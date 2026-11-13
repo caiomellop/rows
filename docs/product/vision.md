@@ -22,7 +22,32 @@ O diagnóstico responde, em linguagem clara:
 - Sinais de força e de narrativa fraca
 - Hipóteses de direção profissional (não verdades absolutas)
 
-Esse diagnóstico é o contexto base para o resto do produto: plano, geração de artefatos, sugestões inline e exportação.
+Esse diagnóstico é o contexto base para o resto do produto: geração de artefatos, sugestões inline e exportação.
+
+## Fluxos principais
+
+```mermaid
+flowchart TD
+  login[Login Google Apple ou email no Rows] --> chat[Chat direto com a IA]
+  chat --> credits[Chat pede créditos]
+  credits --> stripe[Stripe Checkout]
+  stripe --> wallet[Saldo resolvido]
+  wallet --> upload[Upload CV e LinkedIn]
+  upload --> parse[Parsing dos documentos]
+  parse --> diagnosis[Diagnóstico]
+  diagnosis --> artifacts[Artefatos editáveis]
+  artifacts --> preview[Preview LinkedIn]
+  preview --> export[Export com templates]
+```
+
+1. **Login** — o primeiro acesso pode ser por SSO **Google** ou **Apple**, ou por **e-mail** diretamente no banco de dados do Rows.
+2. **Chat** — após o login, abre um **chat direto com a IA** (sem desvio para um modo Plan nesta trilha).
+3. **Créditos** — o chat pede os créditos; a pessoa precisa resolver/comprar para continuar.
+4. **Pagamento** — compra via **Stripe Checkout**; o saldo fica disponível na conta.
+5. **Upload + parse** — a pessoa envia o CV e o PDF do LinkedIn; o Rows faz o **parsing** desses documentos.
+6. **Diagnóstico → artefatos → preview → export** — segue o restante desta visão.
+
+O **modo Plan** / career plan salvo **não faz parte deste fluxo**. Vira uma branch de produto separada que se conecta depois.
 
 ## Do diagnóstico aos artefatos
 
