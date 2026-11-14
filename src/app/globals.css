@@ -62,3 +62,35 @@ body {
 .bg-drift {
   animation: drift 18s ease-in-out infinite alternate;
 }
+
+.sign-in-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #f3f2ef;
+}
+
+.sign-in-atmosphere {
+  background:
+    radial-gradient(ellipse 100% 70% at 12% -10%, rgba(255, 255, 255, 0.98), transparent 55%),
+    radial-gradient(ellipse 80% 55% at 92% 12%, rgba(186, 192, 204, 0.38), transparent 52%),
+    radial-gradient(ellipse 90% 70% at 70% 110%, rgba(176, 164, 150, 0.32), transparent 58%),
+    radial-gradient(ellipse 60% 45% at 30% 70%, rgba(210, 206, 198, 0.35), transparent 60%),
+    linear-gradient(155deg, #f8f7f4 0%, #f1f0ec 38%, #eae7e1 72%, #e4e0d8 100%);
+}
+
+.sign-in-grain {
+  opacity: 0.7;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.75 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3Ccircle cx='24' cy='48' r='0.8' fill='%23000' opacity='0.35'/%3E%3Ccircle cx='90' cy='20' r='0.6' fill='%23000' opacity='0.28'/%3E%3Ccircle cx='160' cy='70' r='0.7' fill='%23000' opacity='0.32'/%3E%3Ccircle cx='220' cy='40' r='0.55' fill='%23000' opacity='0.25'/%3E%3Ccircle cx='50' cy='140' r='0.65' fill='%23000' opacity='0.3'/%3E%3Ccircle cx='130' cy='180' r='0.75' fill='%23000' opacity='0.28'/%3E%3Ccircle cx='200' cy='150' r='0.6' fill='%23000' opacity='0.33'/%3E%3Ccircle cx='250' cy='210' r='0.7' fill='%23000' opacity='0.27'/%3E%3Ccircle cx='70' cy='230' r='0.55' fill='%23000' opacity='0.3'/%3E%3Ccircle cx='180' cy='250' r='0.65' fill='%23000' opacity='0.26'/%3E%3C/svg%3E");
+  background-size: 280px 280px;
+}
+
+.sign-in-input {
+  caret-color: #12151c;
+  height: 3.4rem;
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+.sign-in-input:focus-visible {
+  outline: none;
+}
