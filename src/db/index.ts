@@ -28,7 +28,10 @@ const client =
   postgres(resolveConnectionString(), {
     // Required for Supabase transaction pooler (port 6543).
     prepare: false,
-    max: 1,
+    // A dashboard page reads six tables at once, and the browser prefetches
+    // several tabs together; one connection would run all of that in series.
+    max: 5,
+    idle_timeout: 20,
     connect_timeout: 10,
   });
 
