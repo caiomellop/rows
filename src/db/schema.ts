@@ -244,14 +244,27 @@ export const experienceProjects = pgTable(
 
 export type AssistantMessage = { role: "user" | "assistant"; content: string };
 
-/** The CV interview with the AI assistant (plan §3.7). One open thread per user. */
-export const assistantThreads = pgTable("assistant_threads", {
-  userId: text("userId")
-    .primaryKey()
-    .references(() => users.id, { onDelete: "cascade" }),
-  messages: jsonb("messages").$type<AssistantMessage[]>().notNull().default([]),
-  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
-}).enableRLS();
+/**
+ * Conversations with the AI assistant (plan §3.7). A user has many; the app
+ * sidebar lists them by `updatedAt`.
+ */
+export const assistantThreads = pgTable(
+  "assistant_threads",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull().default("New chat"),
+    pinned: boolean("pinned").notNull().default(false),
+    messages: jsonb("messages").$type<AssistantMessage[]>().notNull().default([]),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("assistant_threads_user_updated").on(t.userId, t.updatedAt)],
+).enableRLS();
 
 export type Profile = typeof profiles.$inferSelect;
 export type Project = typeof projects.$inferSelect;

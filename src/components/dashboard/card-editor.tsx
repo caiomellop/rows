@@ -2,7 +2,7 @@
 
 import { useActionState, useId } from "react";
 
-import type { ActionResult } from "@/app/dashboard/actions";
+import type { ActionResult } from "@/app/(app)/dashboard/actions";
 import { ActionButton, FormStatus } from "@/components/dashboard/action-button";
 import type { ProjectCard } from "@/db/schema";
 

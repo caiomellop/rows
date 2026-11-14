@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 
-import type { ActionResult } from "@/app/dashboard/actions";
+import type { ActionResult } from "@/app/(app)/dashboard/actions";
 import { relativeTime } from "@/lib/insights";
 
 export type RepoRow = {

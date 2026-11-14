@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { loadEditor } from "@/app/dashboard/load";
-import { PageHeader, PageSkeleton } from "@/app/dashboard/skeleton";
+import { loadEditor } from "@/app/(app)/dashboard/load";
+import { PageHeader, PageSkeleton } from "@/app/(app)/dashboard/skeleton";
 import { ExperienceForm, NewExperience } from "@/components/dashboard/experience-form";
 import { ResumeImport } from "@/components/dashboard/resume-import";
 import { aiEnabled } from "@/lib/ai";
 import { formatRange } from "@/lib/insights";
 
-export const metadata: Metadata = { title: "Experience · Rows" };
+export const metadata: Metadata = { title: "Resume · Rows" };
 
 const SOURCE_LABEL = {
   resume: "from your resume",
@@ -33,7 +33,7 @@ async function ExperienceBody() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Experience">
+      <PageHeader title="Resume">
         Jobs and education. This part is self-reported, and the public page says so. Link each job to the projects you built
         there.
       </PageHeader>
@@ -51,7 +51,7 @@ async function ExperienceBody() {
               things up.
             </p>
           </div>
-          <Link href="/dashboard/assistant" className="btn-secondary h-9 self-start rounded-lg px-4 text-[14px]">
+          <Link href="/chat" className="btn-secondary h-9 self-start rounded-lg px-4 text-[14px]">
             Start the interview
           </Link>
         </section>
