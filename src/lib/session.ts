@@ -11,10 +11,29 @@ export type SessionUser = {
   image: string | null;
 };
 
+let warnedLegacySecret = false;
+
+/**
+ * Key used to sign session JWTs (HS256): SESSION_SECRET, at least 32 random
+ * bytes (`openssl rand -base64 32`).
+ *
+ * TEMPORARY: for one release we fall back to AUTH_GITHUB_SECRET (the old
+ * signing key) so sessions issued before the deploy stay valid. Remove the
+ * fallback once SESSION_SECRET is set everywhere.
+ */
 function getSecret() {
-  const secret = process.env.AUTH_GITHUB_SECRET;
+  let secret = process.env.SESSION_SECRET;
   if (!secret) {
-    throw new Error("AUTH_GITHUB_SECRET is not set");
+    secret = process.env.AUTH_GITHUB_SECRET;
+    if (!secret) {
+      throw new Error("SESSION_SECRET is not set");
+    }
+    if (!warnedLegacySecret) {
+      warnedLegacySecret = true;
+      console.warn(
+        "SESSION_SECRET is not set; falling back to AUTH_GITHUB_SECRET to sign sessions. Set SESSION_SECRET (openssl rand -base64 32).",
+      );
+    }
   }
   return new TextEncoder().encode(secret);
 }

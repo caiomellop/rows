@@ -20,6 +20,7 @@ Production: [rows.so](https://rows.so)
 
 - `DATABASE_URL`
 - `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`
+- `SESSION_SECRET` (session signing key, 32+ random bytes: `openssl rand -base64 32`)
 - `NEXT_PUBLIC_APP_URL=https://rows.so`
 
 - Landing: `https://rows.so`

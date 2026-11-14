@@ -12,10 +12,11 @@ Next.js + Supabase/Drizzle + GitHub OAuth (**sem Auth.js**).
 | --- | --- |
 | `DATABASE_URL` | Supabase Postgres |
 | `AUTH_GITHUB_ID` | GitHub OAuth Client ID |
-| `AUTH_GITHUB_SECRET` | GitHub OAuth Client Secret (+ cookie de sessão) |
+| `AUTH_GITHUB_SECRET` | GitHub OAuth Client Secret |
+| `SESSION_SECRET` | Chave que assina o cookie de sessão (mín. 32 bytes aleatórios: `openssl rand -base64 32`) |
 | `NEXT_PUBLIC_APP_URL` | `https://rows.so` |
 
-Sem `AUTH_SECRET` separado.
+`SESSION_SECRET` é separado de `AUTH_GITHUB_SECRET`: rodar o secret do GitHub não desloga ninguém. Na Vercel, defina `SESSION_SECRET` em Production **e** Preview. Por uma release, se `SESSION_SECRET` não existir, o app usa `AUTH_GITHUB_SECRET` com um `console.warn` (para as sessões atuais continuarem válidas); depois disso o fallback será removido.
 
 ## GitHub OAuth App (obrigatório)
 
