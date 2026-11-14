@@ -3,13 +3,12 @@ import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 
 import { db } from "@/db";
-import { accounts, sessions, users, verificationTokens } from "@/db/schema";
+import { accounts, users, verificationTokens } from "@/db/schema";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
-    sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
   providers: [
@@ -19,14 +18,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       allowDangerousEmailAccountLinking: false,
     }),
   ],
+  // JWT sessions avoid a DB round-trip on every page load (better on Vercel).
+  // The Drizzle adapter still create/updates `users` + `accounts` on GitHub sign-in.
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
   trustHost: true,
   callbacks: {
-    session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
+    jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id;
+      }
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
       }
       return session;
     },

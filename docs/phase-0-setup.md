@@ -2,74 +2,75 @@
 
 Scaffold: Next.js App Router + TypeScript + Tailwind, Supabase Postgres via Drizzle, Auth.js (v5) with GitHub. Done when GitHub login creates a row in `users`.
 
-## 1. Env file
+## Env vars — o que é cada uma
+
+São **5 variáveis** (não misturar nomes):
+
+| Variável | O que é | De onde vem |
+| --- | --- | --- |
+| `DATABASE_URL` | URI do Postgres (Supabase) | Supabase → Project Settings → Database → Connection string (URI). Preferir **Transaction pooler** (porta **6543**). No Vercel: já pode estar setada. |
+| `AUTH_SECRET` | Segredo **aleatório** do Auth.js (criptografa cookies/sessão). **Não vem do GitHub.** | Rode: `openssl rand -base64 32` e cole o resultado. |
+| `AUTH_GITHUB_ID` | Client ID do OAuth App | GitHub → Settings → Developer settings → OAuth Apps → Client ID |
+| `AUTH_GITHUB_SECRET` | Client Secret do OAuth App | Mesmo OAuth App → Generate a new client secret |
+| `NEXT_PUBLIC_APP_URL` | URL pública do app | Local: `http://localhost:3000`. Vercel Preview: a URL `*.vercel.app` do deploy. Produção: seu domínio. |
+
+### Confusão comum
+
+- `AUTH_SECRET` ≠ `AUTH_GITHUB_SECRET`
+  - `AUTH_SECRET` = string aleatória gerada por você (`openssl rand -base64 32`)
+  - `AUTH_GITHUB_SECRET` = o **Client Secret** do app OAuth no GitHub
+
+### No Vercel
+
+Project → Settings → Environment Variables. Marque **Preview** e **Production** para cada uma:
+
+1. `DATABASE_URL` — (você já colocou)
+2. `AUTH_SECRET` — resultado de `openssl rand -base64 32`
+3. `AUTH_GITHUB_ID` — Client ID
+4. `AUTH_GITHUB_SECRET` — Client Secret
+5. `NEXT_PUBLIC_APP_URL` — URL do preview/produção (ex. `https://rows-….vercel.app`)
+
+Opcional: `AUTH_URL` = mesmo valor de `NEXT_PUBLIC_APP_URL` se o callback OAuth falhar.
+
+## Local
 
 ```bash
 cp .env.example .env.local
-```
-
-Fill in:
-
-| Variable | Where it comes from |
-| --- | --- |
-| `DATABASE_URL` | Supabase → Project Settings → Database → Connection string (URI). Prefer **Transaction** pooler (port **6543**). |
-| `AUTH_SECRET` | `openssl rand -base64 32` |
-| `AUTH_GITHUB_ID` | GitHub OAuth App Client ID |
-| `AUTH_GITHUB_SECRET` | GitHub OAuth App Client Secret |
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` locally; production origin when deployed |
-
-Optional: set `AUTH_URL` to the same value as `NEXT_PUBLIC_APP_URL` if Auth.js mis-detects the host.
-
-## 2. Supabase Postgres
-
-1. Create a project at [supabase.com](https://supabase.com).
-2. Copy the Postgres URI into `DATABASE_URL`.
-3. From the repo root (with `.env.local` loaded, or `DATABASE_URL` exported):
-
-```bash
-npm run db:push
-```
-
-That creates Auth.js tables: `users`, `accounts`, `sessions`, `verification_tokens`.
-
-## 3. GitHub OAuth App
-
-1. GitHub → Settings → Developer settings → [OAuth Apps](https://github.com/settings/developers) → New OAuth App.
-2. **Homepage URL:** `http://localhost:3000` (or your deployed URL).
-3. **Authorization callback URL:**  
-   `http://localhost:3000/api/auth/callback/github`  
-   (production: `{NEXT_PUBLIC_APP_URL}/api/auth/callback/github`)
-4. Copy Client ID → `AUTH_GITHUB_ID`, generate a Client Secret → `AUTH_GITHUB_SECRET`.
-
-## 4. Run
-
-```bash
-npm install
+# preencha as 5 vars
 npm run db:push
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) → **Sign in with GitHub**.
+## Supabase schema
 
-## 5. Verify user in DB
+```bash
+npm run db:push
+```
 
-After a successful login, in Supabase SQL Editor:
+Cria: `users`, `accounts`, `sessions`, `verification_tokens`.
+
+## GitHub OAuth App
+
+1. [OAuth Apps](https://github.com/settings/developers) → New OAuth App
+2. **Homepage URL:** `http://localhost:3000` (e/ou URL Vercel)
+3. **Authorization callback URL:**  
+   - Local: `http://localhost:3000/api/auth/callback/github`  
+   - Vercel: `https://SEU-DEPLOY.vercel.app/api/auth/callback/github`  
+   (OAuth Apps clássicos têm **um** callback — use a URL que você está testando, ou um app separado para local vs prod)
+4. Client ID → `AUTH_GITHUB_ID`; Client Secret → `AUTH_GITHUB_SECRET`
+
+## Testar login
+
+1. Vars setadas (local e/ou Vercel)
+2. `db:push` ok
+3. Abrir o app → **Sign in with GitHub**
+4. No Supabase:
 
 ```sql
-select id, name, email, image, "emailVerified" from users order by id desc limit 5;
+select id, name, email, image from users order by id desc limit 5;
 select "userId", provider, "providerAccountId" from accounts;
 ```
 
-You should see your GitHub profile in `users` and a `github` row in `accounts`.
-
-## How to test login (checklist)
-
-1. Env vars set; `npm run db:push` succeeded.
-2. OAuth callback URL matches `{app}/api/auth/callback/github`.
-3. `npm run dev` → home shows **Sign in with GitHub**.
-4. Complete GitHub consent → home shows name/email/avatar and **Sign out**.
-5. Supabase shows a new `users` (and `accounts`) row.
-
 ## Phase 1 note
 
-Only Auth.js identity tables are in schema today. Phase 1 will extend `users` and add product tables (`connected_accounts`, `projects`, `experiences`, `experience_projects`) plus `/dashboard`.
+Só tabelas Auth.js por enquanto. Phase 1 estende `users` e adiciona tabelas de produto + `/dashboard`.
