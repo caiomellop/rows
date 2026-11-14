@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { Logo } from "@/components/logo";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
-import { appUrl } from "@/lib/app-url";
+import { siteHost } from "@/lib/app-url";
 import { requireUser } from "@/lib/dal";
 
 import { HandleForm } from "./handle-form";
@@ -37,6 +37,5 @@ async function Handle() {
   const [profile] = await db.select({ id: profiles.userId }).from(profiles).where(eq(profiles.userId, user.id)).limit(1);
   if (profile) redirect("/dashboard");
 
-  const host = appUrl().replace(/^https?:\/\//, "");
-  return <HandleForm urlPrefix={`${host}/in/@`} />;
+  return <HandleForm urlPrefix={`${siteHost()}/in/@`} />;
 }

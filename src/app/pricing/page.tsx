@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "@/components/icons";
 import { PricingPlans } from "@/components/pricing-plans";
 import { SiteNav } from "@/components/site-nav";
+import { appHref } from "@/lib/app-url";
 
 export const metadata: Metadata = {
   title: "Pricing · Rows",
@@ -50,7 +51,7 @@ export default function PricingPage() {
                 profile and GitHub sync are included.
               </p>
               <Link
-                href="/auth/signin"
+                href={appHref("/sign-in")}
                 className="btn-secondary group shrink-0 rounded-full px-4 py-2 text-[0.85rem]"
               >
                 Start free

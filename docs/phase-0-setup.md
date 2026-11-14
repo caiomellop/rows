@@ -1,6 +1,6 @@
 # Phase 0 setup (Caio)
 
-> **Desatualizado em parte (MVP-23):** o login agora é só por e-mail, com link de uso único (`/auth/signin` → e-mail → `/auth/verify`). A rota `/auth` do OAuth foi removida e o GitHub deixa de criar conta ou sessão; ele volta como integração no MVP-24. Variáveis novas: `RESEND_API_KEY` e `EMAIL_FROM`. O que segue descreve a Fase 0 original.
+> **Desatualizado em parte (MVP-23):** o login agora é só por e-mail, com link de uso único (`app.rows.so/sign-in` → e-mail → `/sign-in/verify`). A rota `/auth` do OAuth foi removida e o GitHub deixa de criar conta ou sessão; ele volta como integração no MVP-24. Variáveis novas: `RESEND_API_KEY` e `EMAIL_FROM`. O que segue descreve a Fase 0 original.
 
 
 Next.js + Supabase/Drizzle + GitHub OAuth (**sem Auth.js**).

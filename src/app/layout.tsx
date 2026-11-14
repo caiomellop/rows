@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 
 import "./globals.css";
+import { siteUrl } from "@/lib/app-url";
 
 // Type roles (see docs/landing-design-spec.md §1):
 // EB Garamond: every heading. Geist: wordmark + subtitles/eyebrows. Figtree: everything else.
@@ -31,7 +32,7 @@ const figtree = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://rows.so"),
+  metadataBase: new URL(siteUrl()),
   title: "Rows",
   description: "Portfolio builder with GitHub sync",
 };

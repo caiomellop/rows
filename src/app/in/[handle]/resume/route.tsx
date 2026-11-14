@@ -6,6 +6,7 @@ import { parseHandleSegment, profilePath } from "@/lib/profile-url";
 import { getSession } from "@/lib/session";
 
 import { ResumeDocument } from "./resume-document";
+import { siteUrl } from "@/lib/app-url";
 
 export async function GET(_request: NextRequest, ctx: RouteContext<"/in/[handle]/resume">) {
   const username = parseHandleSegment((await ctx.params).handle);
@@ -15,8 +16,7 @@ export async function GET(_request: NextRequest, ctx: RouteContext<"/in/[handle]
   if (!data) return new Response("Not found", { status: 404 });
 
   const email = await getContactEmail(username, { ownerId: session?.id });
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "https://rows.so").replace(/\/$/, "");
-  const profileUrl = `${base}${profilePath(data.profile.username)}`;
+  const profileUrl = `${siteUrl()}${profilePath(data.profile.username)}`;
 
   const pdf = await renderToBuffer(<ResumeDocument data={data} email={email} profileUrl={profileUrl} />);
   const filename = `${(data.profile.displayName ?? data.profile.username).replace(/[^\w-]+/g, "-")}-resume.pdf`;

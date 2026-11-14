@@ -5,6 +5,7 @@ import { ImageResponse } from "next/og";
 
 import { getPublicProfile } from "@/lib/dal";
 import { parseHandleSegment, profilePath } from "@/lib/profile-url";
+import { siteHost } from "@/lib/app-url";
 
 /**
  * The card LinkedIn shows in the Featured section (product plan §4): a mini
@@ -77,7 +78,7 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
   const name = profile.displayName ?? profile.username;
   const top = projects.find((p) => p.cardStatus === "approved" && p.card) ?? projects[0];
   const topLine = top ? (top.cardStatus === "approved" && top.card ? top.card.whatItIs : top.description) : null;
-  const host = (process.env.NEXT_PUBLIC_APP_URL ?? "https://rows.so").replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const host = siteHost();
 
   return new ImageResponse(
     (

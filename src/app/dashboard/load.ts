@@ -2,6 +2,7 @@ import "server-only";
 
 import { profilePath } from "@/lib/profile-url";
 import { ensureProfile, getEditorData, requireUser } from "@/lib/dal";
+import { siteUrl } from "@/lib/app-url";
 
 /** Session check + first-visit profile creation + all editor data. */
 export async function loadEditor() {
@@ -11,6 +12,5 @@ export async function loadEditor() {
 }
 
 export function publicUrl(username: string) {
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "https://rows.so").replace(/\/$/, "");
-  return `${base}${profilePath(username)}`;
+  return `${siteUrl()}${profilePath(username)}`;
 }

@@ -52,5 +52,5 @@ export function isRateLimited(recent: { byEmail: number; byIp: number }): boolea
 
 /** Where an expired, used or unknown link sends the user, with the email prefilled when it is known. */
 export function expiredLinkUrl(email: string | null): string {
-  return `/auth/signin?error=expired${email ? `&email=${encodeURIComponent(email)}` : ""}`;
+  return `/sign-in?error=expired${email ? `&email=${encodeURIComponent(email)}` : ""}`;
 }

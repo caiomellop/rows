@@ -5,6 +5,7 @@ import { DashboardNav } from "@/components/dashboard/nav";
 import { Logo } from "@/components/logo";
 import { ensureProfile, requireUser } from "@/lib/dal";
 import { profilePath } from "@/lib/profile-url";
+import { siteHref } from "@/lib/app-url";
 
 // AI drafting and GitHub sync run inside Server Actions on these pages.
 export const maxDuration = 60;
@@ -14,10 +15,10 @@ async function AccountLinks() {
   const profile = await ensureProfile(user);
   return (
     <>
-      <Link href={profilePath(profile.username)} className="text-[14px] text-fg-2 hover:text-fg" prefetch={false}>
+      <Link href={siteHref(profilePath(profile.username))} className="text-[14px] text-fg-2 hover:text-fg" prefetch={false}>
         View public page
       </Link>
-      <form action="/auth/logout" method="post">
+      <form action="/sign-out" method="post">
         <button type="submit" className="text-[14px] text-fg-2 hover:text-fg">
           Sign out
         </button>

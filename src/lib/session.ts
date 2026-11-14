@@ -2,6 +2,8 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 
+import { sessionCookieDomain } from "@/lib/app-url";
+
 const COOKIE_NAME = "rows_session";
 
 export type SessionUser = {
@@ -44,6 +46,7 @@ export function attachSessionCookie(response: NextResponse, token: string) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    domain: sessionCookieDomain(),
     maxAge: 60 * 60 * 24 * 30,
   });
 }
@@ -56,6 +59,7 @@ export async function startSession(user: SessionUser) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    domain: sessionCookieDomain(),
     maxAge: 60 * 60 * 24 * 30,
   });
 }
@@ -66,6 +70,7 @@ export function clearSessionCookie(response: NextResponse) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    domain: sessionCookieDomain(),
     maxAge: 0,
   });
 }

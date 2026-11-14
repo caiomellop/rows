@@ -8,7 +8,7 @@ import { appUrl } from "@/lib/app-url";
 
 /** Exact GitHub OAuth callback configured on the OAuth App. */
 export function githubCallbackUrl() {
-  return `${appUrl()}/auth`;
+  return `${appUrl()}/integrations/github/callback`;
 }
 
 export function githubAuthorizeUrl(state: string) {

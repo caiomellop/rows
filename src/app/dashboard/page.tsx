@@ -9,6 +9,7 @@ import { ActionButton } from "@/components/dashboard/action-button";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { Check } from "@/components/icons";
 import { profilePath } from "@/lib/profile-url";
+import { siteHref } from "@/lib/app-url";
 
 export const metadata: Metadata = { title: "Dashboard · Rows" };
 
@@ -77,7 +78,7 @@ async function Overview() {
           </div>
           <div className="flex flex-wrap items-start gap-2">
             <CopyButton value={url} />
-            <Link href={profilePath(profile.username)} className="btn-secondary h-9 rounded-lg px-3.5 text-[14px]" prefetch={false}>
+            <Link href={siteHref(profilePath(profile.username))} className="btn-secondary h-9 rounded-lg px-3.5 text-[14px]" prefetch={false}>
               Preview
             </Link>
             {profile.published ? (
@@ -136,7 +137,7 @@ async function Overview() {
             </ol>
             <div className="mt-5 flex flex-wrap gap-2">
               <CopyButton value={url} label="Copy your link" />
-              <a href={`${profilePath(profile.username)}/resume`} className="btn-secondary h-9 rounded-lg px-3.5 text-[14px]">
+              <a href={siteHref(`${profilePath(profile.username)}/resume`)} className="btn-secondary h-9 rounded-lg px-3.5 text-[14px]">
                 Download resume PDF
               </a>
             </div>
@@ -144,7 +145,7 @@ async function Overview() {
           <figure>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`${profilePath(profile.username)}/opengraph-image`}
+              src={siteHref(`${profilePath(profile.username)}/opengraph-image`)}
               alt="The card LinkedIn shows for your link"
               width={1200}
               height={630}

@@ -25,7 +25,7 @@ import { getSession, type SessionUser } from "@/lib/session";
 
 export async function requireUser(): Promise<SessionUser> {
   const user = await getSession();
-  if (!user) redirect("/auth/signin");
+  if (!user) redirect("/sign-in");
   return user;
 }
 

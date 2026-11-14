@@ -45,7 +45,7 @@ export async function requestLoginLink(email: string, ip: string): Promise<void>
 
   const { token, tokenHash } = generateLoginToken();
   await db.insert(loginTokens).values({ tokenHash, email, ipHash, expiresAt: new Date(now.getTime() + LOGIN_LINK_TTL_MS) });
-  await sendLoginEmail(email, `${appUrl()}/auth/verify?token=${token}`);
+  await sendLoginEmail(email, `${appUrl()}/sign-in/verify?token=${token}`);
 }
 
 /**

@@ -7,6 +7,7 @@ import { SignalChips, VerifiedBadge } from "@/components/project-signals";
 import type { PublicProfile } from "@/lib/dal";
 import { profilePath } from "@/lib/profile-url";
 import { WORK_MODE_LABEL, formatMonthYear, formatRange } from "@/lib/insights";
+import { appHref } from "@/lib/app-url";
 
 const anchor = (name: string) => `project-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
@@ -31,7 +32,7 @@ export function ProfileView({ data, preview = false }: { data: PublicProfile; pr
       {preview ? (
         <p className="mb-6 rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-[14px] text-amber-900">
           Preview: only you can see this page.{" "}
-          <Link href="/dashboard" className="underline underline-offset-2">
+          <Link href={appHref("/dashboard")} className="underline underline-offset-2">
             Publish it from your dashboard
           </Link>
           .

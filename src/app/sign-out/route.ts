@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { appUrl } from "@/lib/app-url";
+import { siteUrl } from "@/lib/app-url";
 import { clearSessionCookie } from "@/lib/session";
 
 // POST only: a GET logout can be triggered by any third-party page
-// (e.g. <img src="https://rows.so/auth/logout">).
+// (e.g. <img src="https://app.rows.so/sign-out">).
 export async function POST() {
-  const response = NextResponse.redirect(`${appUrl()}/`, { status: 303 });
+  const response = NextResponse.redirect(`${siteUrl()}/`, { status: 303 });
   clearSessionCookie(response);
   return response;
 }

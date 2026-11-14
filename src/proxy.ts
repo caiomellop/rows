@@ -1,17 +1,53 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { appUrl, hostsAreSplit, isAppPath, siteUrl } from "@/lib/app-url";
 import { canViewProfile } from "@/lib/profile-access";
 import { isBareHandle, parseHandleSegment } from "@/lib/profile-url";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 /**
- * Gate for the public profile routes (/in/@handle and everything under it).
+ * Two jobs, both of which must happen before a page starts rendering:
  *
- * The profile page streams, so by the time it could call `notFound()` the
- * response is already `200`. Deciding here, before rendering starts, is what
- * lets unknown and unpublished handles answer with a real HTTP 404.
+ * 1. Host routing. The app (sign-in, onboarding, dashboard) lives on
+ *    app.rows.so and everything else on rows.so; a path asked for on the wrong
+ *    host is redirected to the right one.
+ * 2. The gate for public profiles (/in/@handle), so unknown and unpublished
+ *    handles answer with a real HTTP 404 instead of a streamed 200.
  */
 export async function proxy(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+
+  // The pre-MVP-23 sign-in address.
+  if (pathname === "/auth/signin") {
+    return NextResponse.redirect(`${appUrl()}/sign-in${search}`, 308);
+  }
+
+  const elsewhere = otherHost(request, pathname);
+  if (elsewhere) return NextResponse.redirect(`${elsewhere}${search}`, 308);
+
+  if (pathname.startsWith("/in/")) return profileGate(request);
+  return NextResponse.next();
+}
+
+/** The URL this path should be served from when it was asked for on the wrong host. */
+function otherHost(request: NextRequest, pathname: string): string | null {
+  if (!hostsAreSplit()) return null;
+
+  const host = request.headers.get("host");
+  const onApp = host === new URL(appUrl()).host;
+  const onSite = host === new URL(siteUrl()).host;
+
+  if (onApp) {
+    if (pathname === "/") return `${appUrl()}/dashboard`;
+    if (!isAppPath(pathname)) return `${siteUrl()}${pathname}`;
+  } else if (onSite && isAppPath(pathname)) {
+    return `${appUrl()}${pathname}`;
+  }
+  // Any other host (preview deployments, localhost) serves everything.
+  return null;
+}
+
+async function profileGate(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const [, , segment = "", ...rest] = pathname.split("/");
   const tail = rest.length ? `/${rest.join("/")}` : "";
@@ -42,5 +78,6 @@ function notFound(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/in/:path+",
+  // Everything except build assets and files with an extension.
+  matcher: "/((?!_next/|.*\\.[\\w]+$).*)",
 };
