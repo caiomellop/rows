@@ -11,12 +11,14 @@ export async function LandingCta() {
         <p className="text-sm text-ink/70">
           Signed in as <span className="font-medium text-ink">{user.name}</span>
         </p>
-        <Link
-          href="/auth/logout"
-          className="text-sm font-medium text-ink/60 underline-offset-4 hover:text-ink hover:underline"
-        >
-          Sign out
-        </Link>
+        <form method="post" action="/auth/logout">
+          <button
+            type="submit"
+            className="cursor-pointer text-sm font-medium text-ink/60 underline-offset-4 hover:text-ink hover:underline"
+          >
+            Sign out
+          </button>
+        </form>
       </div>
     );
   }

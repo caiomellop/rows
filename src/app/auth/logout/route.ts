@@ -16,8 +16,11 @@ export async function POST() {
   return response;
 }
 
+/**
+ * Logout is POST-only. A GET that clears the cookie could be fired by link
+ * prefetch or by another site (logout CSRF), so GET just redirects home
+ * without touching the session.
+ */
 export async function GET() {
-  const response = NextResponse.redirect(`${homeUrl()}/`);
-  clearSessionCookie(response);
-  return response;
+  return NextResponse.redirect(`${homeUrl()}/`, { status: 303 });
 }
