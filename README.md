@@ -22,7 +22,9 @@ Production: [rows.so](https://rows.so)
 - `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`
 - `NEXT_PUBLIC_APP_URL=https://rows.so`
 
-GitHub OAuth **callback URL:** `https://rows.so/auth`
+- Landing: `https://rows.so`
+- Sign in: `https://rows.so/auth/signin`
+- GitHub OAuth callback: `https://rows.so/auth`
 
 ## Phase 0 done criteria
 
