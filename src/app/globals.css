@@ -1,30 +1,168 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens: docs/landing-design-spec.md §2.
+ * Colors are RGB channel triplets so they can be used as rgb(var(--x) / alpha).
+ * The palette is monochrome on purpose; depth comes from ink alpha tints,
+ * hairline borders and soft layered shadows.
+ */
 :root {
-  --background: #f3f1ec;
-  --foreground: #12151c;
-  --ink: #12151c;
-  --mist: #e7ebe8;
-  --accent: #1f6b4a;
-  --accent-hover: #18553a;
-  --glow: rgba(31, 107, 74, 0.18);
+  --page: 252 252 250;
+  --card: 255 255 255;
+  --panel: 245 244 241;
+  --ink: 17 17 17;
+  --text-primary: 17 17 17;
+  --text-secondary: 82 80 76;
+  --text-muted: 112 110 105;
+  --accent: 17 17 17;
+  --cta-to: 43 43 43;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.05);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-ink: var(--ink);
-  --color-mist: var(--mist);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --font-sans: var(--font-body);
-  --font-display: var(--font-display);
+  --color-page: rgb(var(--page));
+  --color-card: rgb(var(--card));
+  --color-panel: rgb(var(--panel));
+  --color-ink: rgb(var(--ink));
+  --color-fg: rgb(var(--text-primary));
+  --color-fg-2: rgb(var(--text-secondary));
+  --color-fg-3: rgb(var(--text-muted));
+  --color-accent: rgb(var(--accent));
+  --color-line: var(--border);
+  --color-line-subtle: var(--border-subtle);
+
+  --font-serif: var(--font-garamond), Georgia, serif;
+  --font-sans: var(--font-figtree), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-geist: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: rgb(var(--page));
+    color: rgb(var(--text-primary));
+    font-family: var(--font-figtree), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  /* Every heading is EB Garamond, regular weight, unless it opts out with .font-sans. */
+  :is(h1, h2, h3, h4, h5, h6):not(.font-sans) {
+    font-family: var(--font-garamond), Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* The accent phrase inside a display heading is black italic. */
+  :is(h1, h2):not(.font-sans) .text-accent {
+    font-style: italic;
+  }
+
+  ::selection {
+    background: rgba(92, 151, 118, 0.28);
+    color: #111;
+  }
+}
+
+@layer components {
+  /* Primary button: dark gradient, layered shadow, lifts on hover (spec §3.1). */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    white-space: nowrap;
+    color: rgb(var(--page));
+    background-image: linear-gradient(to bottom, rgb(var(--ink)), rgb(var(--cta-to)));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 1px 1.5px rgba(0, 0, 0, 0.16),
+      0 3px 6px -1px rgba(0, 0, 0, 0.22),
+      0 8px 14px -4px rgba(0, 0, 0, 0.18);
+    transition: all 200ms ease-out;
+    will-change: transform;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      0 1px 2px rgba(0, 0, 0, 0.18),
+      0 5px 10px -1px rgba(0, 0, 0, 0.26),
+      0 12px 22px -4px rgba(0, 0, 0, 0.22);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  /* Secondary button: light ink-tinted pill (spec §3.2). */
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: rgb(var(--text-primary));
+    border: 1px solid rgb(var(--ink) / 0.14);
+    background-color: rgb(var(--ink) / 0.05);
+    transition:
+      background-color 200ms ease-out,
+      border-color 200ms ease-out;
+  }
+  .btn-secondary:hover {
+    border-color: rgb(var(--ink) / 0.22);
+    background-color: rgb(var(--ink) / 0.09);
+  }
+
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible {
+    outline: 2px solid rgb(var(--ink));
+    outline-offset: 3px;
+  }
+
+  /* Faint dotted grid (spec §3.3). Pair with a mask utility below. */
+  .dot-grid {
+    background-image: radial-gradient(rgba(17, 17, 17, 0.11) 1px, transparent 1.4px);
+    background-size: 24px 24px;
+    background-position: 12px 12px;
+  }
+  .dot-grid-center {
+    mask-image: radial-gradient(85% 85% at 50% 38%, #000 45%, transparent 100%);
+  }
+  .dot-grid-corner-left {
+    mask-image: radial-gradient(farthest-side at 0 0, #000 0, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
+  }
+  .dot-grid-corner-right {
+    mask-image: radial-gradient(farthest-side at 100% 0, #000 0, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
+  }
+
+  /* Blinking caret for the hero typewriter. */
+  .caret {
+    display: inline-block;
+    width: 3px;
+    height: 0.85em;
+    margin-left: 0.25rem;
+    transform: translateY(0.08em);
+    border-radius: 9999px;
+    background: rgb(var(--accent));
+    animation: caret-blink 1.05s steps(1) infinite;
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes rise {
@@ -35,15 +173,6 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(2%, -3%, 0) scale(1.05);
   }
 }
 
@@ -59,6 +188,14 @@ body {
   animation: rise 0.9s ease-out 0.24s both;
 }
 
-.bg-drift {
-  animation: drift 18s ease-in-out infinite alternate;
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .anim-rise-delay,
+  .anim-rise-delay-2,
+  .caret {
+    animation: none;
+  }
+  .btn-primary:hover {
+    transform: none;
+  }
 }

@@ -1,49 +1,58 @@
-import Link from "next/link";
 import { Suspense } from "react";
 
+import { HeroTypewriter } from "@/components/hero-typewriter";
 import { LandingCta } from "@/components/landing-cta";
+import { SiteNav } from "@/components/site-nav";
+
+// Keep the lead-in short enough for one line at desktop size (~25 chars); the
+// italic phrase always sits on its own second line (spec §5).
+const LEAD_IN = "A developer portfolio that";
+const PHRASES = [
+  "looks like you.",
+  "updates itself.",
+  "tells your story.",
+  "gets you hired.",
+];
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-full flex-1 flex-col overflow-hidden">
-      <div
-        aria-hidden
-        className="bg-drift pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 15% 20%, var(--glow), transparent 55%), radial-gradient(ellipse 70% 50% at 90% 10%, rgba(18, 21, 28, 0.08), transparent 50%), linear-gradient(160deg, #f7f5f0 0%, #eef2ef 45%, #e4ebe6 100%)",
-        }}
-      />
+    <>
+      <SiteNav />
+      <main className="relative flex flex-1 flex-col">
+        {/* Spec §5: home hero */}
+        <section className="relative overflow-x-clip px-5 pb-[clamp(2.5rem,5vw,4rem)] pt-[clamp(80px,12vh,128px)] text-center md:px-8">
+          <div
+            aria-hidden
+            className="dot-grid dot-grid-center pointer-events-none absolute inset-x-0 top-0 -z-10 h-[min(820px,100%)]"
+          />
 
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 pt-8">
-        <Link
-          href="/"
-          className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-ink"
-        >
-          Rows
-        </Link>
-      </header>
+          <h1 className="anim-rise mx-auto mb-6 max-w-[820px] text-balance text-[clamp(2.4rem,5vw,4.1rem)] leading-[1.05] text-fg-2">
+            <span className="sr-only">
+              {LEAD_IN} {PHRASES.join(", ").replace(/\.(?=,)/g, "")}
+            </span>
+            <span aria-hidden>
+              {LEAD_IN} <HeroTypewriter phrases={PHRASES} />
+            </span>
+          </h1>
 
-      <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-6 pb-24 pt-16">
-        <p className="anim-rise font-[family-name:var(--font-display)] text-6xl font-semibold leading-[0.95] tracking-tight text-ink sm:text-7xl md:text-8xl">
-          Rows
-        </p>
-        <h1 className="anim-rise-delay mt-6 max-w-xl text-2xl font-medium leading-snug text-ink/90 sm:text-3xl">
-          Turn your GitHub into a portfolio that actually looks like you.
-        </h1>
-        <p className="anim-rise-delay mt-4 max-w-md text-base leading-7 text-ink/60">
-          Sync repos, shape experiences, publish a public profile.
-        </p>
-        <div className="anim-rise-delay-2 mt-10">
-          <Suspense
-            fallback={
-              <span className="inline-flex h-12 w-36 animate-pulse rounded-md bg-ink/10" />
-            }
-          >
-            <LandingCta />
-          </Suspense>
-        </div>
-      </section>
-    </main>
+          <p className="anim-rise-delay mx-auto mb-5 max-w-[680px] text-balance font-geist text-[clamp(0.98rem,1.65vw,1.28rem)] leading-snug text-fg-2">
+            Sync your repos, <span className="text-fg">shape your experiences</span>,
+            let AI draft your About, and{" "}
+            <span className="text-fg">publish a profile people remember</span> at
+            your own link.
+          </p>
+
+          <div className="anim-rise-delay-2 mx-auto flex w-full flex-col items-center justify-center gap-2.5 sm:flex-row sm:gap-3.5">
+            <Suspense
+              fallback={
+                <span className="inline-block h-[45px] w-[150px] rounded-xl bg-ink/10" />
+              }
+            >
+              <LandingCta />
+            </Suspense>
+          </div>
+        </section>
+      </main>
+    </>
   );
 }
