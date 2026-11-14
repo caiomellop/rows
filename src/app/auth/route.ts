@@ -7,6 +7,7 @@ import {
   githubAuthorizeUrl,
   upsertGithubUser,
 } from "@/lib/github-oauth";
+import { syncGithubRepos } from "@/lib/github-sync";
 import { attachSessionCookie, signSessionToken } from "@/lib/session";
 
 function homeUrl() {
@@ -22,7 +23,7 @@ function homeUrl() {
  *   https://rows.so/auth
  *
  * - GET /auth          → start OAuth (redirect to GitHub)
- * - GET /auth?code=…   → callback (exchange code, set session)
+ * - GET /auth?code=…   → callback (exchange code, set session, → /dashboard)
  */
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
   try {
     const token = await exchangeGithubCode(code);
     const { profile, email } = await fetchGithubProfile(token.access_token!);
-    const user = await upsertGithubUser({
+    const { user, needsInitialSync } = await upsertGithubUser({
       profile,
       email,
       accessToken: token.access_token!,
@@ -71,8 +72,16 @@ export async function GET(request: NextRequest) {
       tokenType: token.token_type,
     });
 
+    // First sign-in: pull repos now so the dashboard isn't empty. A failure
+    // here must not block sign-in; the dashboard has a "Sync" button.
+    if (needsInitialSync) {
+      await syncGithubRepos(user.id).catch((err) => {
+        console.error("Initial GitHub sync failed", err);
+      });
+    }
+
     const sessionToken = await signSessionToken(user);
-    const response = NextResponse.redirect(`${homeUrl()}/`);
+    const response = NextResponse.redirect(`${homeUrl()}/dashboard`);
     attachSessionCookie(response, sessionToken);
     response.cookies.set("rows_oauth_state", "", { path: "/", maxAge: 0 });
     return response;

@@ -1,8 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/db";
 import { accounts, users } from "@/db/schema";
 import type { SessionUser } from "@/lib/session";
+import { normalizeUsername, validateUsername } from "@/lib/username";
 
 function appUrl() {
   return (
@@ -119,13 +120,34 @@ export async function fetchGithubProfile(accessToken: string): Promise<{
   return { profile, email };
 }
 
+/**
+ * A free username for a new profile: the GitHub login when it is valid and
+ * unclaimed, otherwise the login plus a short random suffix.
+ */
+async function pickUsername(login: string): Promise<string> {
+  const base = normalizeUsername(login).slice(0, 32);
+  const candidates = validateUsername(base) === null ? [base] : [];
+  for (let i = 0; i < 5; i++) {
+    candidates.push(`${base || "dev"}-${crypto.randomUUID().slice(0, 4)}`);
+  }
+  for (const candidate of candidates) {
+    const [taken] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.username, candidate))
+      .limit(1);
+    if (!taken) return candidate;
+  }
+  return `dev-${crypto.randomUUID().slice(0, 8)}`;
+}
+
 export async function upsertGithubUser(input: {
   profile: GithubUser;
   email: string | null;
   accessToken: string;
   scope?: string;
   tokenType?: string;
-}): Promise<SessionUser> {
+}): Promise<{ user: SessionUser; needsInitialSync: boolean }> {
   const providerAccountId = String(input.profile.id);
   const existing = await db
     .select({
@@ -140,19 +162,33 @@ export async function upsertGithubUser(input: {
     )
     .limit(1);
 
-  const name = input.profile.name ?? input.profile.login;
+  const githubName = input.profile.name ?? input.profile.login;
   const image = input.profile.avatar_url;
 
   if (existing[0]) {
     const userId = existing[0].userId;
+    // The name is editable on the profile, so GitHub only fills it when empty.
     await db
       .update(users)
-      .set({
-        name,
-        email: input.email,
-        image,
-      })
+      .set({ email: input.email, image, githubLogin: input.profile.login })
       .where(eq(users.id, userId));
+    await db
+      .update(users)
+      .set({ name: githubName })
+      .where(and(eq(users.id, userId), isNull(users.name)));
+
+    // Accounts created before profiles existed have no username yet.
+    const [row] = await db
+      .select({ name: users.name, username: users.username, lastSyncedAt: users.lastSyncedAt })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    if (!row?.username) {
+      await db
+        .update(users)
+        .set({ username: await pickUsername(input.profile.login) })
+        .where(eq(users.id, userId));
+    }
 
     await db
       .update(accounts)
@@ -169,20 +205,20 @@ export async function upsertGithubUser(input: {
       );
 
     return {
-      id: userId,
-      name,
-      email: input.email,
-      image,
+      user: { id: userId, name: row?.name ?? githubName, email: input.email, image },
+      needsInitialSync: !row?.lastSyncedAt,
     };
   }
 
   const userId = crypto.randomUUID();
   await db.insert(users).values({
     id: userId,
-    name,
+    name: githubName,
     email: input.email,
     image,
     emailVerified: input.email ? new Date() : null,
+    githubLogin: input.profile.login,
+    username: await pickUsername(input.profile.login),
   });
 
   await db.insert(accounts).values({
@@ -196,9 +232,7 @@ export async function upsertGithubUser(input: {
   });
 
   return {
-    id: userId,
-    name,
-    email: input.email,
-    image,
+    user: { id: userId, name: githubName, email: input.email, image },
+    needsInitialSync: true,
   };
 }

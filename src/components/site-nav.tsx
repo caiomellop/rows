@@ -14,14 +14,18 @@ async function NavAccount() {
   if (user) {
     return (
       <>
-        <span className="hidden max-w-40 truncate text-[15px] text-fg-2 sm:inline">
-          {user.name ?? "Signed in"}
-        </span>
+        {/* A POST form, not a <Link>: Next.js prefetches links in production,
+            and prefetching a GET that clears the cookie signs the user out. */}
+        <form action="/auth/logout" method="post" className="hidden sm:block">
+          <button type="submit" className={`${navLink} cursor-pointer`}>
+            Sign out
+          </button>
+        </form>
         <Link
-          href="/auth/logout"
-          className="btn-secondary h-[38px] rounded-xl px-4 text-[15px]"
+          href="/dashboard"
+          className="btn-primary h-[38px] rounded-xl px-5 text-[15px]"
         >
-          Sign out
+          Dashboard
         </Link>
       </>
     );

@@ -13,7 +13,7 @@ Production: [rows.so](https://rows.so)
 ## Quick start
 
 1. `cp .env.example .env.local` and fill values (see [`docs/phase-0-setup.md`](./docs/phase-0-setup.md)).
-2. `npm run db:push` (if schema not applied yet)
+2. `npm run db:push` (if schema not applied yet; Phase 1 adds the portfolio tables, see [`docs/phase-1-portfolio.md`](./docs/phase-1-portfolio.md))
 3. `npm run dev`
 
 ### Required env

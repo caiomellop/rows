@@ -11,7 +11,7 @@ async function SignInBody({
 }) {
   const user = await getSession();
   if (user) {
-    redirect("/");
+    redirect("/dashboard");
   }
 
   const { error } = await searchParams;
