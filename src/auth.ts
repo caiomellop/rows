@@ -18,6 +18,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       allowDangerousEmailAccountLinking: false,
     }),
   ],
+  // Reuse GitHub client secret as Auth.js signing secret (no separate AUTH_SECRET).
+  secret: process.env.AUTH_GITHUB_SECRET,
   // JWT sessions avoid a DB round-trip on every page load (better on Vercel).
   // The Drizzle adapter still create/updates `users` + `accounts` on GitHub sign-in.
   session: {

@@ -2,41 +2,31 @@
 
 Scaffold: Next.js App Router + TypeScript + Tailwind, Supabase Postgres via Drizzle, Auth.js (v5) with GitHub. Done when GitHub login creates a row in `users`.
 
-## Env vars — o que é cada uma
+Production domain: **https://rows.so** (Vercel já aponta para cá).
 
-São **5 variáveis** (não misturar nomes):
+## Env vars
 
 | Variável | O que é | De onde vem |
 | --- | --- | --- |
-| `DATABASE_URL` | URI do Postgres (Supabase) | Supabase → Project Settings → Database → Connection string (URI). Preferir **Transaction pooler** (porta **6543**). No Vercel: já pode estar setada. |
-| `AUTH_SECRET` | Segredo **aleatório** do Auth.js (criptografa cookies/sessão). **Não vem do GitHub.** | Rode: `openssl rand -base64 32` e cole o resultado. |
-| `AUTH_GITHUB_ID` | Client ID do OAuth App | GitHub → Settings → Developer settings → OAuth Apps → Client ID |
-| `AUTH_GITHUB_SECRET` | Client Secret do OAuth App | Mesmo OAuth App → Generate a new client secret |
-| `NEXT_PUBLIC_APP_URL` | URL pública do app | Local: `http://localhost:3000`. Vercel Preview: a URL `*.vercel.app` do deploy. Produção: seu domínio. |
-
-### Confusão comum
-
-- `AUTH_SECRET` ≠ `AUTH_GITHUB_SECRET`
-  - `AUTH_SECRET` = string aleatória gerada por você (`openssl rand -base64 32`)
-  - `AUTH_GITHUB_SECRET` = o **Client Secret** do app OAuth no GitHub
+| `DATABASE_URL` | URI do Postgres (Supabase) | Supabase → Database → Connection string (URI). Preferir **Transaction pooler** (porta **6543**). Já no Vercel. |
+| `AUTH_GITHUB_ID` | Client ID do OAuth App | GitHub → OAuth Apps → Client ID |
+| `AUTH_GITHUB_SECRET` | Client Secret do OAuth App (também assina a sessão Auth.js) | Mesmo OAuth App → Client secret |
+| `NEXT_PUBLIC_APP_URL` | URL pública do app | Prod: `https://rows.so`. Local: `http://localhost:3000` |
 
 ### No Vercel
 
-Project → Settings → Environment Variables. Marque **Preview** e **Production** para cada uma:
+1. `DATABASE_URL` — já setada  
+2. `AUTH_GITHUB_ID`  
+3. `AUTH_GITHUB_SECRET`  
+4. `NEXT_PUBLIC_APP_URL` = `https://rows.so`
 
-1. `DATABASE_URL` — (você já colocou)
-2. `AUTH_SECRET` — resultado de `openssl rand -base64 32`
-3. `AUTH_GITHUB_ID` — Client ID
-4. `AUTH_GITHUB_SECRET` — Client Secret
-5. `NEXT_PUBLIC_APP_URL` — URL do preview/produção (ex. `https://rows-….vercel.app`)
-
-Opcional: `AUTH_URL` = mesmo valor de `NEXT_PUBLIC_APP_URL` se o callback OAuth falhar.
+Opcional: `AUTH_URL` = `https://rows.so`
 
 ## Local
 
 ```bash
 cp .env.example .env.local
-# preencha as 5 vars
+# use NEXT_PUBLIC_APP_URL=http://localhost:3000 no .env.local
 npm run db:push
 npm run dev
 ```
@@ -51,19 +41,17 @@ Cria: `users`, `accounts`, `sessions`, `verification_tokens`.
 
 ## GitHub OAuth App
 
-1. [OAuth Apps](https://github.com/settings/developers) → New OAuth App
-2. **Homepage URL:** `http://localhost:3000` (e/ou URL Vercel)
-3. **Authorization callback URL:**  
-   - Local: `http://localhost:3000/api/auth/callback/github`  
-   - Vercel: `https://SEU-DEPLOY.vercel.app/api/auth/callback/github`  
-   (OAuth Apps clássicos têm **um** callback — use a URL que você está testando, ou um app separado para local vs prod)
+1. [OAuth Apps](https://github.com/settings/developers) → New OAuth App (ou editar o existente)
+2. **Homepage URL:** `https://rows.so`
+3. **Authorization callback URL:** `https://rows.so/api/auth/callback/github`  
+   Para testar local, use um segundo OAuth App com callback `http://localhost:3000/api/auth/callback/github`, ou troque o callback temporariamente.
 4. Client ID → `AUTH_GITHUB_ID`; Client Secret → `AUTH_GITHUB_SECRET`
 
 ## Testar login
 
-1. Vars setadas (local e/ou Vercel)
-2. `db:push` ok
-3. Abrir o app → **Sign in with GitHub**
+1. Vars setadas no Vercel
+2. `db:push` ok no Supabase
+3. Abrir https://rows.so → **Sign in with GitHub**
 4. No Supabase:
 
 ```sql

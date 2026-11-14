@@ -2,6 +2,8 @@
 
 Portfolio builder: GitHub sync, experiences, AI About, public profile at `/u/[username]`.
 
+Production: [rows.so](https://rows.so)
+
 ## Stack
 
 - Next.js (App Router) + TypeScript + Tailwind
@@ -16,12 +18,12 @@ Portfolio builder: GitHub sync, experiences, AI About, public profile at `/u/[us
 
 ### Required env
 
-- `DATABASE_URL` — Supabase Postgres URI (transaction pooler preferred)
-- `AUTH_SECRET` — `openssl rand -base64 32`
+- `DATABASE_URL` — Supabase Postgres URI (transaction pooler preferred; already on Vercel)
 - `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` — GitHub OAuth App
-- `NEXT_PUBLIC_APP_URL` — e.g. `http://localhost:3000`
+- `NEXT_PUBLIC_APP_URL` — `https://rows.so` (prod) or `http://localhost:3000` (local)
 
-GitHub OAuth **callback URL:** `{NEXT_PUBLIC_APP_URL}/api/auth/callback/github`
+GitHub OAuth **callback URL:** `https://rows.so/api/auth/callback/github`  
+(local: `http://localhost:3000/api/auth/callback/github`)
 
 ### Scripts
 
