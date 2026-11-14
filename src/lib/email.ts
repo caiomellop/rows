@@ -10,7 +10,7 @@ import { LOGIN_LINK_TTL_MINUTES } from "@/lib/login-token";
  * with SPF, DKIM and DMARC set up).
  */
 
-const FROM = process.env.EMAIL_FROM ?? "Rows <login@rows.so>";
+const FROM = process.env.EMAIL_FROM ?? "Rows <noreply@rows.so>";
 
 type Message = { to: string; subject: string; text: string; html: string };
 
