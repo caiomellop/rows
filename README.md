@@ -1,6 +1,6 @@
 # Rows
 
-Portfolio builder: GitHub sync, experiences, AI About, public profile at `/u/[username]`.
+Portfolio builder: GitHub sync, experiences, AI About, public profile at `/in/@handle`.
 
 Production: [rows.so](https://rows.so)
 
@@ -10,7 +10,7 @@ Product: [`docs/product-plan.md`](./docs/product-plan.md) is the single product 
 
 - Next.js (App Router) + TypeScript + Tailwind
 - Supabase Postgres + Drizzle ORM
-- Custom GitHub OAuth (no Auth.js); callback `https://rows.so/auth`
+- Email-only login with a one-time link (no passwords, no Auth.js); email sent through Resend
 
 ## Quick start
 
@@ -21,13 +21,33 @@ Product: [`docs/product-plan.md`](./docs/product-plan.md) is the single product 
 ### Required env
 
 - `DATABASE_URL`
-- `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`
-- `NEXT_PUBLIC_APP_URL=https://rows.so`
+- `AUTH_SECRET` (session cookie signing key)
+- `RESEND_API_KEY` / `EMAIL_FROM` (login link emails)
+- `NEXT_PUBLIC_SITE_URL=https://rows.so` (landing, pricing, public profiles)
+- `NEXT_PUBLIC_APP_URL=https://app.rows.so` (sign-in, onboarding, dashboard)
 
 - Landing: `https://rows.so`
-- Sign in: `https://rows.so/auth/signin`
-- GitHub OAuth callback: `https://rows.so/auth`
+- Sign in: `https://app.rows.so/sign-in`
+- Login link lands on: `https://app.rows.so/sign-in/verify`
+- App pages asked for on `rows.so` redirect to `app.rows.so`, and the other way round (`src/proxy.ts`)
 
-## Phase 0 done criteria
+- `ANTHROPIC_API_KEY` (optional): turns on AI project cards, the summary draft, resume import and the CV assistant.
 
-GitHub login works and creates a user in the `users` table.
+## Phase 1: what's built
+
+Product plan: [`docs/product-plan.md`](./docs/product-plan.md).
+
+| Route | What it is |
+| --- | --- |
+| `/dashboard` | Onboarding checklist, your link, publish/unpublish, LinkedIn Featured instructions |
+| `/dashboard/projects` | Sync public GitHub repos, pin up to 6, AI-drafted cards you approve |
+| `/dashboard/experience` | Import a resume / LinkedIn PDF or CSV, edit entries, link projects to jobs |
+| `/dashboard/profile` | The 60-second header, goals, open-to-work details, contact |
+| `/dashboard/assistant` | AI CV interview; "Save to my CV" writes the entries |
+| `/sign-in`, `/sign-in/verify` | Email-only login: one field, a one-time link valid for 15 minutes, confirmed with a button |
+| `/onboarding` | First access: choose the unique handle |
+| `/in/@handle` | Public, recruiter-first profile. Unpublished or unknown handles return 404; the owner sees a preview |
+| `/in/@handle/opengraph-image` | The card LinkedIn shows for the link |
+| `/in/@handle/resume` | ATS-ready resume PDF |
+
+Database: `drizzle/0002_phase_1.sql` adds `profiles`, `projects`, `experiences`, `experience_projects` and `assistant_threads`. It only creates tables (RLS on, no access through the Supabase REST API). Apply it with `npm run db:push`.

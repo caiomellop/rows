@@ -11,6 +11,7 @@ import {
   PLANS,
   formatPrice,
 } from "@/lib/pricing";
+import { appHref } from "@/lib/app-url";
 
 /** Spec §6.2: billing toggle. Annual is the default. */
 function BillingToggle({
@@ -96,7 +97,7 @@ function PlanCard({ plan, cycle }: { plan: Plan; cycle: BillingCycle }) {
       </div>
 
       <Link
-        href={`/auth/signin?plan=${plan.id}_${cycle}`}
+        href={`${appHref("/sign-in")}?plan=${plan.id}_${cycle}`}
         className={`group mt-4 rounded-full px-4 py-2 text-[0.85rem] ${
           plan.featured ? "btn-primary" : "btn-secondary"
         }`}

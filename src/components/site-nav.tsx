@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { Logo } from "@/components/logo";
 import { getSession } from "@/lib/session";
+import { appHref } from "@/lib/app-url";
 
 const navLink =
   "text-[15px] text-fg-2 transition-colors hover:text-fg";
@@ -17,25 +18,28 @@ async function NavAccount() {
         <span className="hidden max-w-40 truncate text-[15px] text-fg-2 sm:inline">
           {user.name ?? "Signed in"}
         </span>
-        <form action="/auth/logout" method="post">
-          <button
-            type="submit"
-            className="btn-secondary h-[38px] rounded-xl px-4 text-[15px]"
-          >
+        <form action={appHref("/sign-out")} method="post">
+          <button type="submit" className={navLink}>
             Sign out
           </button>
         </form>
+        <Link
+          href={appHref("/dashboard")}
+          className="btn-primary h-[38px] rounded-xl px-5 text-[15px]"
+        >
+          Dashboard
+        </Link>
       </>
     );
   }
 
   return (
     <>
-      <Link href="/auth/signin" className={`${navLink} hidden sm:inline`}>
+      <Link href={appHref("/sign-in")} className={`${navLink} hidden sm:inline`}>
         Sign in
       </Link>
       <Link
-        href="/auth/signin"
+        href={appHref("/sign-in")}
         className="btn-primary h-[38px] rounded-xl px-5 text-[15px]"
       >
         Get started

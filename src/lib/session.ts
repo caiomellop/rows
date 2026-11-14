@@ -2,6 +2,8 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 
+import { sessionCookieDomain } from "@/lib/app-url";
+
 const COOKIE_NAME = "rows_session";
 
 export type SessionUser = {
@@ -44,6 +46,20 @@ export function attachSessionCookie(response: NextResponse, token: string) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    domain: sessionCookieDomain(),
+    maxAge: 60 * 60 * 24 * 30,
+  });
+}
+
+/** Signs the user in from a Server Action (no NextResponse to attach to). */
+export async function startSession(user: SessionUser) {
+  const jar = await cookies();
+  jar.set(COOKIE_NAME, await signSessionToken(user), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    domain: sessionCookieDomain(),
     maxAge: 60 * 60 * 24 * 30,
   });
 }
@@ -54,13 +70,20 @@ export function clearSessionCookie(response: NextResponse) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    domain: sessionCookieDomain(),
     maxAge: 0,
   });
 }
 
+export const SESSION_COOKIE = COOKIE_NAME;
+
 export async function getSession(): Promise<SessionUser | null> {
   const jar = await cookies();
-  const token = jar.get(COOKIE_NAME)?.value;
+  return verifySessionToken(jar.get(COOKIE_NAME)?.value);
+}
+
+/** Verifies a raw session cookie value. Usable where `cookies()` is not (Proxy). */
+export async function verifySessionToken(token: string | undefined): Promise<SessionUser | null> {
   if (!token) return null;
 
   try {

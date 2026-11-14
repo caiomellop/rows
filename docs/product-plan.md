@@ -54,7 +54,7 @@ Recommendation: **option 1**, with bootcamps from option 2 as the supply channel
 
 ## 3. The product: what a recruiter sees
 
-The public page (`rows.so/u/[username]`) has two audiences. It shows the **recruiter view by default**, with a toggle to the full developer view.
+The public page (`rows.so/in/@handle`) has two audiences. It shows the **recruiter view by default**, with a toggle to the full developer view.
 
 ### 3.1 The 60-second header
 
@@ -143,7 +143,7 @@ That second part is the "link inside LinkedIn" idea, and it's mostly **design wo
 | Placement | What Rows provides |
 |---|---|
 | **Featured section** | LinkedIn shows the link's OG image as a large card. Rows generates a **dynamic OG image that is a mini resume**: name, headline, top stack, a project, plus "View portfolio". This image is the most important pixel real estate in the product. |
-| Contact info → Website | Short, clean URL: `rows.so/caio` (drop the `/u/` prefix later) |
+| Contact info → Website | The profile URL: `rows.so/in/@caio` |
 | Headline / About | Copy suggestions with the link ("Portfolio + verified projects → rows.so/caio") |
 | Banner image | Optional generated banner in the same visual style |
 | Posts | "I'm open to work" post template that unfurls the same card |

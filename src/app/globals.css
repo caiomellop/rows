@@ -119,6 +119,64 @@
     background-color: rgb(var(--ink) / 0.09);
   }
 
+  /* App surfaces (dashboard + public profile). */
+  .surface {
+    background: rgb(var(--card));
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.03),
+      0 4px 14px -6px rgba(0, 0, 0, 0.06);
+  }
+
+  .field {
+    display: block;
+    width: 100%;
+    border-radius: 0.65rem;
+    border: 1px solid rgb(var(--ink) / 0.14);
+    background: rgb(var(--card));
+    padding: 0.55rem 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: rgb(var(--text-primary));
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+  .field::placeholder {
+    color: rgb(var(--text-muted) / 0.8);
+  }
+  .field:focus {
+    outline: none;
+    border-color: rgb(var(--ink) / 0.45);
+    box-shadow: 0 0 0 3px rgb(var(--ink) / 0.07);
+  }
+
+  .label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: rgb(var(--text-secondary));
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgb(var(--panel));
+    padding: 0.2rem 0.65rem;
+    font-size: 0.8rem;
+    color: rgb(var(--text-secondary));
+    white-space: nowrap;
+  }
+
+  .btn-primary:disabled,
+  .btn-secondary:disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
   .btn-primary:focus-visible,
   .btn-secondary:focus-visible {
     outline: 2px solid rgb(var(--ink));
