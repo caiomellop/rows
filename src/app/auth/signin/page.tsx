@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { Logo } from "@/components/logo";
 import { getSession } from "@/lib/session";
 
 async function SignInBody({
@@ -18,16 +18,13 @@ async function SignInBody({
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
-      <Link
-        href="/"
-        className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-ink"
-      >
-        Rows
-      </Link>
-      <h1 className="mt-10 text-3xl font-semibold tracking-tight text-ink">
-        Sign in
+      <div>
+        <Logo />
+      </div>
+      <h1 className="mt-10 text-[2.6rem] leading-[1.05] text-fg-2">
+        Sign in to <span className="text-accent">Rows</span>
       </h1>
-      <p className="mt-3 text-base leading-7 text-ink/60">
+      <p className="mt-3 font-geist text-base leading-7 text-fg-2">
         Continue with GitHub to create your account.
       </p>
       {error ? (
@@ -37,7 +34,7 @@ async function SignInBody({
       ) : null}
       <a
         href="/auth"
-        className="mt-8 inline-flex h-12 items-center justify-center rounded-md bg-ink px-5 text-sm font-semibold text-white transition hover:bg-ink/85"
+        className="btn-primary mt-8 h-12 rounded-xl px-5 text-[0.95rem]"
       >
         Sign in with GitHub
       </a>
@@ -51,14 +48,10 @@ export default function SignInPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   return (
-    <main className="relative flex min-h-full flex-1 flex-col overflow-hidden bg-[#f3f1ec]">
+    <main className="relative flex min-h-full flex-1 flex-col overflow-hidden">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 40% at 80% 0%, rgba(31, 107, 74, 0.12), transparent 55%), linear-gradient(180deg, #f7f5f0, #eef2ef)",
-        }}
+        className="dot-grid dot-grid-center pointer-events-none absolute inset-0 -z-10"
       />
       <Suspense
         fallback={

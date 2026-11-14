@@ -20,17 +20,9 @@ Eden uses EB Garamond for headings and Figtree for everything else, plus a custo
 | Subtitles: hero subtitle, eyebrows ("Pricing", "Creator plans"), billing badge | **Geist** | 400 subtitle / 500 eyebrows | |
 | Paragraphs, nav links, buttons, plan descriptions, feature lists, prices | **Figtree** | 400 body / 500 buttons & labels / 600 `<strong>` | Eden's body font. Price numerals use `tabular-nums` |
 
-Load them with `next/font/google` the same way `src/app/layout.tsx` already does (replace the current Fraunces/Outfit):
+**Implemented.** The fonts are self-hosted from `src/fonts/` and loaded with `next/font/local` in `src/app/layout.tsx`. They are variable WOFF2 files converted from the supplied TTFs and subset to Latin + Latin Extended (~424 KB total, down from 1.8 MB). CSS variables: `--font-garamond`, `--font-geist-sans`, `--font-figtree`. Tailwind utilities: `font-serif`, `font-geist`, `font-sans` (the default).
 
-```tsx
-import { EB_Garamond, Figtree, Geist } from "next/font/google";
-
-const serif = EB_Garamond({ variable: "--font-serif", subsets: ["latin"], weight: ["400", "500"], style: ["normal", "italic"] });
-const geist = Geist({ variable: "--font-geist", subsets: ["latin"], weight: ["400", "500", "600"] });
-const sans  = Figtree({ variable: "--font-sans", subsets: ["latin"] }); // variable font, 400–800
-```
-
-> AGENTS.md: this repo's Next.js version may differ from what you know. Check `node_modules/next/dist/docs/` for the font API before you write this code. `node_modules` was not installed when this spec was written.
+To add glyphs (another script), re-subset the original TTFs with `pyftsubset … --layout-features='*' --flavor=woff2`, keeping the `wght` axis.
 
 Eden's heading rule is worth copying as-is. It makes *every* heading Garamond by default and italicizes the accent span inside `h1`/`h2`:
 
@@ -349,11 +341,24 @@ Eden continues with testimonials, an interactive email-cost calculator, a full c
 
 **Weight scale is narrow on purpose.** Headings use 400, UI labels 500, inline emphasis 600, and nothing goes above that. Hierarchy comes from **size, serif against sans, gray against black, and roman against italic**, not from boldness.
 
-## 8. Build checklist for Rows
+## 8. Implementation status
 
-1. Swap the fonts in `src/app/layout.tsx` (§1). Add the tokens to `src/app/globals.css` (§2). Add the global heading rule.
-2. `src/components/site-nav.tsx`: logo (mark + "Rows" wordmark in Geist), links (Features, Pricing, Sign in), and a CTA that reuses the signed-in/out logic of `LandingCta`.
-3. `src/app/page.tsx`: replace the current hero with §5. Accent phrases are Rows-specific (e.g. "show your best work.", "sync your GitHub.", "publish your profile."). Write your own copy; don't reuse Eden's.
-4. `src/app/pricing/page.tsx`: §6.1 + §6.2 with Rows plans (names, prices and features are TBD: ask the product owner).
-5. Shared `Button` component (primary/secondary × default/pill) per §3.1–3.2.
-6. Check against the reference at 390px, 768px, 1263px and 1440px. Below `sm` the plan grid becomes one column and the group header stacks.
+| Piece | Where | Status |
+|---|---|---|
+| Fonts (§1) | `src/app/layout.tsx`, `src/fonts/` | Done, self-hosted |
+| Tokens, heading rule, `.btn-primary` / `.btn-secondary`, `.dot-grid*`, `.caret` (§2–3) | `src/app/globals.css` | Done |
+| Logo (mark + Geist wordmark) | `src/components/logo.tsx` | Done |
+| Nav bar (§4) | `src/components/site-nav.tsx` | Done. Links: Product, Pricing, Sign in + CTA. The session-aware part sits behind `<Suspense>` (`cacheComponents` is on). Below `sm` only Pricing + CTA show |
+| Home hero + typewriter (§5) | `src/app/page.tsx`, `src/components/hero-typewriter.tsx`, `src/components/landing-cta.tsx` | Done. Keep the lead-in to about 25 characters so it stays on one line on desktop |
+| Pricing (§6.1–6.2) | `src/app/pricing/page.tsx`, `src/components/pricing-plans.tsx` | Done: hero, billing toggle, one plan group, featured card, free strip |
+| Plan data | `src/lib/pricing.ts` | **Placeholder.** Names, prices and features need real values |
+| Sign-in page | `src/app/auth/signin/page.tsx` | Restyled to the new tokens |
+
+Not built yet:
+
+- The home product preview below the hero (§5 "Below the fold").
+- Team/Enterprise cards and §6.3.
+- Dark mode and the theme toggle.
+- A mobile menu sheet.
+
+Verified at 1263px and 390px: computed sizes match §7 and there is no horizontal overflow.
