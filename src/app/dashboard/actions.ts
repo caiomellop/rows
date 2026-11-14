@@ -527,6 +527,9 @@ async function storeThread(userId: string, messages: AssistantMessage[]) {
     .insert(assistantThreads)
     .values({ userId, messages, updatedAt: new Date() })
     .onConflictDoUpdate({ target: assistantThreads.userId, set: { messages, updatedAt: new Date() } });
+  // The dashboard keeps editor data in the browser for a few minutes; drop it so
+  // the conversation is still there after switching tabs.
+  updateTag(userTag(userId));
 }
 
 export type ChatResult = { ok: true; messages: AssistantMessage[] } | { ok: false; error: string; messages: AssistantMessage[] };

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -52,10 +52,17 @@ export async function ensureProfile(user: SessionUser): Promise<Profile> {
   return existing;
 }
 
+/**
+ * Everything the dashboard edits, in one parallel batch. `profile` is undefined
+ * for a user who has not chosen a handle yet. READMEs are left out: they are
+ * large and only the AI drafting actions read them.
+ */
 export async function getEditorData(userId: string) {
-  const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
-  const [projectRows, experienceRows, links, thread, [account]] = await Promise.all([
-    db.select().from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.pinned), asc(projects.position), desc(projects.pushedAt)),
+  const { readme: _readme, ...projectColumns } = getTableColumns(projects);
+  void _readme;
+  const [[profile], projectRows, experienceRows, links, thread, [account]] = await Promise.all([
+    db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1),
+    db.select(projectColumns).from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.pinned), asc(projects.position), desc(projects.pushedAt)),
     db.select().from(experiences).where(eq(experiences.userId, userId)).orderBy(asc(experiences.position), desc(experiences.startDate)),
     db
       .select({ experienceId: experienceProjects.experienceId, projectId: experienceProjects.projectId })
@@ -67,7 +74,7 @@ export async function getEditorData(userId: string) {
   ]);
 
   return {
-    profile,
+    profile: profile as Profile | undefined,
     projects: projectRows,
     experiences: experienceRows,
     experienceLinks: links,

@@ -1,11 +1,12 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
-import { requireUser } from "@/lib/dal";
+import { requireUser, userTag } from "@/lib/dal";
 import { HANDLE_ERROR_MESSAGES, normalizeHandleInput, validateHandle } from "@/lib/username";
 
 export type ClaimHandleState = { handle: string; error?: string };
@@ -41,5 +42,7 @@ export async function claimHandle(_prev: ClaimHandleState, formData: FormData): 
     const [mine] = await db.select({ id: profiles.userId }).from(profiles).where(eq(profiles.userId, user.id)).limit(1);
     if (!mine) return { handle, error: TAKEN };
   }
+  // Drop any dashboard data the browser cached while there was no profile yet.
+  updateTag(userTag(user.id));
   redirect("/dashboard");
 }
