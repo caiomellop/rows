@@ -2,15 +2,8 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { accounts, users } from "@/db/schema";
+import { appUrl } from "@/lib/app-url";
 import type { SessionUser } from "@/lib/session";
-
-function appUrl() {
-  return (
-    process.env.AUTH_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
-}
 
 /** Exact GitHub OAuth callback configured on the OAuth App. */
 export function githubCallbackUrl() {
@@ -74,6 +67,9 @@ export async function exchangeGithubCode(code: string) {
     }),
   });
 
+  if (!res.ok) {
+    throw new Error(`GitHub token exchange failed (${res.status})`);
+  }
   const data = (await res.json()) as GithubTokenResponse;
   if (!data.access_token) {
     throw new Error(data.error_description ?? data.error ?? "GitHub token exchange failed");
@@ -119,6 +115,10 @@ export async function fetchGithubProfile(accessToken: string): Promise<{
   return { profile, email };
 }
 
+/**
+ * Create or update the user + GitHub account in a single transaction, so a
+ * failure half-way can never leave an orphaned `users` row behind.
+ */
 export async function upsertGithubUser(input: {
   profile: GithubUser;
   email: string | null;
@@ -127,78 +127,72 @@ export async function upsertGithubUser(input: {
   tokenType?: string;
 }): Promise<SessionUser> {
   const providerAccountId = String(input.profile.id);
-  const existing = await db
-    .select({
-      userId: accounts.userId,
-    })
-    .from(accounts)
-    .where(
-      and(
-        eq(accounts.provider, "github"),
-        eq(accounts.providerAccountId, providerAccountId),
-      ),
-    )
-    .limit(1);
-
   const name = input.profile.name ?? input.profile.login;
   const image = input.profile.avatar_url;
+  const tokenFields = {
+    access_token: input.accessToken,
+    token_type: input.tokenType ?? "bearer",
+    scope: input.scope ?? null,
+  };
 
-  if (existing[0]) {
-    const userId = existing[0].userId;
-    await db
-      .update(users)
-      .set({
-        name,
-        email: input.email,
-        image,
-      })
-      .where(eq(users.id, userId));
-
-    await db
-      .update(accounts)
-      .set({
-        access_token: input.accessToken,
-        token_type: input.tokenType ?? "bearer",
-        scope: input.scope ?? null,
-      })
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ userId: accounts.userId })
+      .from(accounts)
       .where(
         and(
           eq(accounts.provider, "github"),
           eq(accounts.providerAccountId, providerAccountId),
         ),
-      );
+      )
+      .limit(1);
 
-    return {
+    // `users.email` is unique. Only keep the GitHub email if no *other* user
+    // already owns it, otherwise the insert/update would fail and sign-in
+    // would be impossible for this GitHub account.
+    let email = input.email;
+    if (email) {
+      const [owner] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+      if (owner && owner.id !== existing?.userId) email = null;
+    }
+
+    if (existing) {
+      const userId = existing.userId;
+      await tx
+        .update(users)
+        .set(email ? { name, email, image } : { name, image })
+        .where(eq(users.id, userId));
+      await tx
+        .update(accounts)
+        .set(tokenFields)
+        .where(
+          and(
+            eq(accounts.provider, "github"),
+            eq(accounts.providerAccountId, providerAccountId),
+          ),
+        );
+      return { id: userId, name, email: email ?? input.email, image };
+    }
+
+    const userId = crypto.randomUUID();
+    await tx.insert(users).values({
       id: userId,
       name,
-      email: input.email,
+      email,
       image,
-    };
-  }
-
-  const userId = crypto.randomUUID();
-  await db.insert(users).values({
-    id: userId,
-    name,
-    email: input.email,
-    image,
-    emailVerified: input.email ? new Date() : null,
+      emailVerified: email ? new Date() : null,
+    });
+    await tx.insert(accounts).values({
+      userId,
+      type: "oauth",
+      provider: "github",
+      providerAccountId,
+      ...tokenFields,
+    });
+    return { id: userId, name, email, image };
   });
-
-  await db.insert(accounts).values({
-    userId,
-    type: "oauth",
-    provider: "github",
-    providerAccountId,
-    access_token: input.accessToken,
-    token_type: input.tokenType ?? "bearer",
-    scope: input.scope ?? null,
-  });
-
-  return {
-    id: userId,
-    name,
-    email: input.email,
-    image,
-  };
 }

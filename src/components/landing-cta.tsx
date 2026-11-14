@@ -13,12 +13,14 @@ export async function LandingCta() {
         <p className="text-sm text-fg-2">
           Signed in as <span className="font-medium text-fg">{user.name}</span>
         </p>
-        <Link
-          href="/auth/logout"
-          className="text-sm font-medium text-fg-2 underline-offset-4 hover:text-fg hover:underline"
-        >
-          Sign out
-        </Link>
+        <form action="/auth/logout" method="post">
+          <button
+            type="submit"
+            className="text-sm font-medium text-fg-2 underline-offset-4 hover:text-fg hover:underline"
+          >
+            Sign out
+          </button>
+        </form>
       </div>
     );
   }

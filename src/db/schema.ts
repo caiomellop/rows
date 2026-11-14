@@ -10,6 +10,12 @@ import {
  * Phase 0 identity tables.
  * Phase 1 will extend `users` and add product tables
  * (connected_accounts, projects, experiences, experience_projects).
+ *
+ * Every table has Row Level Security enabled with NO policies. The app talks
+ * to Postgres directly (DATABASE_URL, `postgres` role, which bypasses RLS), so
+ * nothing changes for the server — but Supabase's public REST API
+ * (anon / authenticated roles) can no longer read or write these tables.
+ * Keep `.enableRLS()` on every new table.
  */
 export const users = pgTable("users", {
   id: text("id")
@@ -19,7 +25,7 @@ export const users = pgTable("users", {
   email: text("email").unique(),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
-});
+}).enableRLS();
 
 export const accounts = pgTable(
   "accounts",
@@ -41,4 +47,4 @@ export const accounts = pgTable(
   (account) => [
     primaryKey({ columns: [account.provider, account.providerAccountId] }),
   ],
-);
+).enableRLS();

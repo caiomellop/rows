@@ -4,6 +4,14 @@ import { Suspense } from "react";
 import { Logo } from "@/components/logo";
 import { getSession } from "@/lib/session";
 
+const ERROR_MESSAGES: Record<string, string> = {
+  access_denied: "GitHub sign-in was cancelled.",
+  invalid_state: "Your sign-in session expired. Please try again.",
+  token_exchange: "GitHub rejected the sign-in. Please try again.",
+  github_profile: "Couldn't read your GitHub profile. Please try again.",
+  database: "We couldn't save your account. Please try again in a moment.",
+};
+
 async function SignInBody({
   searchParams,
 }: {
@@ -29,7 +37,7 @@ async function SignInBody({
       </p>
       {error ? (
         <p className="mt-4 text-sm text-red-700" role="alert">
-          {error}
+          {ERROR_MESSAGES[error] ?? "Sign-in failed. Please try again."}
         </p>
       ) : null}
       <a
