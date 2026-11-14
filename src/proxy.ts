@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { appUrl, hostsAreSplit, isAppPath, siteUrl } from "@/lib/app-url";
+import { appUrl, hostsAreSplit, isAppPath, isSiteHost, siteUrl } from "@/lib/app-url";
 import { canViewProfile } from "@/lib/profile-access";
 import { isBareHandle, parseHandleSegment } from "@/lib/profile-url";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
@@ -35,12 +35,11 @@ function otherHost(request: NextRequest, pathname: string): string | null {
 
   const host = request.headers.get("host");
   const onApp = host === new URL(appUrl()).host;
-  const onSite = host === new URL(siteUrl()).host;
 
   if (onApp) {
     if (pathname === "/") return `${appUrl()}/dashboard`;
     if (!isAppPath(pathname)) return `${siteUrl()}${pathname}`;
-  } else if (onSite && isAppPath(pathname)) {
+  } else if (isSiteHost(host) && isAppPath(pathname)) {
     return `${appUrl()}${pathname}`;
   }
   // Any other host (preview deployments, localhost) serves everything.

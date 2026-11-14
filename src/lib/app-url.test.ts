@@ -21,6 +21,12 @@ describe("split hosts", () => {
     expect(sessionCookieDomain()).toBe("rows.so");
   });
 
+  it("shares the cookie when the site is configured with www", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://www.rows.so");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.rows.so");
+    expect(sessionCookieDomain()).toBe("rows.so");
+  });
+
   it("does not share the cookie with an unrelated domain", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://rows.so");
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com");

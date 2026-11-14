@@ -54,7 +54,14 @@ export function isAppPath(pathname: string) {
  */
 export function sessionCookieDomain(): string | undefined {
   if (!hostsAreSplit()) return undefined;
-  const site = new URL(siteUrl()).hostname;
+  const site = new URL(siteUrl()).hostname.replace(/^www\./, "");
   const app = new URL(appUrl()).hostname;
   return app.endsWith(`.${site}`) ? site : undefined;
+}
+
+/** True when `host` is the site, with or without the www prefix. */
+export function isSiteHost(host: string | null) {
+  if (!host) return false;
+  const site = new URL(siteUrl()).host.replace(/^www\./, "");
+  return host === site || host === `www.${site}`;
 }

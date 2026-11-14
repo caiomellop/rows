@@ -39,6 +39,8 @@ describe("host routing", () => {
     expect(await location("/sign-in", "rows.so")).toBe("https://app.rows.so/sign-in");
     expect(await location("/dashboard/projects?x=1", "rows.so")).toBe("https://app.rows.so/dashboard/projects?x=1");
     expect(await location("/onboarding", "rows.so")).toBe("https://app.rows.so/onboarding");
+    expect(await location("/sign-in", "www.rows.so")).toBe("https://app.rows.so/sign-in");
+    expect(await location("/pricing", "www.rows.so")).toBe("served");
   });
 
   it("redirects the old sign-in address, keeping the query", async () => {
