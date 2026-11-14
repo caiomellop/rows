@@ -16,7 +16,13 @@ export const users = pgTable("users", {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name"),
-  email: text("email").unique(),
+  // Stable public handle for /u/[username]; see src/lib/username.ts.
+  // Nullable so existing rows survive the migration (filled on next login).
+  username: text("username").unique(),
+  // Deliberately NOT unique: users are identified by (provider,
+  // providerAccountId), never by email. A unique email made login fail when two
+  // GitHub accounts shared one, and linking accounts by email is unsafe.
+  email: text("email"),
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
 });

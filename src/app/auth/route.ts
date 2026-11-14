@@ -62,10 +62,13 @@ export async function GET(request: NextRequest) {
 
   try {
     const token = await exchangeGithubCode(code);
-    const { profile, email } = await fetchGithubProfile(token.access_token!);
+    const { profile, email, emailVerified } = await fetchGithubProfile(
+      token.access_token!,
+    );
     const user = await upsertGithubUser({
       profile,
       email,
+      emailVerified,
       accessToken: token.access_token!,
       scope: token.scope,
       tokenType: token.token_type,

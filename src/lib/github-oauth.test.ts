@@ -47,6 +47,7 @@ describe("fetchGithubProfile email picking", () => {
     const result = await fetchGithubProfile("token");
 
     expect(result.email).toBe("public@example.com");
+    expect(result.emailVerified).toBe(true);
     expect(calledUrls()).toEqual(["https://api.github.com/user"]);
   });
 
@@ -57,7 +58,10 @@ describe("fetchGithubProfile email picking", () => {
       { email: "unverified@example.com", primary: false, verified: false },
     ]);
 
-    expect((await fetchGithubProfile("token")).email).toBe("primary@example.com");
+    const result = await fetchGithubProfile("token");
+
+    expect(result.email).toBe("primary@example.com");
+    expect(result.emailVerified).toBe(true);
   });
 
   it("falls back to any verified email when the primary is unverified", async () => {
@@ -66,7 +70,10 @@ describe("fetchGithubProfile email picking", () => {
       { email: "verified@example.com", primary: false, verified: true },
     ]);
 
-    expect((await fetchGithubProfile("token")).email).toBe("verified@example.com");
+    const result = await fetchGithubProfile("token");
+
+    expect(result.email).toBe("verified@example.com");
+    expect(result.emailVerified).toBe(true);
   });
 
   it("falls back to the first email when none are verified", async () => {
@@ -75,19 +82,29 @@ describe("fetchGithubProfile email picking", () => {
       { email: "second@example.com", primary: true, verified: false },
     ]);
 
-    expect((await fetchGithubProfile("token")).email).toBe("first@example.com");
+    const result = await fetchGithubProfile("token");
+
+    // Still used as the contact email, but must not be treated as verified.
+    expect(result.email).toBe("first@example.com");
+    expect(result.emailVerified).toBe(false);
   });
 
   it("returns null when the account has no emails", async () => {
     mockGithub({ ...profile, email: null }, []);
 
-    expect((await fetchGithubProfile("token")).email).toBeNull();
+    const result = await fetchGithubProfile("token");
+
+    expect(result.email).toBeNull();
+    expect(result.emailVerified).toBe(false);
   });
 
   it("returns null when /user/emails fails", async () => {
     mockGithub({ ...profile, email: null }, "error");
 
-    expect((await fetchGithubProfile("token")).email).toBeNull();
+    const result = await fetchGithubProfile("token");
+
+    expect(result.email).toBeNull();
+    expect(result.emailVerified).toBe(false);
   });
 
   it("sends the access token as a Bearer header", async () => {

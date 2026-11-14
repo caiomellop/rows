@@ -1,8 +1,13 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { accounts, users } from "@/db/schema";
 import type { SessionUser } from "@/lib/session";
+import {
+  fallbackUsername,
+  isUniqueViolation,
+  normalizeUsername,
+} from "@/lib/username";
 
 function appUrl() {
   return (
@@ -84,6 +89,8 @@ export async function exchangeGithubCode(code: string) {
 export async function fetchGithubProfile(accessToken: string): Promise<{
   profile: GithubUser;
   email: string | null;
+  /** Whether `email` is verified by GitHub (the public profile email counts). */
+  emailVerified: boolean;
 }> {
   const userRes = await fetch("https://api.github.com/user", {
     headers: {
@@ -98,6 +105,7 @@ export async function fetchGithubProfile(accessToken: string): Promise<{
   const profile = (await userRes.json()) as GithubUser;
 
   let email = profile.email;
+  let emailVerified = Boolean(email);
   if (!email) {
     const emailRes = await fetch("https://api.github.com/user/emails", {
       headers: {
@@ -108,20 +116,39 @@ export async function fetchGithubProfile(accessToken: string): Promise<{
     });
     if (emailRes.ok) {
       const emails = (await emailRes.json()) as GithubEmail[];
-      email =
-        emails.find((e) => e.primary && e.verified)?.email ??
-        emails.find((e) => e.verified)?.email ??
-        emails[0]?.email ??
-        null;
+      const verified =
+        emails.find((e) => e.primary && e.verified) ??
+        emails.find((e) => e.verified);
+      // The emails[0] fallback may be unverified, so don't mark it as verified.
+      const chosen = verified ?? emails[0];
+      email = chosen?.email ?? null;
+      emailVerified = Boolean(verified);
     }
   }
 
-  return { profile, email };
+  return { profile, email, emailVerified };
+}
+
+async function insertWithFallbackUsername(
+  user: typeof users.$inferInsert,
+  login: string,
+) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await db.insert(users).values({ ...user, username: fallbackUsername(login) });
+      return;
+    } catch (err) {
+      if (attempt >= 4 || !isUniqueViolation(err, "users_username_unique")) {
+        throw err;
+      }
+    }
+  }
 }
 
 export async function upsertGithubUser(input: {
   profile: GithubUser;
   email: string | null;
+  emailVerified: boolean;
   accessToken: string;
   scope?: string;
   tokenType?: string;
@@ -143,16 +170,34 @@ export async function upsertGithubUser(input: {
   const name = input.profile.name ?? input.profile.login;
   const image = input.profile.avatar_url;
 
+  const username = normalizeUsername(input.profile.login);
+  // Only ever set when GitHub says the email is verified; a verified email
+  // keeps its original timestamp.
+  const emailVerified = input.emailVerified
+    ? sql`coalesce(${users.emailVerified}, now())`
+    : null;
+
   if (existing[0]) {
     const userId = existing[0].userId;
-    await db
-      .update(users)
-      .set({
-        name,
-        email: input.email,
-        image,
-      })
-      .where(eq(users.id, userId));
+    const profileFields = {
+      name,
+      email: input.email,
+      emailVerified,
+      image,
+    };
+    try {
+      await db
+        .update(users)
+        .set({ ...profileFields, username })
+        .where(eq(users.id, userId));
+    } catch (err) {
+      if (!isUniqueViolation(err, "users_username_unique")) throw err;
+      // Handle taken by another user: keep ours, never fail the login.
+      await db
+        .update(users)
+        .set(profileFields)
+        .where(eq(users.id, userId));
+    }
 
     await db
       .update(accounts)
@@ -177,13 +222,20 @@ export async function upsertGithubUser(input: {
   }
 
   const userId = crypto.randomUUID();
-  await db.insert(users).values({
+  const newUser = {
     id: userId,
     name,
     email: input.email,
     image,
-    emailVerified: input.email ? new Date() : null,
-  });
+    emailVerified: input.emailVerified ? new Date() : null,
+  };
+  try {
+    await db.insert(users).values({ ...newUser, username });
+  } catch (err) {
+    if (!isUniqueViolation(err, "users_username_unique")) throw err;
+    // Handle taken (e.g. a renamed GitHub login): use a suffixed one.
+    await insertWithFallbackUsername(newUser, input.profile.login);
+  }
 
   await db.insert(accounts).values({
     userId,
