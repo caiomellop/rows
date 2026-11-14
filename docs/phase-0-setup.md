@@ -13,9 +13,12 @@ Next.js + Supabase/Drizzle + GitHub OAuth (**sem Auth.js**).
 | `DATABASE_URL` | Supabase Postgres |
 | `AUTH_GITHUB_ID` | GitHub OAuth Client ID |
 | `AUTH_GITHUB_SECRET` | GitHub OAuth Client Secret (+ cookie de sessão) |
+| `TOKEN_ENCRYPTION_KEY` | Chave AES-256-GCM que criptografa o access token do GitHub no banco (32 bytes em base64: `openssl rand -base64 32`) |
 | `NEXT_PUBLIC_APP_URL` | `https://rows.so` |
 
 Sem `AUTH_SECRET` separado.
+
+`TOKEN_ENCRYPTION_KEY` precisa existir em Production **e** Preview **antes** do deploy: sem ela o login falha (o token nunca é gravado em texto puro). Tokens antigos, gravados em texto puro, continuam legíveis e são recriptografados no próximo login do usuário. Se a chave for perdida ou trocada, os tokens gravados ficam ilegíveis e os usuários precisam entrar de novo.
 
 ## GitHub OAuth App (obrigatório)
 

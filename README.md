@@ -20,6 +20,7 @@ Production: [rows.so](https://rows.so)
 
 - `DATABASE_URL`
 - `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`
+- `TOKEN_ENCRYPTION_KEY` (encrypts stored GitHub access tokens, 32 bytes base64: `openssl rand -base64 32`)
 - `NEXT_PUBLIC_APP_URL=https://rows.so`
 
 - Landing: `https://rows.so`
