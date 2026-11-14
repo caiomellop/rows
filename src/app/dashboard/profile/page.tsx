@@ -1,0 +1,32 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+
+import { loadEditor } from "@/app/dashboard/load";
+import { PageHeader, PageSkeleton } from "@/app/dashboard/skeleton";
+import { ProfileForm } from "@/components/dashboard/profile-form";
+import { aiEnabled } from "@/lib/ai";
+
+export const metadata: Metadata = { title: "Profile · Rows" };
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <ProfileBody />
+    </Suspense>
+  );
+}
+
+async function ProfileBody() {
+  const { profile } = await loadEditor();
+  const appHost = (process.env.NEXT_PUBLIC_APP_URL ?? "https://rows.so").replace(/^https?:\/\//, "").replace(/\/$/, "");
+  return (
+    <div>
+      <PageHeader title="Profile">Your header, what you&apos;re looking for, and how recruiters reach you.</PageHeader>
+      <ProfileForm
+        profile={profile}
+        aiEnabled={aiEnabled()}
+        appHost={appHost}
+      />
+    </div>
+  );
+}

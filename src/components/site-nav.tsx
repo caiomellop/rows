@@ -18,13 +18,16 @@ async function NavAccount() {
           {user.name ?? "Signed in"}
         </span>
         <form action="/auth/logout" method="post">
-          <button
-            type="submit"
-            className="btn-secondary h-[38px] rounded-xl px-4 text-[15px]"
-          >
+          <button type="submit" className={navLink}>
             Sign out
           </button>
         </form>
+        <Link
+          href="/dashboard"
+          className="btn-primary h-[38px] rounded-xl px-5 text-[15px]"
+        >
+          Dashboard
+        </Link>
       </>
     );
   }

@@ -31,6 +31,7 @@ const figtree = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://rows.so"),
   title: "Rows",
   description: "Portfolio builder with GitHub sync",
 };

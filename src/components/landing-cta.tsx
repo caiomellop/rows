@@ -9,19 +9,13 @@ export async function LandingCta() {
 
   if (user) {
     return (
-      <div className="flex flex-wrap items-center justify-center gap-4">
-        <p className="text-sm text-fg-2">
-          Signed in as <span className="font-medium text-fg">{user.name}</span>
-        </p>
-        <form action="/auth/logout" method="post">
-          <button
-            type="submit"
-            className="text-sm font-medium text-fg-2 underline-offset-4 hover:text-fg hover:underline"
-          >
-            Sign out
-          </button>
-        </form>
-      </div>
+      <Link
+        href="/dashboard"
+        className="btn-primary group rounded-xl px-6 py-2 text-[0.9rem] leading-relaxed sm:py-2.5 sm:text-[0.95rem]"
+      >
+        <span>Open your dashboard</span>
+        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+      </Link>
     );
   }
 

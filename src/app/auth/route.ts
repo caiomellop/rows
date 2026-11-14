@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     });
 
     const sessionToken = await signSessionToken(user);
-    const response = NextResponse.redirect(`${appUrl()}/`);
+    const response = NextResponse.redirect(`${appUrl()}/dashboard`);
     attachSessionCookie(response, sessionToken);
     response.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });
     return response;
