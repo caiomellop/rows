@@ -4,6 +4,8 @@ Portfolio builder: GitHub sync, experiences, AI About, public profile at `/u/[us
 
 Production: [rows.so](https://rows.so)
 
+Product: [`docs/product-plan.md`](./docs/product-plan.md) is the single product document (what Rows is, who it is for, roadmap). The MVP tasks that implement it are tracked in the Linear project "Rows MVP".
+
 ## Stack
 
 - Next.js (App Router) + TypeScript + Tailwind
