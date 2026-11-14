@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+import { appUrl } from "@/lib/app-url";
 import {
   exchangeGithubCode,
   fetchGithubProfile,
@@ -9,20 +10,21 @@ import {
 } from "@/lib/github-oauth";
 import { attachSessionCookie, signSessionToken } from "@/lib/session";
 
-function homeUrl() {
-  return (
-    process.env.AUTH_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
+const STATE_COOKIE = "rows_oauth_state";
+
+function signInError(code: string) {
+  const response = NextResponse.redirect(
+    `${appUrl()}/auth/signin?error=${encodeURIComponent(code)}`,
+  );
+  response.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });
+  return response;
 }
 
 /**
- * GitHub OAuth — Authorization callback URL must be exactly:
- *   https://rows.so/auth
+ * GitHub OAuth — Authorization callback URL must be exactly `${appUrl()}/auth`.
  *
  * - GET /auth          → start OAuth (redirect to GitHub)
- * - GET /auth?code=…   → callback (exchange code, set session)
+ * - GET /auth?code=…   → callback (exchange code, save user, set session)
  */
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -30,16 +32,15 @@ export async function GET(request: NextRequest) {
   const error = request.nextUrl.searchParams.get("error");
 
   if (error) {
-    return NextResponse.redirect(
-      `${homeUrl()}/auth/signin?error=${encodeURIComponent(error)}`,
-    );
+    console.error("[auth] GitHub returned an error:", error);
+    return signInError(error === "access_denied" ? "access_denied" : "github");
   }
 
   // No code → start login (same path GitHub will call back to)
   if (!code) {
     const nextState = crypto.randomUUID();
     const response = NextResponse.redirect(githubAuthorizeUrl(nextState));
-    response.cookies.set("rows_oauth_state", nextState, {
+    response.cookies.set(STATE_COOKIE, nextState, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -50,19 +51,25 @@ export async function GET(request: NextRequest) {
   }
 
   const jar = await cookies();
-  const expectedState = jar.get("rows_oauth_state")?.value;
+  const expectedState = jar.get(STATE_COOKIE)?.value;
 
   if (!state || !expectedState || state !== expectedState) {
-    const response = NextResponse.redirect(
-      `${homeUrl()}/auth/signin?error=invalid_state`,
-    );
-    response.cookies.set("rows_oauth_state", "", { path: "/", maxAge: 0 });
-    return response;
+    console.error("[auth] OAuth state mismatch", {
+      host: request.headers.get("host"),
+      hasStateParam: Boolean(state),
+      hasStateCookie: Boolean(expectedState),
+    });
+    return signInError("invalid_state");
   }
 
+  // Each step is tagged so a failure in the Vercel logs says exactly where it
+  // broke (GitHub vs. database) instead of silently bouncing to /auth/signin.
+  let step = "token_exchange";
   try {
     const token = await exchangeGithubCode(code);
+    step = "github_profile";
     const { profile, email } = await fetchGithubProfile(token.access_token!);
+    step = "database";
     const user = await upsertGithubUser({
       profile,
       email,
@@ -72,14 +79,14 @@ export async function GET(request: NextRequest) {
     });
 
     const sessionToken = await signSessionToken(user);
-    const response = NextResponse.redirect(`${homeUrl()}/`);
+    const response = NextResponse.redirect(`${appUrl()}/`);
     attachSessionCookie(response, sessionToken);
-    response.cookies.set("rows_oauth_state", "", { path: "/", maxAge: 0 });
+    response.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });
     return response;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "oauth_failed";
-    return NextResponse.redirect(
-      `${homeUrl()}/auth/signin?error=${encodeURIComponent(message)}`,
-    );
+    // Full detail goes to the server logs only; never echo raw error text
+    // (it can contain DB host names, SQL, etc.) into the URL or the page.
+    console.error(`[auth] sign-in failed at step "${step}":`, err);
+    return signInError(step);
   }
 }

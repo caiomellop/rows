@@ -17,12 +17,14 @@ async function NavAccount() {
         <span className="hidden max-w-40 truncate text-[15px] text-fg-2 sm:inline">
           {user.name ?? "Signed in"}
         </span>
-        <Link
-          href="/auth/logout"
-          className="btn-secondary h-[38px] rounded-xl px-4 text-[15px]"
-        >
-          Sign out
-        </Link>
+        <form action="/auth/logout" method="post">
+          <button
+            type="submit"
+            className="btn-secondary h-[38px] rounded-xl px-4 text-[15px]"
+          >
+            Sign out
+          </button>
+        </form>
       </>
     );
   }

@@ -11,10 +11,16 @@ export type SessionUser = {
   image: string | null;
 };
 
+/**
+ * Key used to sign session cookies. Set a dedicated AUTH_SECRET
+ * (`openssl rand -base64 32`) so rotating the GitHub client secret doesn't
+ * invalidate sessions and the OAuth secret isn't reused for a second purpose.
+ * Falls back to AUTH_GITHUB_SECRET so existing deployments keep working.
+ */
 function getSecret() {
-  const secret = process.env.AUTH_GITHUB_SECRET;
+  const secret = process.env.AUTH_SECRET ?? process.env.AUTH_GITHUB_SECRET;
   if (!secret) {
-    throw new Error("AUTH_GITHUB_SECRET is not set");
+    throw new Error("AUTH_SECRET (or AUTH_GITHUB_SECRET) is not set");
   }
   return new TextEncoder().encode(secret);
 }
