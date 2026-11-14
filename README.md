@@ -8,32 +8,21 @@ Production: [rows.so](https://rows.so)
 
 - Next.js (App Router) + TypeScript + Tailwind
 - Supabase Postgres + Drizzle ORM
-- Auth.js (NextAuth v5) with GitHub
+- GitHub OAuth (custom, callback `https://rows.so/auth`)
 
 ## Quick start
 
 1. `cp .env.example .env.local` and fill values (see [`docs/phase-0-setup.md`](./docs/phase-0-setup.md)).
-2. `npm run db:push`
+2. `npm run db:push` (if schema not applied yet)
 3. `npm run dev`
 
 ### Required env
 
-- `DATABASE_URL` — Supabase Postgres URI (transaction pooler preferred; already on Vercel)
-- `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` — GitHub OAuth App
-- `NEXT_PUBLIC_APP_URL` — `https://rows.so` (prod) or `http://localhost:3000` (local)
+- `DATABASE_URL`
+- `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`
+- `NEXT_PUBLIC_APP_URL=https://rows.so`
 
-GitHub OAuth **callback URL:** `https://rows.so/api/auth/callback/github`  
-(local: `http://localhost:3000/api/auth/callback/github`)
-
-### Scripts
-
-| Script | Purpose |
-| --- | --- |
-| `npm run dev` | Next.js dev server |
-| `npm run build` / `start` | Production build |
-| `npm run db:generate` | Generate Drizzle migrations |
-| `npm run db:push` | Push schema to Postgres |
-| `npm run db:studio` | Drizzle Studio |
+GitHub OAuth **callback URL:** `https://rows.so/auth`
 
 ## Phase 0 done criteria
 
