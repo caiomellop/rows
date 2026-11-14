@@ -1,8 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
 import { Suspense } from "react";
 
 import { LandingCta } from "@/components/landing-cta";
+import { SiteHeader } from "@/components/site-header";
 
 export default function Home() {
   return (
@@ -43,29 +43,7 @@ export default function Home() {
         />
       </div>
 
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 pt-7 sm:px-8 sm:pt-8">
-        <Link href="/" className="group flex items-center gap-2.5">
-          <Image
-            src="/brand/rows-mark.png"
-            alt=""
-            width={28}
-            height={28}
-            className="h-7 w-7 rounded-sm object-cover"
-            priority
-          />
-          <span className="font-[family-name:var(--font-geist)] text-[1.35rem] font-semibold tracking-[-0.04em] text-ink">
-            Rows
-          </span>
-        </Link>
-
-        <Suspense
-          fallback={
-            <span className="inline-flex h-10 w-28 animate-pulse rounded-full bg-ink/10" />
-          }
-        >
-          <LandingCta variant="nav" />
-        </Suspense>
-      </header>
+      <SiteHeader active="home" />
 
       <section className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 pb-20 pt-16 sm:px-8 sm:pb-24 sm:pt-10 md:pt-0">
         <p className="anim-rise font-[family-name:var(--font-geist)] text-[clamp(3.25rem,9vw,6.75rem)] font-semibold leading-[0.9] tracking-[-0.055em] text-ink">
