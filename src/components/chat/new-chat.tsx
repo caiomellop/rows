@@ -70,7 +70,7 @@ export function NewChat({ greeting, aiEnabled }: { greeting: string; aiEnabled: 
           </div>
         </>
       ) : (
-        <p className="surface mt-8 p-5 text-center text-[14px] text-fg-2">The assistant needs ANTHROPIC_API_KEY to be set.</p>
+        <p className="surface mt-8 p-5 text-center text-[14px] text-fg-2">The assistant needs ANTHROPIC_KEYS to be set.</p>
       )}
     </div>
   );

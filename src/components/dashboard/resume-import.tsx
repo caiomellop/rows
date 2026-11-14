@@ -19,7 +19,7 @@ export function ResumeImport({ aiEnabled }: { aiEnabled: boolean }) {
   const [source, setSource] = useState<(typeof SOURCES)[number]["value"]>("resume");
 
   if (!aiEnabled) {
-    return <p className="text-[14px] text-fg-3">Import needs AI. Set ANTHROPIC_API_KEY, or add entries by hand below.</p>;
+    return <p className="text-[14px] text-fg-3">Import needs AI. Set ANTHROPIC_KEYS, or add entries by hand below.</p>;
   }
 
   return (

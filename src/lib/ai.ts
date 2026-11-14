@@ -25,12 +25,13 @@ export class AiError extends Error {}
 let client: Anthropic | null = null;
 
 export function aiEnabled() {
-  return Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
+  return Boolean(process.env.ANTHROPIC_KEYS || process.env.ANTHROPIC_AUTH_TOKEN);
 }
 
 function anthropic() {
-  if (!aiEnabled()) throw new AiError("AI is not configured. Set ANTHROPIC_API_KEY.");
-  client ??= new Anthropic();
+  if (!aiEnabled()) throw new AiError("AI is not configured. Set ANTHROPIC_KEYS.");
+  // The key lives in ANTHROPIC_KEYS, not the SDK's default variable name, so it is passed in.
+  client ??= new Anthropic({ apiKey: process.env.ANTHROPIC_KEYS?.trim() || undefined });
   return client;
 }
 
@@ -63,7 +64,7 @@ async function structured<T extends z.ZodType>(opts: {
 function toAiError(err: unknown): Error {
   if (err instanceof AiError) return err;
   if (err instanceof Anthropic.RateLimitError) return new AiError("The AI is busy right now. Try again in a minute.");
-  if (err instanceof Anthropic.AuthenticationError) return new AiError("The AI key is invalid. Check ANTHROPIC_API_KEY.");
+  if (err instanceof Anthropic.AuthenticationError) return new AiError("The AI key is invalid. Check ANTHROPIC_KEYS.");
   if (err instanceof Anthropic.BadRequestError) return new AiError(`The AI rejected the request: ${err.message}`);
   if (err instanceof Anthropic.APIError) return new AiError(`The AI service failed (${err.status ?? "network"}). Try again.`);
   return err instanceof Error ? err : new Error(String(err));
