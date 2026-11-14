@@ -1,76 +1,51 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { Logo } from "@/components/logo";
+import { isValidEmail, normalizeEmail } from "@/lib/login-token";
 import { getSession } from "@/lib/session";
 
-const ERROR_MESSAGES: Record<string, string> = {
-  access_denied: "GitHub sign-in was cancelled.",
-  invalid_state: "Your sign-in session expired. Please try again.",
-  token_exchange: "GitHub rejected the sign-in. Please try again.",
-  github_profile: "Couldn't read your GitHub profile. Please try again.",
-  database: "We couldn't save your account. Please try again in a moment.",
-};
+import { SignInForm } from "./signin-form";
 
-async function SignInBody({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const user = await getSession();
-  if (user) {
-    redirect("/dashboard");
-  }
+export const metadata: Metadata = { title: "Log in to Rows" };
 
-  const { error } = await searchParams;
+type Props = { searchParams: Promise<{ error?: string; email?: string }> };
 
+/**
+ * Login is email only (MVP-23): logo, title, one field, the terms line.
+ * Nothing else belongs on this page.
+ */
+export default function SignInPage({ searchParams }: Props) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
-      <div>
+    <main className="flex min-h-full flex-1 flex-col items-center justify-center px-6 py-16">
+      <div className="flex w-full max-w-[400px] flex-col items-center text-center">
         <Logo />
-      </div>
-      <h1 className="mt-10 text-[2.6rem] leading-[1.05] text-fg-2">
-        Sign in to <span className="text-accent">Rows</span>
-      </h1>
-      <p className="mt-3 font-geist text-base leading-7 text-fg-2">
-        Continue with GitHub to create your account.
-      </p>
-      {error ? (
-        <p className="mt-4 text-sm text-red-700" role="alert">
-          {ERROR_MESSAGES[error] ?? "Sign-in failed. Please try again."}
+        <h1 className="mt-8 text-[2.2rem] leading-[1.1] text-fg">Log in to Rows</h1>
+        <Suspense fallback={<div className="mt-8 h-14 w-full animate-pulse rounded-xl bg-ink/10" />}>
+          <SignInBody searchParams={searchParams} />
+        </Suspense>
+        <p className="mt-6 text-[13px] leading-relaxed text-fg-3">
+          By signing in you agree with our{" "}
+          <Link href="/terms" className="underline underline-offset-2 hover:text-fg">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-fg">
+            Privacy Policy
+          </Link>
+          .
         </p>
-      ) : null}
-      <a
-        href="/auth"
-        className="btn-primary mt-8 h-12 rounded-xl px-5 text-[0.95rem]"
-      >
-        Sign in with GitHub
-      </a>
-    </div>
+      </div>
+    </main>
   );
 }
 
-export default function SignInPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  return (
-    <main className="relative flex min-h-full flex-1 flex-col overflow-hidden">
-      <div
-        aria-hidden
-        className="dot-grid dot-grid-center pointer-events-none absolute inset-0 -z-10"
-      />
-      <Suspense
-        fallback={
-          <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
-            <div className="h-8 w-24 animate-pulse rounded bg-ink/10" />
-            <div className="mt-10 h-10 w-40 animate-pulse rounded bg-ink/10" />
-          </div>
-        }
-      >
-        <SignInBody searchParams={searchParams} />
-      </Suspense>
-    </main>
-  );
+async function SignInBody({ searchParams }: Props) {
+  if (await getSession()) redirect("/dashboard");
+
+  const { error, email } = await searchParams;
+  const prefill = email && isValidEmail(normalizeEmail(email)) ? normalizeEmail(email) : "";
+  return <SignInForm initialEmail={prefill} initialError={error === "expired" ? "Link expired. Request a new one." : undefined} />;
 }

@@ -48,6 +48,18 @@ export function attachSessionCookie(response: NextResponse, token: string) {
   });
 }
 
+/** Signs the user in from a Server Action (no NextResponse to attach to). */
+export async function startSession(user: SessionUser) {
+  const jar = await cookies();
+  jar.set(COOKIE_NAME, await signSessionToken(user), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+}
+
 export function clearSessionCookie(response: NextResponse) {
   response.cookies.set(COOKIE_NAME, "", {
     httpOnly: true,

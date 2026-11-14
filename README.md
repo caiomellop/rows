@@ -10,7 +10,7 @@ Product: [`docs/product-plan.md`](./docs/product-plan.md) is the single product 
 
 - Next.js (App Router) + TypeScript + Tailwind
 - Supabase Postgres + Drizzle ORM
-- Custom GitHub OAuth (no Auth.js); callback `https://rows.so/auth`
+- Email-only login with a one-time link (no passwords, no Auth.js); email sent through Resend
 
 ## Quick start
 
@@ -21,12 +21,13 @@ Product: [`docs/product-plan.md`](./docs/product-plan.md) is the single product 
 ### Required env
 
 - `DATABASE_URL`
-- `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`
+- `AUTH_SECRET` (session cookie signing key)
+- `RESEND_API_KEY` / `EMAIL_FROM` (login link emails)
 - `NEXT_PUBLIC_APP_URL=https://rows.so`
 
 - Landing: `https://rows.so`
 - Sign in: `https://rows.so/auth/signin`
-- GitHub OAuth callback: `https://rows.so/auth`
+- Login link lands on: `https://rows.so/auth/verify`
 
 - `ANTHROPIC_API_KEY` (optional): turns on AI project cards, the summary draft, resume import and the CV assistant.
 
@@ -41,6 +42,8 @@ Product plan: [`docs/product-plan.md`](./docs/product-plan.md).
 | `/dashboard/experience` | Import a resume / LinkedIn PDF or CSV, edit entries, link projects to jobs |
 | `/dashboard/profile` | The 60-second header, goals, open-to-work details, contact |
 | `/dashboard/assistant` | AI CV interview; "Save to my CV" writes the entries |
+| `/auth/signin`, `/auth/verify` | Email-only login: one field, a one-time link valid for 15 minutes, confirmed with a button |
+| `/onboarding` | First access: choose the unique handle |
 | `/in/@handle` | Public, recruiter-first profile. Unpublished or unknown handles return 404; the owner sees a preview |
 | `/in/@handle/opengraph-image` | The card LinkedIn shows for the link |
 | `/in/@handle/resume` | ATS-ready resume PDF |

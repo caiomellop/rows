@@ -25,6 +25,7 @@ import {
   parseResume,
   type ParsedResume,
 } from "@/lib/ai";
+import { HANDLE_ERROR_MESSAGES, validateHandle } from "@/lib/username";
 import { ensureProfile, getGithubToken, requireUser, userTag } from "@/lib/dal";
 import { fetchRepoDetails, listRepos } from "@/lib/github";
 import { MAX_PINNED, ROLE_TYPES, stackEvidence } from "@/lib/insights";
@@ -231,9 +232,6 @@ export async function saveCard(projectId: string, formData: FormData): Promise<A
 /* Profile                                                             */
 /* ------------------------------------------------------------------ */
 
-const USERNAME = /^[a-z0-9](?:[a-z0-9-]{0,37}[a-z0-9])?$/;
-const RESERVED = new Set(["admin", "api", "auth", "dashboard", "pricing", "u", "settings", "about", "help", "rows"]);
-
 function optionalUrl(value: FormDataEntryValue | null): string | undefined {
   const v = String(value ?? "").trim();
   if (!v) return undefined;
@@ -256,10 +254,10 @@ export async function saveProfile(_prev: ActionResult | null, formData: FormData
     const { userId, profile } = await owner();
 
     const username = String(formData.get("username") ?? "").trim().toLowerCase();
-    if (!USERNAME.test(username) || RESERVED.has(username)) {
-      return { ok: false, error: "Username: 1–39 lowercase letters, numbers or dashes." };
-    }
     if (username !== profile.username) {
+      // Same rules as onboarding. A handle kept unchanged is never re-judged.
+      const invalid = validateHandle(username);
+      if (invalid) return { ok: false, error: HANDLE_ERROR_MESSAGES[invalid] };
       const [taken] = await db.select({ id: profiles.userId }).from(profiles).where(eq(profiles.username, username)).limit(1);
       if (taken) return { ok: false, error: `rows.so/in/@${username} is taken.` };
     }

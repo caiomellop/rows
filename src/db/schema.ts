@@ -59,6 +59,24 @@ export const accounts = pgTable(
   ],
 ).enableRLS();
 
+/**
+ * Email login links (MVP-23). Only the SHA-256 of the token is stored; a row
+ * is spent by setting `usedAt`. Rows also serve as the request log for rate
+ * limiting (per email and per salted IP hash).
+ */
+export const loginTokens = pgTable(
+  "login_tokens",
+  {
+    tokenHash: text("tokenHash").primaryKey(),
+    email: text("email").notNull(),
+    ipHash: text("ipHash").notNull(),
+    expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
+    usedAt: timestamp("usedAt", { mode: "date" }),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("login_tokens_created").on(t.createdAt)],
+).enableRLS();
+
 /* ------------------------------------------------------------------ */
 /* Phase 1: profile, projects, experiences                            */
 /* ------------------------------------------------------------------ */

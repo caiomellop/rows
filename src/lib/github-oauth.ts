@@ -1,9 +1,10 @@
-import { and, eq } from "drizzle-orm";
-
-import { db } from "@/db";
-import { accounts, users } from "@/db/schema";
 import { appUrl } from "@/lib/app-url";
-import type { SessionUser } from "@/lib/session";
+
+/**
+ * GitHub OAuth helpers. GitHub is no longer a way to sign in (MVP-23: login is
+ * email only), so nothing here creates users or sessions. These helpers are
+ * kept for connecting GitHub to an existing account as an integration (MVP-24).
+ */
 
 /** Exact GitHub OAuth callback configured on the OAuth App. */
 export function githubCallbackUrl() {
@@ -113,86 +114,4 @@ export async function fetchGithubProfile(accessToken: string): Promise<{
   }
 
   return { profile, email };
-}
-
-/**
- * Create or update the user + GitHub account in a single transaction, so a
- * failure half-way can never leave an orphaned `users` row behind.
- */
-export async function upsertGithubUser(input: {
-  profile: GithubUser;
-  email: string | null;
-  accessToken: string;
-  scope?: string;
-  tokenType?: string;
-}): Promise<SessionUser> {
-  const providerAccountId = String(input.profile.id);
-  const name = input.profile.name ?? input.profile.login;
-  const image = input.profile.avatar_url;
-  const tokenFields = {
-    access_token: input.accessToken,
-    token_type: input.tokenType ?? "bearer",
-    scope: input.scope ?? null,
-  };
-
-  return db.transaction(async (tx) => {
-    const [existing] = await tx
-      .select({ userId: accounts.userId })
-      .from(accounts)
-      .where(
-        and(
-          eq(accounts.provider, "github"),
-          eq(accounts.providerAccountId, providerAccountId),
-        ),
-      )
-      .limit(1);
-
-    // `users.email` is unique. Only keep the GitHub email if no *other* user
-    // already owns it, otherwise the insert/update would fail and sign-in
-    // would be impossible for this GitHub account.
-    let email = input.email;
-    if (email) {
-      const [owner] = await tx
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
-      if (owner && owner.id !== existing?.userId) email = null;
-    }
-
-    if (existing) {
-      const userId = existing.userId;
-      await tx
-        .update(users)
-        .set(email ? { name, email, image } : { name, image })
-        .where(eq(users.id, userId));
-      await tx
-        .update(accounts)
-        .set(tokenFields)
-        .where(
-          and(
-            eq(accounts.provider, "github"),
-            eq(accounts.providerAccountId, providerAccountId),
-          ),
-        );
-      return { id: userId, name, email: email ?? input.email, image };
-    }
-
-    const userId = crypto.randomUUID();
-    await tx.insert(users).values({
-      id: userId,
-      name,
-      email,
-      image,
-      emailVerified: email ? new Date() : null,
-    });
-    await tx.insert(accounts).values({
-      userId,
-      type: "oauth",
-      provider: "github",
-      providerAccountId,
-      ...tokenFields,
-    });
-    return { id: userId, name, email, image };
-  });
 }

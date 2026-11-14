@@ -15,7 +15,6 @@ import {
   users,
   type Profile,
 } from "@/db/schema";
-import { fetchGithubUser } from "@/lib/github";
 import { stackEvidence } from "@/lib/insights";
 import { getSession, type SessionUser } from "@/lib/session";
 
@@ -43,44 +42,14 @@ export async function getGithubToken(userId: string): Promise<string> {
 /** Tag for every cached read derived from one user's data. */
 export const userTag = (userId: string) => `user:${userId}`;
 
-function slugify(login: string) {
-  return login.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-+|-+$/g, "") || "user";
-}
-
-async function freeUsername(base: string) {
-  for (let i = 0; i < 50; i++) {
-    const candidate = i === 0 ? base : `${base}-${i + 1}`;
-    const taken = await db.select({ id: profiles.userId }).from(profiles).where(eq(profiles.username, candidate)).limit(1);
-    if (!taken[0]) return candidate;
-  }
-  return `${base}-${crypto.randomUUID().slice(0, 6)}`;
-}
-
-/** Creates the profile on first visit, seeded from GitHub. */
+/**
+ * The signed-in user's profile. A user without one has not chosen a handle
+ * yet, so they are sent to onboarding first.
+ */
 export async function ensureProfile(user: SessionUser): Promise<Profile> {
   const [existing] = await db.select().from(profiles).where(eq(profiles.userId, user.id)).limit(1);
-  if (existing) return existing;
-
-  const gh = await fetchGithubUser(await getGithubToken(user.id));
-  const username = await freeUsername(slugify(gh.login));
-  const links = gh.blog ? { website: gh.blog.startsWith("http") ? gh.blog : `https://${gh.blog}` } : {};
-
-  const [created] = await db
-    .insert(profiles)
-    .values({
-      userId: user.id,
-      username,
-      githubLogin: gh.login,
-      displayName: gh.name ?? user.name ?? gh.login,
-      location: gh.location,
-      links,
-    })
-    .onConflictDoNothing()
-    .returning();
-
-  if (created) return created;
-  const [row] = await db.select().from(profiles).where(eq(profiles.userId, user.id)).limit(1);
-  return row;
+  if (!existing) redirect("/onboarding");
+  return existing;
 }
 
 export async function getEditorData(userId: string) {
