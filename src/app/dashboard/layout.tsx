@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { DashboardNav } from "@/components/dashboard/nav";
 import { Logo } from "@/components/logo";
-import { ensureProfile, requireUser } from "@/lib/dal";
+import { loadEditor } from "@/app/dashboard/load";
 import { profilePath } from "@/lib/profile-url";
 import { siteHref } from "@/lib/app-url";
 
@@ -11,8 +11,8 @@ import { siteHref } from "@/lib/app-url";
 export const maxDuration = 60;
 
 async function AccountLinks() {
-  const user = await requireUser();
-  const profile = await ensureProfile(user);
+  // Same cached read as the page below it, so the two share one query batch.
+  const { profile } = await loadEditor();
   return (
     <>
       <Link href={siteHref(profilePath(profile.username))} className="text-[14px] text-fg-2 hover:text-fg" prefetch={false}>
