@@ -26,6 +26,14 @@ Production: [rows.so](https://rows.so)
 - Sign in: `https://rows.so/auth/signin`
 - GitHub OAuth callback: `https://rows.so/auth`
 
+## Sign-up flow
+
+1. `/auth` — GitHub OAuth. Creates `users`, `accounts` and a `profiles` row (with the GitHub login).
+2. `/onboarding` — pick the public handle (`rows.so/u/{handle}`). Pre-filled with the normalized GitHub login; taken or reserved handles get an alternative. Rules live in `src/lib/username.ts`; uniqueness is enforced by the `profiles_username_unique` index.
+3. `/discovery` — first discovery question (the chat itself is MVP-09).
+
+Users without a handle are sent to `/onboarding` after sign-in.
+
 ## Phase 0 done criteria
 
 GitHub login works and creates a user in the `users` table.
