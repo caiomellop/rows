@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 
-import { importResume, type ActionResult } from "@/app/dashboard/actions";
+import { importResume, type ActionResult } from "@/app/(app)/dashboard/actions";
 import { FormStatus } from "@/components/dashboard/action-button";
 
 const SOURCES = [

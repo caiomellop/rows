@@ -20,6 +20,28 @@
   --border-subtle: rgba(0, 0, 0, 0.05);
 }
 
+/*
+ * Dark theme. Only the signed-in app (.app-shell) has one; the landing and the
+ * public profile are always light. The inline script in src/app/layout.tsx
+ * sets data-theme before the first paint.
+ */
+html[data-theme="dark"]:has(.app-shell) {
+  color-scheme: dark;
+  --page: 14 14 13;
+  --card: 23 23 22;
+  --panel: 33 33 31;
+  --ink: 240 240 236;
+  --text-primary: 240 240 236;
+  --text-secondary: 172 170 164;
+  --text-muted: 132 130 124;
+  --accent: 240 240 236;
+  --cta-to: 214 214 209;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+}
+
+@custom-variant dark (&:where(html[data-theme="dark"]:has(.app-shell) *));
+
 @theme inline {
   --color-page: rgb(var(--page));
   --color-card: rgb(var(--card));

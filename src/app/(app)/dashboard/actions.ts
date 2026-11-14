@@ -2,7 +2,8 @@
 
 import { and, eq, inArray, max, sql } from "drizzle-orm";
 import mammoth from "mammoth";
-import { updateTag } from "next/cache";
+import { refresh as refreshRouter, updateTag } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { db } from "@/db";
 import {
@@ -26,7 +27,8 @@ import {
   type ParsedResume,
 } from "@/lib/ai";
 import { HANDLE_ERROR_MESSAGES, validateHandle } from "@/lib/username";
-import { ensureProfile, getGithubToken, requireUser, userTag } from "@/lib/dal";
+import { STARTERS } from "@/config/starters";
+import { ensureProfile, getGithubToken, getThread, requireUser, userTag } from "@/lib/dal";
 import { fetchRepoDetails, listRepos } from "@/lib/github";
 import { MAX_PINNED, ROLE_TYPES, stackEvidence } from "@/lib/insights";
 
@@ -514,29 +516,57 @@ export async function deleteExperience(id: string): Promise<ActionResult> {
 }
 
 /* ------------------------------------------------------------------ */
-/* CV interview assistant                                              */
+/* Chat with the AI assistant                                          */
 /* ------------------------------------------------------------------ */
 
-async function loadThread(userId: string): Promise<AssistantMessage[]> {
-  const [row] = await db.select().from(assistantThreads).where(eq(assistantThreads.userId, userId)).limit(1);
-  return row?.messages ?? [];
+async function ownedThread(userId: string, threadId: string) {
+  const thread = await getThread(userId, threadId);
+  if (!thread) throw new Error("Conversation not found.");
+  return thread;
 }
 
-async function storeThread(userId: string, messages: AssistantMessage[]) {
-  await db
+async function storeThread(threadId: string, messages: AssistantMessage[]) {
+  await db.update(assistantThreads).set({ messages, updatedAt: new Date() }).where(eq(assistantThreads.id, threadId));
+}
+
+/** First line of the opening message, shortened for the sidebar. */
+function threadTitle(text: string) {
+  const line = text.split("\n")[0].trim();
+  return line.length > 60 ? `${line.slice(0, 57).trimEnd()}…` : line;
+}
+
+async function createThread(text: string, title = threadTitle(text)): Promise<never> {
+  const { userId } = await owner();
+  const message = text.trim().slice(0, 4000);
+  if (!message) redirect("/chat");
+  const [row] = await db
     .insert(assistantThreads)
-    .values({ userId, messages, updatedAt: new Date() })
-    .onConflictDoUpdate({ target: assistantThreads.userId, set: { messages, updatedAt: new Date() } });
+    .values({ userId, title: title || "New chat", messages: [{ role: "user", content: message }] })
+    .returning({ id: assistantThreads.id });
+  // The thread page asks for the reply, so the new chat opens right away.
+  redirect(`/chat/${row.id}`);
+}
+
+/** New chat from the composer on /chat. */
+export async function startChat(formData: FormData) {
+  await createThread(String(formData.get("text") ?? ""));
+}
+
+/** New chat from a starter: its prompt is sent as the first message. */
+export async function startStarter(starterId: string) {
+  const starter = STARTERS.find((s) => s.id === starterId);
+  if (!starter) redirect("/chat");
+  await createThread(starter.prompt, starter.title);
 }
 
 export type ChatResult = { ok: true; messages: AssistantMessage[] } | { ok: false; error: string; messages: AssistantMessage[] };
 
-/** Sends the user's message (or starts the interview when `text` is empty). */
-export async function sendInterviewMessage(text: string): Promise<ChatResult> {
+/** Adds the user's message (if any) and the assistant's reply to a conversation. */
+export async function sendChatMessage(threadId: string, text: string): Promise<ChatResult> {
   const { userId, profile } = await owner();
-  const history = await loadThread(userId);
+  const thread = await ownedThread(userId, threadId);
   const message = text.trim().slice(0, 4000);
-  const messages: AssistantMessage[] = message ? [...history, { role: "user", content: message }] : history;
+  const messages: AssistantMessage[] = message ? [...thread.messages, { role: "user", content: message }] : thread.messages;
 
   try {
     const [experienceRows, pinned] = await Promise.all([
@@ -545,26 +575,35 @@ export async function sendInterviewMessage(text: string): Promise<ChatResult> {
     ]);
     const reply = await interviewReply({ profile, experiences: experienceRows, projects: pinned, messages });
     const next: AssistantMessage[] = [...messages, { role: "assistant", content: reply }];
-    await storeThread(userId, next);
+    await storeThread(threadId, next);
+    // The sidebar orders conversations by last activity.
+    refreshRouter();
     return { ok: true, messages: next };
   } catch (err) {
     // Keep the user's message so they don't lose what they typed.
-    await storeThread(userId, messages);
+    await storeThread(threadId, messages);
+    refreshRouter();
     const r = fail(err);
     return { ok: false, error: r.ok ? "Something went wrong." : r.error, messages };
   }
 }
 
-export async function resetInterview(): Promise<ActionResult> {
-  const { userId } = await owner();
-  await storeThread(userId, []);
-  return { ok: true };
+export async function setThreadPinned(threadId: string, pinned: boolean): Promise<ActionResult> {
+  try {
+    const { userId } = await owner();
+    await ownedThread(userId, threadId);
+    await db.update(assistantThreads).set({ pinned }).where(eq(assistantThreads.id, threadId));
+    refreshRouter();
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
 }
 
-export async function saveInterviewToCv(): Promise<ActionResult> {
+export async function saveChatToCv(threadId: string): Promise<ActionResult> {
   try {
     const { userId, profile } = await owner();
-    const messages = await loadThread(userId);
+    const { messages } = await ownedThread(userId, threadId);
     if (!messages.some((m) => m.role === "user")) return { ok: false, error: "Answer a few questions first." };
 
     const extract = await extractFromInterview(messages);
@@ -585,7 +624,7 @@ export async function saveInterviewToCv(): Promise<ActionResult> {
     refresh(profile);
     return {
       ok: true,
-      message: `Saved to your CV: ${added} new ${added === 1 ? "entry" : "entries"}, ${merged} updated. Review them in Experience.`,
+      message: `Saved to your CV: ${added} new ${added === 1 ? "entry" : "entries"}, ${merged} updated. Review them in Resume.`,
     };
   } catch (err) {
     return fail(err);

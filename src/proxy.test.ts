@@ -30,6 +30,9 @@ beforeEach(() => {
 });
 
 describe("host routing", () => {
+  // Signed in, so the session gate below never gets in the way.
+  beforeEach(() => verifySessionToken.mockResolvedValue({ id: "u1" }));
+
   const location = async (path: string, host: string) => {
     const res = await get(path, undefined, host);
     return res.status === 308 ? res.headers.get("location") : passedThrough(res) ? "served" : `status ${res.status}`;
@@ -39,6 +42,8 @@ describe("host routing", () => {
     expect(await location("/sign-in", "rows.so")).toBe("https://app.rows.so/sign-in");
     expect(await location("/dashboard/projects?x=1", "rows.so")).toBe("https://app.rows.so/dashboard/projects?x=1");
     expect(await location("/onboarding", "rows.so")).toBe("https://app.rows.so/onboarding");
+    expect(await location("/chat/abc", "rows.so")).toBe("https://app.rows.so/chat/abc");
+    expect(await location("/memory", "rows.so")).toBe("https://app.rows.so/memory");
     expect(await location("/sign-in", "www.rows.so")).toBe("https://app.rows.so/sign-in");
     expect(await location("/pricing", "www.rows.so")).toBe("served");
   });
@@ -48,7 +53,7 @@ describe("host routing", () => {
   });
 
   it("serves app pages on the app host", async () => {
-    for (const path of ["/sign-in", "/sign-in/verify", "/sign-out", "/onboarding", "/dashboard", "/dashboard/profile"]) {
+    for (const path of ["/sign-in", "/sign-in/verify", "/sign-out", "/onboarding", "/dashboard", "/dashboard/profile", "/chat", "/chat/abc", "/memory"]) {
       expect(await location(path, "app.rows.so")).toBe("served");
     }
   });
@@ -79,6 +84,39 @@ describe("host routing", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://rows.so");
     expect(await location("/dashboard", "rows.so")).toBe("served");
     expect(await location("/sign-in", "rows.so")).toBe("served");
+  });
+});
+
+describe("session gate", () => {
+  const signedInPaths = ["/chat", "/chat/abc", "/memory", "/dashboard", "/dashboard/projects", "/onboarding"];
+
+  it("sends a visitor without a session to the login", async () => {
+    for (const path of signedInPaths) {
+      const res = await get(path, undefined, "app.rows.so");
+      expect(res.status).toBe(307);
+      expect(res.headers.get("location")).toBe("https://app.rows.so/sign-in");
+    }
+  });
+
+  it("does the same for an invalid or expired session cookie", async () => {
+    const res = await get("/chat", "expired", "app.rows.so");
+    expect(verifySessionToken).toHaveBeenCalledWith("expired");
+    expect(res.headers.get("location")).toBe("https://app.rows.so/sign-in");
+  });
+
+  it("lets a signed-in user through", async () => {
+    verifySessionToken.mockResolvedValue({ id: "u1" });
+    for (const path of signedInPaths) {
+      expect(passedThrough(await get(path, "token", "app.rows.so"))).toBe(true);
+    }
+  });
+
+  it("leaves the login and the public site open", async () => {
+    for (const path of ["/sign-in", "/sign-in/verify", "/sign-out"]) {
+      expect(passedThrough(await get(path, undefined, "app.rows.so"))).toBe(true);
+    }
+    expect(passedThrough(await get("/pricing"))).toBe(true);
+    expect(passedThrough(await get("/chatty"))).toBe(true);
   });
 });
 
