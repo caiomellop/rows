@@ -53,7 +53,7 @@ async function Projects() {
 
       {!ai ? (
         <p className="rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-[14px] text-amber-900">
-          AI drafting is off because <code>ANTHROPIC_API_KEY</code> isn&apos;t set. You can still write cards by hand.
+          AI drafting is off because <code>ANTHROPIC_KEYS</code> isn&apos;t set. You can still write cards by hand.
         </p>
       ) : null}
 

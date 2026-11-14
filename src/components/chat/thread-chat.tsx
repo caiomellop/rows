@@ -118,7 +118,7 @@ export function ThreadChat({ threadId, title, pinned: initialPinned, initial, ai
             {error}
           </p>
         ) : null}
-        {!aiEnabled ? <p className="px-5 pb-2 text-[13px] text-fg-3">The assistant needs ANTHROPIC_API_KEY to be set.</p> : null}
+        {!aiEnabled ? <p className="px-5 pb-2 text-[13px] text-fg-3">The assistant needs ANTHROPIC_KEYS to be set.</p> : null}
 
         <form
           className="flex items-end gap-2 border-t border-line p-3"

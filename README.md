@@ -31,7 +31,7 @@ Product: [`docs/product-plan.md`](./docs/product-plan.md) is the single product 
 - Login link lands on: `https://app.rows.so/sign-in/verify`
 - App pages asked for on `rows.so` redirect to `app.rows.so`, and the other way round (`src/proxy.ts`)
 
-- `ANTHROPIC_API_KEY` (optional): turns on AI project cards, the summary draft, resume import and the CV assistant.
+- `ANTHROPIC_KEYS` (optional): turns on AI project cards, the summary draft, resume import and the CV assistant.
 
 ## Phase 1: what's built
 
