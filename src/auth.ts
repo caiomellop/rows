@@ -5,6 +5,13 @@ import GitHub from "next-auth/providers/github";
 import { db } from "@/db";
 import { accounts, users, verificationTokens } from "@/db/schema";
 
+const authSecret =
+  process.env.AUTH_GITHUB_SECRET ??
+  // Allow `next build` when Preview env vars are not yet set.
+  (process.env.NEXT_PHASE === "phase-production-build"
+    ? "build-placeholder-secret"
+    : undefined);
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
     usersTable: users,
@@ -19,7 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   // Reuse GitHub client secret as Auth.js signing secret (no separate AUTH_SECRET).
-  secret: process.env.AUTH_GITHUB_SECRET,
+  secret: authSecret,
   // JWT sessions avoid a DB round-trip on every page load (better on Vercel).
   // The Drizzle adapter still create/updates `users` + `accounts` on GitHub sign-in.
   session: {
