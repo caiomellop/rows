@@ -43,7 +43,7 @@ export default function SignInPage({ searchParams }: Props) {
 }
 
 async function SignInBody({ searchParams }: Props) {
-  if (await getSession()) redirect("/dashboard");
+  if (await getSession()) redirect("/chat");
 
   const { error, email } = await searchParams;
   const prefill = email && isValidEmail(normalizeEmail(email)) ? normalizeEmail(email) : "";

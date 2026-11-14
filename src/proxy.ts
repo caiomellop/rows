@@ -45,7 +45,7 @@ function otherHost(request: NextRequest, pathname: string): string | null {
   const onApp = host === new URL(appUrl()).host;
 
   if (onApp) {
-    if (pathname === "/") return `${appUrl()}/dashboard`;
+    if (pathname === "/") return `${appUrl()}/chat`;
     if (!isAppPath(pathname)) return `${siteUrl()}${pathname}`;
   } else if (isSiteHost(host) && isAppPath(pathname)) {
     return `${appUrl()}${pathname}`;

@@ -64,8 +64,8 @@ describe("host routing", () => {
     expect(await location("/terms", "app.rows.so")).toBe("https://rows.so/terms");
   });
 
-  it("opens the dashboard at the root of the app host", async () => {
-    expect(await location("/", "app.rows.so")).toBe("https://app.rows.so/dashboard");
+  it("opens the chat at the root of the app host", async () => {
+    expect(await location("/", "app.rows.so")).toBe("https://app.rows.so/chat");
   });
 
   it("serves site pages on the site, and does not treat look-alike paths as app paths", async () => {
