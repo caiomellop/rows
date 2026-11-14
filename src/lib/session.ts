@@ -58,9 +58,15 @@ export function clearSessionCookie(response: NextResponse) {
   });
 }
 
+export const SESSION_COOKIE = COOKIE_NAME;
+
 export async function getSession(): Promise<SessionUser | null> {
   const jar = await cookies();
-  const token = jar.get(COOKIE_NAME)?.value;
+  return verifySessionToken(jar.get(COOKIE_NAME)?.value);
+}
+
+/** Verifies a raw session cookie value. Usable where `cookies()` is not (Proxy). */
+export async function verifySessionToken(token: string | undefined): Promise<SessionUser | null> {
   if (!token) return null;
 
   try {

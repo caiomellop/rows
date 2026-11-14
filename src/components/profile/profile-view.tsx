@@ -1,10 +1,11 @@
 import Link from "next/link";
 
-import { revealContact } from "@/app/u/[username]/actions";
+import { revealContact } from "@/app/in/[handle]/actions";
 import { ContactButton } from "@/components/profile/contact-button";
 import { ViewToggle } from "@/components/profile/view-toggle";
 import { SignalChips, VerifiedBadge } from "@/components/project-signals";
 import type { PublicProfile } from "@/lib/dal";
+import { profilePath } from "@/lib/profile-url";
 import { WORK_MODE_LABEL, formatMonthYear, formatRange } from "@/lib/insights";
 
 const anchor = (name: string) => `project-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
@@ -81,7 +82,7 @@ export function ProfileView({ data, preview = false }: { data: PublicProfile; pr
         ) : null}
 
         <div className="mt-7 flex flex-wrap items-center gap-2.5">
-          <a href={`/u/${profile.username}/resume`} className={`${profile.hasContact ? "btn-secondary" : "btn-primary"} h-10 rounded-xl px-5 text-[15px]`}>
+          <a href={`${profilePath(profile.username)}/resume`} className={`${profile.hasContact ? "btn-secondary" : "btn-primary"} h-10 rounded-xl px-5 text-[15px]`}>
             Download resume (PDF)
           </a>
           {profile.hasContact ? <ContactButton reveal={revealContact.bind(null, profile.username)} /> : null}
@@ -110,12 +111,9 @@ export function ProfileView({ data, preview = false }: { data: PublicProfile; pr
           {/* 3.2 Projects, translated */}
           {projects.length ? (
             <section aria-labelledby="projects-heading" className="space-y-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 id="projects-heading" className="text-[1.9rem] text-fg">
-                  Projects
-                </h2>
-                <VerifiedBadge />
-              </div>
+              <h2 id="projects-heading" className="text-[1.9rem] text-fg">
+                Projects
+              </h2>
               {projects.map((p) => {
                 const card = p.cardStatus === "approved" ? p.card : null;
                 const deps = p.dependencies.slice(0, 24);
@@ -146,8 +144,9 @@ export function ProfileView({ data, preview = false }: { data: PublicProfile; pr
                         ))}
                       </ul>
                     ) : null}
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
                       <SignalChips project={p} />
+                      <VerifiedBadge />
                     </div>
 
                     <div className="mt-4 hidden space-y-3 border-t border-line pt-4 text-[14px] text-fg-2 group-data-[view=developer]/view:block">
@@ -215,12 +214,7 @@ function TimelineSection({
 }) {
   return (
     <section aria-label={title} className="mt-12">
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[1.9rem] text-fg">{title}</h2>
-        <span className="text-[12px] text-fg-3" title="Written by the owner, not verified by Rows">
-          Self-reported
-        </span>
-      </div>
+      <h2 className="mb-4 text-[1.9rem] text-fg">{title}</h2>
       <ol className="surface divide-y divide-line">
         {entries.map((e) => {
           const linked = experienceLinks.filter((l) => l.experienceId === e.id).map((l) => projectName.get(l.projectId)).filter(Boolean) as string[];
@@ -232,7 +226,10 @@ function TimelineSection({
                 </h3>
                 <span className="text-[14px] tabular-nums text-fg-3">{formatRange(e.startDate, e.endDate, e.current)}</span>
               </div>
-              {e.location ? <p className="text-[13px] text-fg-3">{e.location}</p> : null}
+              <p className="text-[13px] text-fg-3">
+                {e.location ? `${e.location} · ` : ""}
+                <span title="Written by the owner, not verified by Rows">Self-reported</span>
+              </p>
               {e.bullets.length ? (
                 <ul className="mt-3 space-y-1.5 text-[15px] leading-relaxed text-fg-2">
                   {e.bullets.map((b) => (

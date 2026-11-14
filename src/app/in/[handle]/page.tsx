@@ -4,23 +4,36 @@ import { Suspense } from "react";
 
 import { ProfileView } from "@/components/profile/profile-view";
 import { getOwnerPreview, getPublicProfile } from "@/lib/dal";
+import { parseHandleSegment, profilePath } from "@/lib/profile-url";
 
-export async function generateMetadata({ params }: PageProps<"/u/[username]">): Promise<Metadata> {
-  const { username } = await params;
-  const data = await getPublicProfile(username);
+/**
+ * Public profile at rows.so/in/@handle.
+ *
+ * Unknown and unpublished handles get a real HTTP 404 from `src/proxy.ts`,
+ * before this page starts streaming (once the shell is sent the status is
+ * already 200). The `notFound()` calls here are the fallback for the same cases.
+ */
+
+type Props = PageProps<"/in/[handle]">;
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const username = parseHandleSegment((await params).handle);
+  const data = username ? await getPublicProfile(username) : null;
   if (!data) return { title: "Rows", robots: { index: false } };
 
   const name = data.profile.displayName ?? data.profile.username;
   const description = data.profile.summary ?? data.profile.headline ?? `${name}'s portfolio on Rows.`;
+  const url = profilePath(data.profile.username);
   return {
     title: `${name}${data.profile.headline ? ` · ${data.profile.headline}` : ""} | Rows`,
     description,
-    openGraph: { title: name, description, type: "profile", url: `/u/${data.profile.username}` },
+    alternates: { canonical: url },
+    openGraph: { title: name, description, type: "profile", url },
     twitter: { card: "summary_large_image", title: name, description },
   };
 }
 
-export default function PublicProfilePage({ params }: PageProps<"/u/[username]">) {
+export default function PublicProfilePage({ params }: Props) {
   return (
     <main className="flex flex-1 flex-col">
       <Suspense fallback={<ProfileSkeleton />}>
@@ -30,8 +43,10 @@ export default function PublicProfilePage({ params }: PageProps<"/u/[username]">
   );
 }
 
-async function Profile({ params }: Pick<PageProps<"/u/[username]">, "params">) {
-  const { username } = await params;
+async function Profile({ params }: Pick<Props, "params">) {
+  const username = parseHandleSegment((await params).handle);
+  if (!username) notFound();
+
   const data = await getPublicProfile(username);
   if (data) return <ProfileView data={data} />;
 

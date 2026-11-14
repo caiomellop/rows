@@ -261,7 +261,7 @@ export async function saveProfile(_prev: ActionResult | null, formData: FormData
     }
     if (username !== profile.username) {
       const [taken] = await db.select({ id: profiles.userId }).from(profiles).where(eq(profiles.username, username)).limit(1);
-      if (taken) return { ok: false, error: `rows.so/u/${username} is taken.` };
+      if (taken) return { ok: false, error: `rows.so/in/@${username} is taken.` };
     }
 
     const summary = clean(formData.get("summary"), 800);

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
 import { getPublicProfile } from "@/lib/dal";
+import { parseHandleSegment, profilePath } from "@/lib/profile-url";
 
 /**
  * The card LinkedIn shows in the Featured section (product plan §4): a mini
@@ -43,9 +44,9 @@ function Mark() {
 
 const truncate = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 
-export default async function Image({ params }: { params: Promise<{ username: string }> }) {
-  const { username } = await params;
-  const [data, [garamond, garamondItalic, figtree, figtreeSemi]] = await Promise.all([getPublicProfile(username), fonts]);
+export default async function Image({ params }: { params: Promise<{ handle: string }> }) {
+  const username = parseHandleSegment((await params).handle);
+  const [data, [garamond, garamondItalic, figtree, figtreeSemi]] = await Promise.all([username ? getPublicProfile(username) : null, fonts]);
 
   const fontOptions = {
     ...size,
@@ -120,7 +121,7 @@ export default async function Image({ params }: { params: Promise<{ username: st
         ) : null}
 
         <div style={{ display: "flex", marginTop: "auto", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", fontSize: 26, color: FG3 }}>{`${host}/u/${profile.username}`}</div>
+          <div style={{ display: "flex", fontSize: 26, color: FG3 }}>{`${host}${profilePath(profile.username)}`}</div>
           <div style={{ display: "flex", background: INK, color: PAGE, borderRadius: 16, padding: "14px 28px", fontSize: 26, fontWeight: 600 }}>View portfolio →</div>
         </div>
       </div>

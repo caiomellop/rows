@@ -2,19 +2,21 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import type { NextRequest } from "next/server";
 
 import { getContactEmail, getOwnerPreview, getPublicProfile } from "@/lib/dal";
+import { parseHandleSegment, profilePath } from "@/lib/profile-url";
 import { getSession } from "@/lib/session";
 
 import { ResumeDocument } from "./resume-document";
 
-export async function GET(_request: NextRequest, ctx: RouteContext<"/u/[username]/resume">) {
-  const { username } = await ctx.params;
+export async function GET(_request: NextRequest, ctx: RouteContext<"/in/[handle]/resume">) {
+  const username = parseHandleSegment((await ctx.params).handle);
+  if (!username) return new Response("Not found", { status: 404 });
   const session = await getSession();
   const data = (await getPublicProfile(username)) ?? (await getOwnerPreview(username));
   if (!data) return new Response("Not found", { status: 404 });
 
   const email = await getContactEmail(username, { ownerId: session?.id });
   const base = (process.env.NEXT_PUBLIC_APP_URL ?? "https://rows.so").replace(/\/$/, "");
-  const profileUrl = `${base}/u/${data.profile.username}`;
+  const profileUrl = `${base}${profilePath(data.profile.username)}`;
 
   const pdf = await renderToBuffer(<ResumeDocument data={data} email={email} profileUrl={profileUrl} />);
   const filename = `${(data.profile.displayName ?? data.profile.username).replace(/[^\w-]+/g, "-")}-resume.pdf`;

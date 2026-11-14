@@ -82,7 +82,7 @@ export const profiles = pgTable("profiles", {
   userId: text("userId")
     .primaryKey()
     .references(() => users.id, { onDelete: "cascade" }),
-  /** Public handle: rows.so/u/{username}. Starts as the GitHub login. */
+  /** Public handle: rows.so/in/@{username}. Starts as the GitHub login. */
   username: text("username").notNull().unique(),
   githubLogin: text("githubLogin"),
   displayName: text("displayName"),

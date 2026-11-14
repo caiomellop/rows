@@ -1,6 +1,6 @@
 # Rows
 
-Portfolio builder: GitHub sync, experiences, AI About, public profile at `/u/[username]`.
+Portfolio builder: GitHub sync, experiences, AI About, public profile at `/in/@handle`.
 
 Production: [rows.so](https://rows.so)
 
@@ -41,8 +41,8 @@ Product plan: [`docs/product-plan.md`](./docs/product-plan.md).
 | `/dashboard/experience` | Import a resume / LinkedIn PDF or CSV, edit entries, link projects to jobs |
 | `/dashboard/profile` | The 60-second header, goals, open-to-work details, contact |
 | `/dashboard/assistant` | AI CV interview; "Save to my CV" writes the entries |
-| `/u/[username]` | Public, recruiter-first profile (owner sees a preview while unpublished) |
-| `/u/[username]/opengraph-image` | The card LinkedIn shows for the link |
-| `/u/[username]/resume` | ATS-ready resume PDF |
+| `/in/@handle` | Public, recruiter-first profile. Unpublished or unknown handles return 404; the owner sees a preview |
+| `/in/@handle/opengraph-image` | The card LinkedIn shows for the link |
+| `/in/@handle/resume` | ATS-ready resume PDF |
 
 Database: `drizzle/0002_phase_1.sql` adds `profiles`, `projects`, `experiences`, `experience_projects` and `assistant_threads`. It only creates tables (RLS on, no access through the Supabase REST API). Apply it with `npm run db:push`.

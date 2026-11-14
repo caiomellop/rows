@@ -83,7 +83,7 @@ export function ProfileForm({ profile, aiEnabled, appHost }: { profile: Editable
               Your link
             </label>
             <div className="flex items-center rounded-[0.65rem] border border-ink/14 bg-panel pl-3 focus-within:border-ink/45">
-              <span className="shrink-0 text-[14px] text-fg-3">{appHost}/u/</span>
+              <span className="shrink-0 text-[14px] text-fg-3">{appHost}/in/@</span>
               <input
                 id={f("username")}
                 name="username"

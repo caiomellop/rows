@@ -26,7 +26,7 @@ export const PLANS: Plan[] = [
     monthly: 8,
     annualPerMonth: 6,
     features: [
-      { text: "Public profile at rows.so/u/you" },
+      { text: "Public profile at rows.so/in/@you" },
       { text: "Automatic GitHub repo sync" },
       { text: "Unlimited experiences and projects" },
       { text: "3 profile themes" },
