@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { accounts, users } from "@/db/schema";
+import { accounts, profiles, users } from "@/db/schema";
 import { appUrl } from "@/lib/app-url";
 import type { SessionUser } from "@/lib/session";
 
@@ -116,8 +116,9 @@ export async function fetchGithubProfile(accessToken: string): Promise<{
 }
 
 /**
- * Create or update the user + GitHub account in a single transaction, so a
- * failure half-way can never leave an orphaned `users` row behind.
+ * Create or update the user + GitHub account + profile in a single
+ * transaction, so a failure half-way can never leave an orphaned `users` row
+ * behind. `needsOnboarding` is true until the user has picked a handle.
  */
 export async function upsertGithubUser(input: {
   profile: GithubUser;
@@ -125,7 +126,7 @@ export async function upsertGithubUser(input: {
   accessToken: string;
   scope?: string;
   tokenType?: string;
-}): Promise<SessionUser> {
+}): Promise<{ user: SessionUser; needsOnboarding: boolean }> {
   const providerAccountId = String(input.profile.id);
   const name = input.profile.name ?? input.profile.login;
   const image = input.profile.avatar_url;
@@ -175,7 +176,11 @@ export async function upsertGithubUser(input: {
             eq(accounts.providerAccountId, providerAccountId),
           ),
         );
-      return { id: userId, name, email: email ?? input.email, image };
+      const needsOnboarding = await upsertProfile(tx, userId, input.profile.login);
+      return {
+        user: { id: userId, name, email: email ?? input.email, image },
+        needsOnboarding,
+      };
     }
 
     const userId = crypto.randomUUID();
@@ -193,6 +198,26 @@ export async function upsertGithubUser(input: {
       providerAccountId,
       ...tokenFields,
     });
-    return { id: userId, name, email, image };
+    const needsOnboarding = await upsertProfile(tx, userId, input.profile.login);
+    return { user: { id: userId, name, email, image }, needsOnboarding };
   });
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Keep the profile's GitHub login current (it seeds the suggested handle).
+ * Accounts created before profiles existed get their row here on next sign-in.
+ * Returns true when no handle has been chosen yet.
+ */
+async function upsertProfile(tx: Tx, userId: string, githubLogin: string) {
+  const [row] = await tx
+    .insert(profiles)
+    .values({ userId, githubLogin })
+    .onConflictDoUpdate({
+      target: profiles.userId,
+      set: { githubLogin, updatedAt: new Date() },
+    })
+    .returning({ username: profiles.username });
+  return !row?.username;
 }

@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     step = "github_profile";
     const { profile, email } = await fetchGithubProfile(token.access_token!);
     step = "database";
-    const user = await upsertGithubUser({
+    const { user, needsOnboarding } = await upsertGithubUser({
       profile,
       email,
       accessToken: token.access_token!,
@@ -79,7 +79,11 @@ export async function GET(request: NextRequest) {
     });
 
     const sessionToken = await signSessionToken(user);
-    const response = NextResponse.redirect(`${appUrl()}/`);
+    // New users (and anyone who hasn't picked a handle yet) go to onboarding.
+    // Returning users go home until the dashboard (MVP-15) exists.
+    const response = NextResponse.redirect(
+      `${appUrl()}${needsOnboarding ? "/onboarding" : "/"}`,
+    );
     attachSessionCookie(response, sessionToken);
     response.cookies.set(STATE_COOKIE, "", { path: "/", maxAge: 0 });
     return response;

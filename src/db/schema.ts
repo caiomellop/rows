@@ -1,15 +1,17 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   integer,
   pgTable,
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 /**
- * Phase 0 identity tables.
- * Phase 1 will extend `users` and add product tables
- * (connected_accounts, projects, experiences, experience_projects).
+ * Identity tables (users, accounts) and the public profile (profiles).
+ * Later phases add product tables (projects, experiences, discovery…).
  *
  * Every table has Row Level Security enabled with NO policies. The app talks
  * to Postgres directly (DATABASE_URL, `postgres` role, which bypasses RLS), so
@@ -48,3 +50,34 @@ export const accounts = pgTable(
     primaryKey({ columns: [account.provider, account.providerAccountId] }),
   ],
 ).enableRLS();
+
+/**
+ * Public profile, 1:1 with users. The row is created at sign-in (with the
+ * GitHub login); `username` stays null until the user picks a handle in
+ * onboarding, so `username IS NULL` means "onboarding not finished".
+ *
+ * Uniqueness is enforced by `profiles_username_unique`, not only by a lookup,
+ * and the format rule mirrors `src/lib/username.ts`.
+ */
+export const profiles = pgTable(
+  "profiles",
+  {
+    userId: text("userId")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Public handle: rows.so/u/{username}. Always lowercase. */
+    username: text("username"),
+    githubLogin: text("githubLogin"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("profiles_username_unique").on(t.username),
+    check(
+      "profiles_username_format",
+      sql`${t.username} ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND char_length(${t.username}) BETWEEN 3 AND 39`,
+    ),
+  ],
+).enableRLS();
+
+export type Profile = typeof profiles.$inferSelect;

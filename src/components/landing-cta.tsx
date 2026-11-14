@@ -10,6 +10,14 @@ export async function LandingCta() {
   if (user) {
     return (
       <div className="flex flex-wrap items-center justify-center gap-4">
+        {/* /onboarding forwards to the discovery once the handle is set. */}
+        <Link
+          href="/onboarding"
+          className="btn-primary group rounded-xl px-6 py-2 text-[0.9rem] leading-relaxed sm:py-2.5 sm:text-[0.95rem]"
+        >
+          <span>Continue</span>
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </Link>
         <p className="text-sm text-fg-2">
           Signed in as <span className="font-medium text-fg">{user.name}</span>
         </p>
