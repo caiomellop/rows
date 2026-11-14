@@ -2,7 +2,7 @@
 
 import { useActionState, useId, useState } from "react";
 
-import { deleteExperience, saveExperience, type ActionResult } from "@/app/dashboard/actions";
+import { deleteExperience, saveExperience, type ActionResult } from "@/app/(app)/dashboard/actions";
 import { ActionButton, FormStatus } from "@/components/dashboard/action-button";
 import type { Experience } from "@/db/schema";
 

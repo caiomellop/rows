@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type ReactNode } from "react";
 
-import type { ActionResult } from "@/app/dashboard/actions";
+import type { ActionResult } from "@/app/(app)/dashboard/actions";
 
 /** A button that runs a Server Action and reports its result inline. */
 export function ActionButton({

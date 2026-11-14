@@ -1,17 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { appUrl, hostsAreSplit, isAppPath, isSiteHost, siteUrl } from "@/lib/app-url";
+import { appUrl, hostsAreSplit, isAppPath, isSiteHost, needsSession, siteUrl } from "@/lib/app-url";
 import { canViewProfile } from "@/lib/profile-access";
 import { isBareHandle, parseHandleSegment } from "@/lib/profile-url";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 /**
- * Two jobs, both of which must happen before a page starts rendering:
+ * Three jobs, all of which must happen before a page starts rendering:
  *
  * 1. Host routing. The app (sign-in, onboarding, dashboard) lives on
  *    app.rows.so and everything else on rows.so; a path asked for on the wrong
  *    host is redirected to the right one.
- * 2. The gate for public profiles (/in/@handle), so unknown and unpublished
+ * 2. The gate for the signed-in app (chat, dashboard, onboarding): without a
+ *    valid session the visitor is redirected to /sign-in. Pages check the
+ *    session again when they read data (src/lib/dal.ts).
+ * 3. The gate for public profiles (/in/@handle), so unknown and unpublished
  *    handles answer with a real HTTP 404 instead of a streamed 200.
  */
 export async function proxy(request: NextRequest) {
@@ -25,6 +28,11 @@ export async function proxy(request: NextRequest) {
   const elsewhere = otherHost(request, pathname);
   if (elsewhere) return NextResponse.redirect(`${elsewhere}${search}`, 308);
 
+  if (needsSession(pathname)) {
+    const viewer = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+    if (!viewer) return NextResponse.redirect(new URL("/sign-in", request.url), 307);
+  }
+
   if (pathname.startsWith("/in/")) return profileGate(request);
   return NextResponse.next();
 }
@@ -37,7 +45,7 @@ function otherHost(request: NextRequest, pathname: string): string | null {
   const onApp = host === new URL(appUrl()).host;
 
   if (onApp) {
-    if (pathname === "/") return `${appUrl()}/dashboard`;
+    if (pathname === "/") return `${appUrl()}/chat`;
     if (!isAppPath(pathname)) return `${siteUrl()}${pathname}`;
   } else if (isSiteHost(host) && isAppPath(pathname)) {
     return `${appUrl()}${pathname}`;

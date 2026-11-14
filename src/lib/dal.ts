@@ -60,7 +60,7 @@ export async function ensureProfile(user: SessionUser): Promise<Profile> {
 export async function getEditorData(userId: string) {
   const { readme: _readme, ...projectColumns } = getTableColumns(projects);
   void _readme;
-  const [[profile], projectRows, experienceRows, links, thread, [account]] = await Promise.all([
+  const [[profile], projectRows, experienceRows, links, [account]] = await Promise.all([
     db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1),
     db.select(projectColumns).from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.pinned), asc(projects.position), desc(projects.pushedAt)),
     db.select().from(experiences).where(eq(experiences.userId, userId)).orderBy(asc(experiences.position), desc(experiences.startDate)),
@@ -69,7 +69,6 @@ export async function getEditorData(userId: string) {
       .from(experienceProjects)
       .innerJoin(experiences, eq(experiences.id, experienceProjects.experienceId))
       .where(eq(experiences.userId, userId)),
-    db.select().from(assistantThreads).where(eq(assistantThreads.userId, userId)).limit(1),
     db.select({ image: users.image, email: users.email }).from(users).where(eq(users.id, userId)).limit(1),
   ]);
 
@@ -78,13 +77,43 @@ export async function getEditorData(userId: string) {
     projects: projectRows,
     experiences: experienceRows,
     experienceLinks: links,
-    thread: thread[0]?.messages ?? [],
     image: account?.image ?? null,
     accountEmail: account?.email ?? null,
   };
 }
 
 export type EditorData = Awaited<ReturnType<typeof getEditorData>>;
+
+/** How many unpinned conversations the sidebar lists. */
+const RECENT_THREADS = 20;
+
+/** The user's conversations for the sidebar: every pinned one, then the latest. */
+export async function listThreads(userId: string) {
+  const cols = {
+    id: assistantThreads.id,
+    title: assistantThreads.title,
+    pinned: assistantThreads.pinned,
+    updatedAt: assistantThreads.updatedAt,
+  };
+  const mine = (pinned: boolean) => and(eq(assistantThreads.userId, userId), eq(assistantThreads.pinned, pinned));
+  const [pinned, recent] = await Promise.all([
+    db.select(cols).from(assistantThreads).where(mine(true)).orderBy(desc(assistantThreads.updatedAt)).limit(RECENT_THREADS),
+    db.select(cols).from(assistantThreads).where(mine(false)).orderBy(desc(assistantThreads.updatedAt)).limit(RECENT_THREADS),
+  ]);
+  return { pinned, recent };
+}
+
+export type ThreadSummary = Awaited<ReturnType<typeof listThreads>>["recent"][number];
+
+/** One conversation, only if it belongs to the user. */
+export async function getThread(userId: string, threadId: string) {
+  const [row] = await db
+    .select()
+    .from(assistantThreads)
+    .where(and(eq(assistantThreads.id, threadId), eq(assistantThreads.userId, userId)))
+    .limit(1);
+  return row ?? null;
+}
 
 async function profileRow(username: string) {
   const [row] = await db

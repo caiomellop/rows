@@ -4,9 +4,16 @@ import { cacheLife, cacheTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { profilePath } from "@/lib/profile-url";
-import { getEditorData, userTag } from "@/lib/dal";
+import { ensureProfile, getEditorData, requireUser, userTag } from "@/lib/dal";
 import { getSession } from "@/lib/session";
 import { siteUrl } from "@/lib/app-url";
+
+/** Session check + profile (or a redirect to onboarding), for pages that need nothing else. */
+export async function loadViewer() {
+  const user = await requireUser();
+  const profile = await ensureProfile(user);
+  return { user, profile };
+}
 
 /**
  * The signed-in user's editor data, or null when there is no valid session.

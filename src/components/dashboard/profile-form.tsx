@@ -2,7 +2,7 @@
 
 import { useActionState, useId, useState, useTransition } from "react";
 
-import { draftProfileSummary, saveProfile, type ActionResult } from "@/app/dashboard/actions";
+import { draftProfileSummary, saveProfile, type ActionResult } from "@/app/(app)/dashboard/actions";
 import { FormStatus } from "@/components/dashboard/action-button";
 import type { Profile } from "@/db/schema";
 import { ROLE_TYPES, WORK_MODE_LABEL } from "@/lib/insights";

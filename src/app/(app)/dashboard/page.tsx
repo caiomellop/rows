@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { setPublished } from "@/app/dashboard/actions";
-import { loadEditor, publicUrl } from "@/app/dashboard/load";
-import { PageHeader, PageSkeleton } from "@/app/dashboard/skeleton";
+import { setPublished } from "@/app/(app)/dashboard/actions";
+import { loadEditor, publicUrl } from "@/app/(app)/dashboard/load";
+import { PageHeader, PageSkeleton } from "@/app/(app)/dashboard/skeleton";
 import { ActionButton } from "@/components/dashboard/action-button";
 import { CopyButton } from "@/components/dashboard/copy-button";
 import { Check } from "@/components/icons";

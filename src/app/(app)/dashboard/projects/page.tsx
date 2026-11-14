@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { draftCard, movePinned, refreshDetails, saveCard, setPinned, syncRepos } from "@/app/dashboard/actions";
-import { loadEditor } from "@/app/dashboard/load";
-import { PageHeader, PageSkeleton } from "@/app/dashboard/skeleton";
+import { draftCard, movePinned, refreshDetails, saveCard, setPinned, syncRepos } from "@/app/(app)/dashboard/actions";
+import { loadEditor } from "@/app/(app)/dashboard/load";
+import { PageHeader, PageSkeleton } from "@/app/(app)/dashboard/skeleton";
 import { ActionButton } from "@/components/dashboard/action-button";
 import { CardEditor } from "@/components/dashboard/card-editor";
 import { RepoBrowser } from "@/components/dashboard/repo-browser";

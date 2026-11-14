@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { loadEditor } from "@/app/dashboard/load";
-import { PageHeader, PageSkeleton } from "@/app/dashboard/skeleton";
+import { loadEditor } from "@/app/(app)/dashboard/load";
+import { PageHeader, PageSkeleton } from "@/app/(app)/dashboard/skeleton";
 import { ProfileForm } from "@/components/dashboard/profile-form";
 import { aiEnabled } from "@/lib/ai";
 import { siteHost } from "@/lib/app-url";

@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
     // Resume uploads (PDF/DOCX) go through a Server Action; files are capped at 4 MB.
     serverActions: { bodySizeLimit: "5mb" },
   },
+  async redirects() {
+    // The assistant moved out of the dashboard into Chat (MVP-25).
+    return [{ source: "/dashboard/assistant", destination: "/chat", permanent: true }];
+  },
   turbopack: {
     rules: {
       "*.css": {

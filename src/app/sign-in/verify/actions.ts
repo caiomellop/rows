@@ -17,5 +17,5 @@ export async function confirmLogin(formData: FormData) {
 
   const { user, needsOnboarding } = await findOrCreateUserByEmail(email);
   await startSession(user);
-  redirect(needsOnboarding ? "/onboarding" : "/dashboard");
+  redirect(needsOnboarding ? "/onboarding" : "/chat");
 }

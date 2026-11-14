@@ -29,6 +29,13 @@
       "when": 1794682052494,
       "tag": "0003_email_login",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794691242747,
+      "tag": "0004_chat_threads",
+      "breakpoints": true
     }
   ]
 }

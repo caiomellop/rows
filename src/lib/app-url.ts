@@ -2,7 +2,7 @@
  * Rows is served on two hosts from one deployment:
  *
  * - the site (rows.so): landing, pricing, public profiles, terms;
- * - the app (app.rows.so): sign-in, onboarding, dashboard.
+ * - the app (app.rows.so): sign-in, onboarding, chat, dashboard.
  *
  * `src/proxy.ts` keeps each path on its host. Locally and on preview
  * deployments both URLs are the same origin and nothing is redirected.
@@ -41,10 +41,19 @@ export function siteHost() {
 }
 
 /** Paths that belong to the app host. Everything else belongs to the site. */
-const APP_PATHS = ["/sign-in", "/sign-out", "/onboarding", "/dashboard"];
+const APP_PATHS = ["/sign-in", "/sign-out", "/onboarding", "/dashboard", "/chat", "/memory"];
+
+const matches = (paths: string[], pathname: string) => paths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
 export function isAppPath(pathname: string) {
-  return APP_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  return matches(APP_PATHS, pathname);
+}
+
+/** App paths that need a session: everything behind the sidebar, plus onboarding. */
+const SIGNED_IN_PATHS = ["/onboarding", "/dashboard", "/chat", "/memory"];
+
+export function needsSession(pathname: string) {
+  return matches(SIGNED_IN_PATHS, pathname);
 }
 
 /**
