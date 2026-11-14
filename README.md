@@ -8,7 +8,7 @@ Production: [rows.so](https://rows.so)
 
 - Next.js (App Router) + TypeScript + Tailwind
 - Supabase Postgres + Drizzle ORM
-- GitHub OAuth (custom, callback `https://rows.so/auth`)
+- Custom GitHub OAuth (no Auth.js); callback `https://rows.so/auth`
 
 ## Quick start
 

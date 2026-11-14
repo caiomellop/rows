@@ -4,11 +4,17 @@ import { Suspense } from "react";
 
 import { getSession } from "@/lib/session";
 
-async function SignInBody() {
+async function SignInBody({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const user = await getSession();
   if (user) {
     redirect("/");
   }
+
+  const { error } = await searchParams;
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
@@ -24,8 +30,13 @@ async function SignInBody() {
       <p className="mt-3 text-base leading-7 text-ink/60">
         Continue with GitHub to create your account.
       </p>
+      {error ? (
+        <p className="mt-4 text-sm text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
       <a
-        href="/auth/login"
+        href="/auth"
         className="mt-8 inline-flex h-12 items-center justify-center rounded-md bg-ink px-5 text-sm font-semibold text-white transition hover:bg-ink/85"
       >
         Sign in with GitHub
@@ -34,7 +45,11 @@ async function SignInBody() {
   );
 }
 
-export default function SignInPage() {
+export default function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   return (
     <main className="relative flex min-h-full flex-1 flex-col overflow-hidden bg-[#f3f1ec]">
       <div
@@ -53,7 +68,7 @@ export default function SignInPage() {
           </div>
         }
       >
-        <SignInBody />
+        <SignInBody searchParams={searchParams} />
       </Suspense>
     </main>
   );

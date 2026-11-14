@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   exchangeGithubCode,
   fetchGithubProfile,
+  githubAuthorizeUrl,
   upsertGithubUser,
 } from "@/lib/github-oauth";
 import { attachSessionCookie, signSessionToken } from "@/lib/session";
@@ -17,8 +18,11 @@ function homeUrl() {
 }
 
 /**
- * GitHub OAuth callback — Authorization callback URL must be exactly:
+ * GitHub OAuth — Authorization callback URL must be exactly:
  *   https://rows.so/auth
+ *
+ * - GET /auth          → start OAuth (redirect to GitHub)
+ * - GET /auth?code=…   → callback (exchange code, set session)
  */
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -27,19 +31,31 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(
-      `${homeUrl()}/?error=${encodeURIComponent(error)}`,
+      `${homeUrl()}/auth/signin?error=${encodeURIComponent(error)}`,
     );
   }
 
+  // No code → start login (same path GitHub will call back to)
   if (!code) {
-    return NextResponse.redirect(`${homeUrl()}/auth/login`);
+    const nextState = crypto.randomUUID();
+    const response = NextResponse.redirect(githubAuthorizeUrl(nextState));
+    response.cookies.set("rows_oauth_state", nextState, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 10,
+    });
+    return response;
   }
 
   const jar = await cookies();
   const expectedState = jar.get("rows_oauth_state")?.value;
 
   if (!state || !expectedState || state !== expectedState) {
-    const response = NextResponse.redirect(`${homeUrl()}/?error=invalid_state`);
+    const response = NextResponse.redirect(
+      `${homeUrl()}/auth/signin?error=invalid_state`,
+    );
     response.cookies.set("rows_oauth_state", "", { path: "/", maxAge: 0 });
     return response;
   }
@@ -63,7 +79,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "oauth_failed";
     return NextResponse.redirect(
-      `${homeUrl()}/?error=${encodeURIComponent(message)}`,
+      `${homeUrl()}/auth/signin?error=${encodeURIComponent(message)}`,
     );
   }
 }
