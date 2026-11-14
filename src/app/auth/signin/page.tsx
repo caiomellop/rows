@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { authErrorMessage } from "@/lib/auth-errors";
 import { getSession } from "@/lib/session";
 
 async function SignInBody({
@@ -15,6 +16,7 @@ async function SignInBody({
   }
 
   const { error } = await searchParams;
+  const errorMessage = authErrorMessage(error);
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
@@ -30,9 +32,9 @@ async function SignInBody({
       <p className="mt-3 text-base leading-7 text-ink/60">
         Continue with GitHub to create your account.
       </p>
-      {error ? (
+      {errorMessage ? (
         <p className="mt-4 text-sm text-red-700" role="alert">
-          {error}
+          {errorMessage}
         </p>
       ) : null}
       <a

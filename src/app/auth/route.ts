@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
   const error = request.nextUrl.searchParams.get("error");
 
   if (error) {
-    return NextResponse.redirect(
-      `${appUrl()}/auth/signin?error=${encodeURIComponent(error)}`,
-    );
+    // `error` comes from the query string, so never forward it as-is.
+    const code = error === "access_denied" ? "access_denied" : "oauth_failed";
+    return NextResponse.redirect(`${appUrl()}/auth/signin?error=${code}`);
   }
 
   // No code → start login (same path GitHub will call back to)
@@ -70,9 +70,7 @@ export async function GET(request: NextRequest) {
     response.cookies.set("rows_oauth_state", "", { path: "/", maxAge: 0 });
     return response;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "oauth_failed";
-    return NextResponse.redirect(
-      `${appUrl()}/auth/signin?error=${encodeURIComponent(message)}`,
-    );
+    console.error("GitHub OAuth callback failed:", err);
+    return NextResponse.redirect(`${appUrl()}/auth/signin?error=oauth_failed`);
   }
 }
