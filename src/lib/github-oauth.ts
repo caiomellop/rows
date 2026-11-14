@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { accounts, users } from "@/db/schema";
 import { appUrl } from "@/lib/app-url";
 import type { SessionUser } from "@/lib/session";
+import { encrypt } from "@/lib/token-crypto";
 
 /** Exact GitHub OAuth callback configured on the OAuth App. */
 export function githubCallbackUrl() {
@@ -126,11 +127,14 @@ export async function upsertGithubUser(input: {
   scope?: string;
   tokenType?: string;
 }): Promise<SessionUser> {
+  // Encrypt first: if the key is missing or invalid we must fail before
+  // writing anything (never a plain-text token in the database).
+  const accessToken = encrypt(input.accessToken);
   const providerAccountId = String(input.profile.id);
   const name = input.profile.name ?? input.profile.login;
   const image = input.profile.avatar_url;
   const tokenFields = {
-    access_token: input.accessToken,
+    access_token: accessToken,
     token_type: input.tokenType ?? "bearer",
     scope: input.scope ?? null,
   };
