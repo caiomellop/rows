@@ -1,36 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f1ec;
-  --foreground: #12151c;
-  --ink: #12151c;
-  --mist: #e7ebe8;
-  --accent: #1f6b4a;
-  --accent-hover: #18553a;
-  --glow: rgba(31, 107, 74, 0.18);
+  --background: #e8e9eb;
+  --foreground: #0c0c0d;
+  --ink: #0c0c0d;
+  --muted: rgba(12, 12, 13, 0.58);
+  --paper: #f4f4f5;
+  --line: rgba(12, 12, 13, 0.1);
+  --glow: rgba(12, 12, 13, 0.06);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-ink: var(--ink);
-  --color-mist: var(--mist);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --font-sans: var(--font-body);
-  --font-display: var(--font-display);
+  --color-paper: var(--paper);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --font-sans: var(--font-figtree);
+  --font-brand: var(--font-geist);
+  --font-display: var(--font-garamond);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
@@ -38,27 +39,45 @@ body {
   }
 }
 
-@keyframes drift {
+@keyframes mark-drift {
   from {
     transform: translate3d(0, 0, 0) scale(1);
   }
   to {
-    transform: translate3d(2%, -3%, 0) scale(1.05);
+    transform: translate3d(1.5%, -2%, 0) scale(1.04);
+  }
+}
+
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-1%, 1%);
   }
 }
 
 .anim-rise {
-  animation: rise 0.8s ease-out both;
+  animation: rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .anim-rise-delay {
-  animation: rise 0.9s ease-out 0.12s both;
+  animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
 
 .anim-rise-delay-2 {
-  animation: rise 0.9s ease-out 0.24s both;
+  animation: rise 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
 }
 
-.bg-drift {
-  animation: drift 18s ease-in-out infinite alternate;
+.anim-rise-delay-3 {
+  animation: rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+.mark-drift {
+  animation: mark-drift 16s ease-in-out infinite alternate;
+}
+
+.grain-shift {
+  animation: grain 8s steps(2) infinite;
 }

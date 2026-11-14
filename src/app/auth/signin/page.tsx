@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { BrandLink } from "@/components/brand-link";
 import { getSession } from "@/lib/session";
 
 async function SignInBody({
@@ -18,13 +18,8 @@ async function SignInBody({
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
-      <Link
-        href="/"
-        className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-ink"
-      >
-        Rows
-      </Link>
-      <h1 className="mt-10 text-3xl font-semibold tracking-tight text-ink">
+      <BrandLink wordmarkClassName="font-[family-name:var(--font-geist)] text-[1.25rem] font-semibold tracking-[-0.04em] text-ink" />
+      <h1 className="mt-10 font-[family-name:var(--font-garamond)] text-4xl italic tracking-[-0.02em] text-ink">
         Sign in
       </h1>
       <p className="mt-3 text-base leading-7 text-ink/60">
@@ -37,7 +32,7 @@ async function SignInBody({
       ) : null}
       <a
         href="/auth"
-        className="mt-8 inline-flex h-12 items-center justify-center rounded-md bg-ink px-5 text-sm font-semibold text-white transition hover:bg-ink/85"
+        className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-ink px-5 text-[15px] font-medium text-paper transition hover:bg-ink/88"
       >
         Sign in with GitHub
       </a>
@@ -51,13 +46,13 @@ export default function SignInPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   return (
-    <main className="relative flex min-h-full flex-1 flex-col overflow-hidden bg-[#f3f1ec]">
+    <main className="relative flex min-h-full flex-1 flex-col overflow-hidden bg-[#e8e9eb]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 60% 40% at 80% 0%, rgba(31, 107, 74, 0.12), transparent 55%), linear-gradient(180deg, #f7f5f0, #eef2ef)",
+            "radial-gradient(ellipse 70% 50% at 85% 0%, rgba(12,12,13,0.05), transparent 55%), linear-gradient(180deg, #f0f0f2, #e4e5e8)",
         }}
       />
       <Suspense

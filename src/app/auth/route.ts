@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+import { appUrl } from "@/lib/app-url";
 import {
   exchangeGithubCode,
   fetchGithubProfile,
@@ -8,14 +9,6 @@ import {
   upsertGithubUser,
 } from "@/lib/github-oauth";
 import { attachSessionCookie, signSessionToken } from "@/lib/session";
-
-function homeUrl() {
-  return (
-    process.env.AUTH_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
-}
 
 /**
  * GitHub OAuth — Authorization callback URL must be exactly:
@@ -28,10 +21,11 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const error = request.nextUrl.searchParams.get("error");
+  const origin = appUrl();
 
   if (error) {
     return NextResponse.redirect(
-      `${homeUrl()}/auth/signin?error=${encodeURIComponent(error)}`,
+      `${origin}/auth/signin?error=${encodeURIComponent(error)}`,
     );
   }
 
@@ -54,7 +48,7 @@ export async function GET(request: NextRequest) {
 
   if (!state || !expectedState || state !== expectedState) {
     const response = NextResponse.redirect(
-      `${homeUrl()}/auth/signin?error=invalid_state`,
+      `${origin}/auth/signin?error=invalid_state`,
     );
     response.cookies.set("rows_oauth_state", "", { path: "/", maxAge: 0 });
     return response;
@@ -72,14 +66,14 @@ export async function GET(request: NextRequest) {
     });
 
     const sessionToken = await signSessionToken(user);
-    const response = NextResponse.redirect(`${homeUrl()}/`);
+    const response = NextResponse.redirect(`${origin}/`);
     attachSessionCookie(response, sessionToken);
     response.cookies.set("rows_oauth_state", "", { path: "/", maxAge: 0 });
     return response;
   } catch (err) {
     const message = err instanceof Error ? err.message : "oauth_failed";
     return NextResponse.redirect(
-      `${homeUrl()}/auth/signin?error=${encodeURIComponent(message)}`,
+      `${origin}/auth/signin?error=${encodeURIComponent(message)}`,
     );
   }
 }

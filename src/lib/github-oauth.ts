@@ -2,15 +2,8 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { accounts, users } from "@/db/schema";
+import { appUrl } from "@/lib/app-url";
 import type { SessionUser } from "@/lib/session";
-
-function appUrl() {
-  return (
-    process.env.AUTH_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
-}
 
 /** Exact GitHub OAuth callback configured on the OAuth App. */
 export function githubCallbackUrl() {
@@ -53,6 +46,14 @@ type GithubEmail = {
   verified: boolean;
 };
 
+function githubApiHeaders(accessToken: string): HeadersInit {
+  return {
+    Accept: "application/vnd.github+json",
+    Authorization: `Bearer ${accessToken}`,
+    "User-Agent": "rows-app",
+  };
+}
+
 export async function exchangeGithubCode(code: string) {
   const clientId = process.env.AUTH_GITHUB_ID;
   const clientSecret = process.env.AUTH_GITHUB_SECRET;
@@ -86,11 +87,7 @@ export async function fetchGithubProfile(accessToken: string): Promise<{
   email: string | null;
 }> {
   const userRes = await fetch("https://api.github.com/user", {
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${accessToken}`,
-      "User-Agent": "rows-app",
-    },
+    headers: githubApiHeaders(accessToken),
   });
   if (!userRes.ok) {
     throw new Error(`GitHub user fetch failed (${userRes.status})`);
@@ -100,11 +97,7 @@ export async function fetchGithubProfile(accessToken: string): Promise<{
   let email = profile.email;
   if (!email) {
     const emailRes = await fetch("https://api.github.com/user/emails", {
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${accessToken}`,
-        "User-Agent": "rows-app",
-      },
+      headers: githubApiHeaders(accessToken),
     });
     if (emailRes.ok) {
       const emails = (await emailRes.json()) as GithubEmail[];

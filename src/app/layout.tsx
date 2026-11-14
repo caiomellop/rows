@@ -1,17 +1,33 @@
 import type { Metadata } from "next";
-import { Fraunces, Outfit } from "next/font/google";
+import localFont from "next/font/local";
 
 import "./globals.css";
 
-const display = Fraunces({
-  variable: "--font-display",
-  subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
+const geist = localFont({
+  src: "../../public/fonts/Geist-Variable.ttf",
+  variable: "--font-geist",
+  display: "swap",
 });
 
-const body = Outfit({
-  variable: "--font-body",
-  subsets: ["latin"],
+const garamond = localFont({
+  src: [
+    {
+      path: "../../public/fonts/EBGaramond-Variable.ttf",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/EBGaramond-Italic-Variable.ttf",
+      style: "italic",
+    },
+  ],
+  variable: "--font-garamond",
+  display: "swap",
+});
+
+const figtree = localFont({
+  src: "../../public/fonts/Figtree-Variable.ttf",
+  variable: "--font-figtree",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -23,9 +39,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${display.variable} ${body.variable} h-full antialiased`}
+      className={`${geist.variable} ${garamond.variable} ${figtree.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col font-[family-name:var(--font-figtree)]">
+        {children}
+      </body>
     </html>
   );
 }

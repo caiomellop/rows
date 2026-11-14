@@ -4,6 +4,13 @@ import type { NextResponse } from "next/server";
 
 const COOKIE_NAME = "rows_session";
 
+const sessionCookieBase = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+};
+
 export type SessionUser = {
   id: string;
   name: string | null;
@@ -34,20 +41,14 @@ export async function signSessionToken(user: SessionUser) {
 
 export function attachSessionCookie(response: NextResponse, token: string) {
   response.cookies.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
+    ...sessionCookieBase,
     maxAge: 60 * 60 * 24 * 30,
   });
 }
 
 export function clearSessionCookie(response: NextResponse) {
   response.cookies.set(COOKIE_NAME, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
+    ...sessionCookieBase,
     maxAge: 0,
   });
 }
