@@ -1,56 +1,39 @@
 # Rows
 
-Portfolio builder: GitHub sync, experiences, AI About, public profile at `/in/@handle`.
+AI copilot for job candidates (being renamed to Prepermint, tracked in MVP-50).
 
-Production: [rows.so](https://rows.so)
-
-Product: [`docs/product-plan.md`](./docs/product-plan.md) is the single product document (what Rows is, who it is for, roadmap). The MVP tasks that implement it are tracked in the Linear project "Rows MVP".
+What to build, in what order and with which acceptance criteria lives in Linear: project **Prepermint MVP**, team **CAI**. The rules for working in this repo are in [`AGENTS.md`](./AGENTS.md).
 
 ## Stack
 
 - Next.js (App Router) + TypeScript + Tailwind
 - Supabase Postgres + Drizzle ORM
 - Email-only login with a one-time link (no passwords, no Auth.js); email sent through Resend
+- Anthropic Claude for the AI features
 
 ## Quick start
 
-1. `cp .env.example .env.local` and fill values (see [`docs/phase-0-setup.md`](./docs/phase-0-setup.md)).
-2. `npm run db:migrate` (applies the migrations in `drizzle/` that are not applied yet)
-3. `npm run dev`
+1. `cp .env.example .env.local` and fill in the values. Each variable is explained in `.env.example`.
+2. `npm install`
+3. `npm run db:migrate` (applies the migrations in `drizzle/` that are not applied yet)
+4. `npm run dev`
 
-### Required env
+Required variables: `DATABASE_URL`, `AUTH_SECRET`, `RESEND_API_KEY` and `EMAIL_FROM`, `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_APP_URL`. `ANTHROPIC_KEYS` is optional: without it the AI buttons are hidden.
 
-- `DATABASE_URL`
-- `AUTH_SECRET` (session cookie signing key)
-- `RESEND_API_KEY` / `EMAIL_FROM` (login link emails)
-- `NEXT_PUBLIC_SITE_URL=https://rows.so` (landing, pricing, public profiles)
-- `NEXT_PUBLIC_APP_URL=https://app.rows.so` (sign-in, onboarding, dashboard)
+## Hosts
 
-- Landing: `https://rows.so`
-- Sign in: `https://app.rows.so/sign-in`
-- Login link lands on: `https://app.rows.so/sign-in/verify`
-- App pages asked for on `rows.so` redirect to `app.rows.so`, and the other way round (`src/proxy.ts`)
+- Site: `https://rows.so` (landing, pricing, terms, privacy)
+- App: `https://app.rows.so` (sign-in, chat, memory, dashboard)
+- The login link lands on `https://app.rows.so/sign-in/verify`.
+- A path asked for on the wrong host is redirected to the right one (`src/proxy.ts`).
 
-- `ANTHROPIC_KEYS` (optional): turns on AI project cards, the summary draft, resume import and the CV assistant.
+## Checks
 
-## Phase 1: what's built
-
-Product plan: [`docs/product-plan.md`](./docs/product-plan.md).
-
-| Route | What it is |
-| --- | --- |
-| `/dashboard` | Onboarding checklist, your link, publish/unpublish, LinkedIn Featured instructions |
-| `/dashboard/projects` | Sync public GitHub repos, pin up to 6, AI-drafted cards you approve |
-| `/dashboard/experience` | Import a resume / LinkedIn PDF or CSV, edit entries, link projects to jobs |
-| `/dashboard/profile` | The 60-second header, goals, open-to-work details, contact |
-| `/dashboard/assistant` | AI CV interview; "Save to my CV" writes the entries |
-| `/sign-in`, `/sign-in/verify` | Email-only login: one field, a one-time link valid for 15 minutes, confirmed with a button |
-| `/onboarding` | First access: choose the unique handle |
-| `/in/@handle` | Public, recruiter-first profile. Unpublished or unknown handles return 404; the owner sees a preview |
-| `/in/@handle/opengraph-image` | The card LinkedIn shows for the link |
-| `/in/@handle/resume` | ATS-ready resume PDF |
-
-Database: `drizzle/0002_phase_1.sql` adds `profiles`, `projects`, `experiences`, `experience_projects` and `assistant_threads`. It only creates tables (RLS on, no access through the Supabase REST API). Apply it with `npm run db:migrate`.
+```
+npm run lint
+npm test
+npx next build
+```
 
 ## Database migrations
 
