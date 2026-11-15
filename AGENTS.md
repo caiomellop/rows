@@ -25,7 +25,7 @@ Read this whole file before you change anything. If a rule here conflicts with a
 | How to work in this repo | This file |
 | Visual design for marketing pages | `docs/landing-design-spec.md` |
 
-Linear is the only task list. Do not keep plans, TODO lists or roadmaps in the repo. `docs/product-plan.md` and `docs/phase-0-setup.md` describe the old Rows product and are being removed (MVP-49): do not follow them.
+Linear is the only task list. Do not keep plans, TODO lists or roadmaps in the repo.
 
 Each Linear issue has a user story, Gherkin acceptance criteria, "Fora de escopo" (out of scope) and a collapsible **Agent notes** section with technical requirements and dependencies. The acceptance criteria are the spec. Issues are written in Portuguese; code, comments, commits and PRs are in English.
 
@@ -155,7 +155,7 @@ New features with several files go in `src/features/<feature>/` (for example `sr
 ### Environment variables
 - Every new variable goes into `.env.example` with a comment saying what it is and where it comes from, in the same PR.
 - `NEXT_PUBLIC_*` variables are visible to everyone. Never put a secret in one.
-- Current variables: `DATABASE_URL`, `AUTH_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL`, `ANTHROPIC_KEYS`. `AUTH_GITHUB_*` is being removed (MVP-49).
+- Current variables: `DATABASE_URL`, `AUTH_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL`, `ANTHROPIC_KEYS`.
 
 ### UI
 - Clean, neutral, monochrome look. Use the tokens in `globals.css` (`bg-page`, `bg-card`, `text-fg`, `text-fg-2`, `border-line`…), not raw hex colors.

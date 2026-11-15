@@ -18,9 +18,7 @@ import { RowsMark } from "@/components/brand/rows-mark";
 import { useIconHover } from "@/components/icons/animated";
 import { BrainIcon } from "@/components/icons/brain";
 import { CircleHelpIcon } from "@/components/icons/circle-help";
-import { EarthIcon } from "@/components/icons/earth";
 import { FileTextIcon } from "@/components/icons/file-text";
-import { GithubIcon } from "@/components/icons/github";
 import { HomeIcon } from "@/components/icons/home";
 import { MenuIcon } from "@/components/icons/menu";
 import { SettingsIcon } from "@/components/icons/settings";
@@ -65,7 +63,7 @@ function ChatNav({ threads }: { threads: ReactNode }) {
   );
 }
 
-function DashboardNav({ publicPage }: { publicPage: ReactNode }) {
+function DashboardNav() {
   return (
     <nav aria-label="Dashboard">
       <SidebarSection>
@@ -74,42 +72,19 @@ function DashboardNav({ publicPage }: { publicPage: ReactNode }) {
         </SidebarLink>
       </SidebarSection>
       <SidebarDivider />
-      <SidebarSection label="Your page">
+      <SidebarSection>
         <SidebarLink href="/dashboard/profile" icon={UserIcon}>
           Profile
         </SidebarLink>
         <SidebarLink href="/dashboard/experience" icon={FileTextIcon}>
           Resume
         </SidebarLink>
-        <SidebarLink href="/dashboard/projects" icon={GithubIcon}>
-          Projects
-        </SidebarLink>
-        {publicPage}
       </SidebarSection>
       <SidebarDivider />
       <SidebarSection>
         <SidebarSoon icon={SettingsIcon}>Settings</SidebarSoon>
       </SidebarSection>
     </nav>
-  );
-}
-
-/** The "Public page" item: opens the user's public profile in a new tab. */
-export function PublicPageLink({ href }: { href: string }) {
-  return (
-    <SidebarLink href={href} external icon={EarthIcon}>
-      Public page
-    </SidebarLink>
-  );
-}
-
-/** Shown while the public page address is loading. */
-export function PublicPagePending() {
-  return (
-    <span className="flex h-9 items-center gap-2.5 px-2.5 text-[14px] text-fg-3">
-      <EarthIcon size={17} className="[&_svg]:[stroke-width:1.6]" />
-      Public page
-    </span>
   );
 }
 
@@ -125,9 +100,9 @@ function HelpButton() {
 /**
  * The app sidebar. On desktop it is a fixed column; below 768px it becomes a
  * drawer opened from the top bar, where the Chat / Dashboard switch stays
- * visible. `threads`, `account` and `publicPage` are server-rendered slots.
+ * visible. `threads` and `account` are server-rendered slots.
  */
-export function Sidebar({ threads, account, publicPage }: { threads: ReactNode; account: ReactNode; publicPage: ReactNode }) {
+export function Sidebar({ threads, account }: { threads: ReactNode; account: ReactNode }) {
   const mode = modeFor(usePathname());
   const [open, setOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -196,7 +171,7 @@ export function Sidebar({ threads, account, publicPage }: { threads: ReactNode; 
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-2">
-          {mode === "chat" ? <ChatNav threads={threads} /> : <DashboardNav publicPage={publicPage} />}
+          {mode === "chat" ? <ChatNav threads={threads} /> : <DashboardNav />}
         </div>
 
         <div className="flex shrink-0 items-center gap-1 border-t border-line p-2">

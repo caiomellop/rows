@@ -7,7 +7,7 @@ import { PageHeader, PageSkeleton } from "@/app/(app)/dashboard/skeleton";
 import { ExperienceForm, NewExperience } from "@/components/dashboard/experience-form";
 import { ResumeImport } from "@/components/dashboard/resume-import";
 import { aiEnabled } from "@/lib/ai";
-import { formatRange } from "@/lib/insights";
+import { formatRange } from "@/lib/experience-format";
 
 export const metadata: Metadata = { title: "Resume · Rows" };
 
@@ -27,15 +27,13 @@ export default function ExperiencePage() {
 }
 
 async function ExperienceBody() {
-  const { experiences, projects, experienceLinks } = await loadEditor();
-  const pinned = projects.filter((p) => p.pinned).map((p) => ({ id: p.id, name: p.name }));
+  const { experiences } = await loadEditor();
   const ai = aiEnabled();
 
   return (
     <div className="space-y-8">
       <PageHeader title="Resume">
-        Jobs and education. This part is self-reported, and the public page says so. Link each job to the projects you built
-        there.
+        Jobs and education. Everything here is self-reported.
       </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-[1fr_280px]">
@@ -80,16 +78,11 @@ async function ExperienceBody() {
               </span>
             </summary>
             <div className="border-t border-line p-5">
-              <ExperienceForm
-                key={e.id}
-                experience={e}
-                projects={pinned}
-                linkedProjectIds={experienceLinks.filter((l) => l.experienceId === e.id).map((l) => l.projectId)}
-              />
+              <ExperienceForm key={e.id} experience={e} />
             </div>
           </details>
         ))}
-        <NewExperience projects={pinned} />
+        <NewExperience />
       </section>
     </div>
   );

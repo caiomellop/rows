@@ -1,8 +1,8 @@
 /**
  * Rows is served on two hosts from one deployment:
  *
- * - the site (rows.so): landing, pricing, public profiles, terms;
- * - the app (app.rows.so): sign-in, onboarding, chat, dashboard.
+ * - the site (rows.so): landing, pricing, terms, privacy;
+ * - the app (app.rows.so): sign-in, chat, memory, dashboard.
  *
  * `src/proxy.ts` keeps each path on its host. Locally and on preview
  * deployments both URLs are the same origin and nothing is redirected.
@@ -41,7 +41,7 @@ export function siteHost() {
 }
 
 /** Paths that belong to the app host. Everything else belongs to the site. */
-const APP_PATHS = ["/sign-in", "/sign-out", "/onboarding", "/dashboard", "/chat", "/memory"];
+const APP_PATHS = ["/sign-in", "/sign-out", "/dashboard", "/chat", "/memory"];
 
 const matches = (paths: string[], pathname: string) => paths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
@@ -49,8 +49,8 @@ export function isAppPath(pathname: string) {
   return matches(APP_PATHS, pathname);
 }
 
-/** App paths that need a session: everything behind the sidebar, plus onboarding. */
-const SIGNED_IN_PATHS = ["/onboarding", "/dashboard", "/chat", "/memory"];
+/** App paths that need a session: everything behind the sidebar. */
+const SIGNED_IN_PATHS = ["/dashboard", "/chat", "/memory"];
 
 export function needsSession(pathname: string) {
   return matches(SIGNED_IN_PATHS, pathname);
@@ -58,7 +58,7 @@ export function needsSession(pathname: string) {
 
 /**
  * Cookie `Domain` that lets the session set on app.rows.so be read on rows.so
- * too (signed-in nav, the owner's preview of an unpublished profile).
+ * too (for example, a signed-in nav on the site).
  * Undefined when the hosts are not split or the app is not a subdomain of the site.
  */
 export function sessionCookieDomain(): string | undefined {

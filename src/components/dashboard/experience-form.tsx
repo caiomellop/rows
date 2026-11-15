@@ -6,22 +6,10 @@ import { deleteExperience, saveExperience, type ActionResult } from "@/app/(app)
 import { ActionButton, FormStatus } from "@/components/dashboard/action-button";
 import type { Experience } from "@/db/schema";
 
-type ProjectOption = { id: string; name: string };
-
 /** Month inputs need "YYYY-MM"; a bare year becomes January. */
 const toMonth = (v: string | null) => (v ? (v.length === 4 ? `${v}-01` : v) : "");
 
-export function ExperienceForm({
-  experience,
-  projects,
-  linkedProjectIds = [],
-  onDone,
-}: {
-  experience?: Experience;
-  projects: ProjectOption[];
-  linkedProjectIds?: string[];
-  onDone?: () => void;
-}) {
+export function ExperienceForm({ experience, onDone }: { experience?: Experience; onDone?: () => void }) {
   const id = useId();
   const [current, setCurrent] = useState(experience?.current ?? false);
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(async (prev, fd) => {
@@ -106,19 +94,6 @@ export function ExperienceForm({
         </label>
         <input id={`${id}-skills`} name="skills" defaultValue={experience?.skills.join(", ")} className="field" placeholder="Go, PostgreSQL, Kubernetes" />
       </div>
-      {projects.length > 0 ? (
-        <fieldset>
-          <legend className="label">Projects from this job</legend>
-          <div className="flex flex-wrap gap-2">
-            {projects.map((p) => (
-              <label key={p.id} className="chip cursor-pointer bg-card">
-                <input type="checkbox" name="projectIds" value={p.id} defaultChecked={linkedProjectIds.includes(p.id)} />
-                {p.name}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      ) : null}
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" className="btn-primary h-9 rounded-lg px-4 text-[14px]" disabled={pending}>
           {pending ? "Saving…" : experience ? "Save" : "Add entry"}
@@ -138,7 +113,7 @@ export function ExperienceForm({
   );
 }
 
-export function NewExperience({ projects }: { projects: ProjectOption[] }) {
+export function NewExperience() {
   const [open, setOpen] = useState(false);
   const [version, setVersion] = useState(0);
   if (!open) {
@@ -152,7 +127,6 @@ export function NewExperience({ projects }: { projects: ProjectOption[] }) {
     <div className="surface p-5">
       <ExperienceForm
         key={version}
-        projects={projects}
         onDone={() => {
           setVersion((v) => v + 1);
           setOpen(false);

@@ -13,7 +13,7 @@ describe("split hosts", () => {
   it("links across hosts with absolute URLs", () => {
     split();
     expect(appHref("/sign-in")).toBe("https://app.rows.so/sign-in");
-    expect(siteHref("/in/@ada")).toBe("https://rows.so/in/@ada");
+    expect(siteHref("/pricing")).toBe("https://rows.so/pricing");
   });
 
   it("shares the session cookie with the site", () => {
