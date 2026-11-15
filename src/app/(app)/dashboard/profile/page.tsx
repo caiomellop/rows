@@ -6,7 +6,7 @@ import { PageHeader, PageSkeleton } from "@/app/(app)/dashboard/skeleton";
 import { ProfileForm } from "@/components/dashboard/profile-form";
 import { aiEnabled } from "@/lib/ai";
 
-export const metadata: Metadata = { title: "Profile · Rows" };
+export const metadata: Metadata = { title: "Profile · Prepermint" };
 
 export default function ProfilePage() {
   return (

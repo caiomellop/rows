@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { loadViewer } from "@/app/(app)/dashboard/load";
 import { PageHeader, PageSkeleton } from "@/app/(app)/dashboard/skeleton";
 
-export const metadata: Metadata = { title: "Memory · Rows" };
+export const metadata: Metadata = { title: "Memory · Prepermint" };
 
 export default function MemoryPage() {
   return (

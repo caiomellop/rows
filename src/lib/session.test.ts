@@ -32,7 +32,7 @@ afterEach(() => {
 
 describe("session token", () => {
   it("round-trips: sign then verify returns the same user", async () => {
-    cookieStore.set("rows_session", await signSessionToken(user));
+    cookieStore.set("pp_session", await signSessionToken(user));
 
     expect(await getSession()).toEqual(user);
   });
@@ -41,12 +41,18 @@ describe("session token", () => {
     expect(await getSession()).toBeNull();
   });
 
+  it("ignores a session cookie from before the rename (rows_session)", async () => {
+    cookieStore.set("rows_session", await signSessionToken(user));
+
+    expect(await getSession()).toBeNull();
+  });
+
   it("returns null for a tampered token", async () => {
     const [header, , signature] = (await signSessionToken(user)).split(".");
     const forgedPayload = Buffer.from(
       JSON.stringify({ ...user, id: "someone-else" }),
     ).toString("base64url");
-    cookieStore.set("rows_session", `${header}.${forgedPayload}.${signature}`);
+    cookieStore.set("pp_session", `${header}.${forgedPayload}.${signature}`);
 
     expect(await getSession()).toBeNull();
   });
@@ -54,7 +60,7 @@ describe("session token", () => {
   it("returns null for a token signed with a different secret", async () => {
     const token = await signSessionToken(user);
     vi.stubEnv("AUTH_SECRET", "a-completely-different-secret-value!!");
-    cookieStore.set("rows_session", token);
+    cookieStore.set("pp_session", token);
 
     expect(await getSession()).toBeNull();
   });
@@ -62,7 +68,7 @@ describe("session token", () => {
   it("returns null for an expired token", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    cookieStore.set("rows_session", await signSessionToken(user));
+    cookieStore.set("pp_session", await signSessionToken(user));
 
     vi.setSystemTime(new Date("2026-01-30T23:59:00Z"));
     expect(await getSession()).toEqual(user); // still inside the 30d window

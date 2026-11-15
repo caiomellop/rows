@@ -33,7 +33,7 @@ const figtree = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: "Rows",
+  title: "Prepermint",
   description: "Portfolio builder with GitHub sync",
 };
 

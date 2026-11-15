@@ -4,7 +4,7 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 const globalForDb = globalThis as unknown as {
-  rowsSql: ReturnType<typeof postgres> | undefined;
+  ppSql: ReturnType<typeof postgres> | undefined;
 };
 
 function resolveConnectionString(): string {
@@ -15,7 +15,7 @@ function resolveConnectionString(): string {
   // `next build` / Vercel compile must not require Preview env to be present.
   // Runtime (and local `next dev` / `next start`) still requires DATABASE_URL.
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    return "postgresql://build:build@127.0.0.1:5432/rows_build";
+    return "postgresql://build:build@127.0.0.1:5432/prepermint_build";
   }
 
   throw new Error(
@@ -24,7 +24,7 @@ function resolveConnectionString(): string {
 }
 
 const client =
-  globalForDb.rowsSql ??
+  globalForDb.ppSql ??
   postgres(resolveConnectionString(), {
     // Required for Supabase transaction pooler (port 6543).
     prepare: false,
@@ -36,7 +36,7 @@ const client =
   });
 
 if (process.env.NODE_ENV !== "production") {
-  globalForDb.rowsSql = client;
+  globalForDb.ppSql = client;
 }
 
 export const db = drizzle(client, { schema });

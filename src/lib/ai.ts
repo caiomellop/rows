@@ -8,7 +8,7 @@ import { z } from "zod";
 import type { AssistantMessage, Experience, Profile } from "@/db/schema";
 
 /**
- * Every AI feature in Rows: the summary draft, resume import and the CV interview.
+ * Every AI feature in Prepermint: the summary draft, resume import and the CV interview.
  *
  * The one rule all prompts share: never invent. Resume parsing copies what the
  * document says, and the CV interview asks questions instead of making up
@@ -101,7 +101,7 @@ export async function draftSummary(input: { profile: Profile; experiences: Exper
   return structured({
     schema: SummarySchema,
     effort: "medium",
-    system: `You write the top of a Rows profile: the part a recruiter reads first.
+    system: `You write the top of a Prepermint profile: the part a recruiter reads first.
 
 Write a headline and a 3-sentence summary in plain English, in the third person without pronouns ("Builds…", "Has worked…") or in a neutral voice.
 - Sentence 1: what they build and with which core technologies.
@@ -168,7 +168,7 @@ function interviewContext(profile: Profile, experiences: Experience[]) {
   ].join("\n");
 }
 
-const INTERVIEW_SYSTEM = `You are the career assistant inside Rows. You help a tech worker turn a weak or empty CV into a strong one by interviewing them.
+const INTERVIEW_SYSTEM = `You are the career assistant inside Prepermint. You help a tech worker turn a weak or empty CV into a strong one by interviewing them.
 
 How you work:
 1. Start with goals if they're missing: target role, level and market (country or "remote, international").

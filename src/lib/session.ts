@@ -4,7 +4,7 @@ import type { NextResponse } from "next/server";
 
 import { sessionCookieDomain } from "@/lib/app-url";
 
-const COOKIE_NAME = "rows_session";
+const COOKIE_NAME = "pp_session";
 
 export type SessionUser = {
   id: string;

@@ -14,7 +14,7 @@ import {
   SidebarSoon,
 } from "@/components/app-shell/sidebar-item";
 import { ThemeToggle, footerButton } from "@/components/app-shell/theme-toggle";
-import { RowsMark } from "@/components/brand/rows-mark";
+import { PrepermintMark } from "@/components/brand/prepermint-mark";
 import { useIconHover } from "@/components/icons/animated";
 import { BrainIcon } from "@/components/icons/brain";
 import { CircleHelpIcon } from "@/components/icons/circle-help";
@@ -31,9 +31,9 @@ import { cn } from "@/lib/utils";
 
 function Brand({ href }: { href: string }) {
   return (
-    <Link href={href} aria-label="Rows home" className="flex items-center gap-2 rounded-lg text-fg outline-none focus-visible:ring-2 focus-visible:ring-ink/60">
-      <RowsMark size={26} />
-      <span className="font-geist text-[20px] font-semibold leading-none tracking-[-0.04em]">Rows</span>
+    <Link href={href} aria-label="Prepermint home" className="flex items-center gap-2 rounded-lg text-fg outline-none focus-visible:ring-2 focus-visible:ring-ink/60">
+      <PrepermintMark size={26} />
+      <span className="font-geist text-[20px] font-semibold leading-none tracking-[-0.04em]">Prepermint</span>
     </Link>
   );
 }
@@ -191,7 +191,7 @@ export function SidebarFallback() {
       <div className="h-14 border-b border-line md:hidden" />
       <div aria-busy className="hidden w-[272px] shrink-0 border-r border-line md:sticky md:top-0 md:block md:h-dvh">
         <div className="flex h-14 items-center px-4 text-fg">
-          <RowsMark size={26} />
+          <PrepermintMark size={26} />
         </div>
         <div className="space-y-2 px-3 pt-2">
           {[0, 1, 2, 3].map((i) => (

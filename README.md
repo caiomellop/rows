@@ -1,6 +1,6 @@
-# Rows
+# Prepermint
 
-AI copilot for job candidates (being renamed to Prepermint, tracked in MVP-50).
+AI copilot for job candidates (formerly Rows).
 
 What to build, in what order and with which acceptance criteria lives in Linear: project **Prepermint MVP**, team **CAI**. The rules for working in this repo are in [`AGENTS.md`](./AGENTS.md).
 
@@ -22,9 +22,10 @@ Required variables: `DATABASE_URL`, `AUTH_SECRET`, `RESEND_API_KEY` and `EMAIL_F
 
 ## Hosts
 
-- Site: `https://rows.so` (landing, pricing, terms, privacy)
-- App: `https://app.rows.so` (sign-in, chat, memory, dashboard)
-- The login link lands on `https://app.rows.so/sign-in/verify`.
+- Site: `https://prepermint.com` (landing, pricing, terms, privacy)
+- App: `https://app.prepermint.com` (sign-in, chat, memory, dashboard)
+- The login link lands on `https://app.prepermint.com/sign-in/verify`.
+- `rows.so`, `www.rows.so` and `app.rows.so` redirect (308) to the same path on the new hosts (`src/proxy.ts`).
 - A path asked for on the wrong host is redirected to the right one (`src/proxy.ts`).
 
 ## Checks

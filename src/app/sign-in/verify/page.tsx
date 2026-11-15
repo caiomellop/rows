@@ -8,7 +8,7 @@ import { expiredLinkUrl } from "@/lib/login-token";
 
 import { confirmLogin } from "./actions";
 
-export const metadata: Metadata = { title: "Log in to Rows", robots: { index: false } };
+export const metadata: Metadata = { title: "Log in to Prepermint", robots: { index: false } };
 
 type Props = { searchParams: Promise<{ token?: string }> };
 
@@ -22,7 +22,7 @@ export default function VerifyPage({ searchParams }: Props) {
     <main className="flex min-h-full flex-1 flex-col items-center justify-center px-6 py-16">
       <div className="flex w-full max-w-[400px] flex-col items-center text-center">
         <Logo />
-        <h1 className="mt-8 text-[2.2rem] leading-[1.1] text-fg">Log in to Rows</h1>
+        <h1 className="mt-8 text-[2.2rem] leading-[1.1] text-fg">Log in to Prepermint</h1>
         <Suspense fallback={<div className="mt-8 h-14 w-full animate-pulse rounded-xl bg-ink/10" />}>
           <Confirm searchParams={searchParams} />
         </Suspense>
