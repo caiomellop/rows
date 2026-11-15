@@ -22,9 +22,7 @@ const user = {
 
 beforeEach(() => {
   cookieStore.clear();
-  // Cover both the current key and the fallback key (see T3).
-  vi.stubEnv("SESSION_SECRET", "test-session-secret-0123456789abcdef");
-  vi.stubEnv("AUTH_GITHUB_SECRET", "test-session-secret-0123456789abcdef");
+  vi.stubEnv("AUTH_SECRET", "test-session-secret-0123456789abcdef");
 });
 
 afterEach(() => {
@@ -55,8 +53,7 @@ describe("session token", () => {
 
   it("returns null for a token signed with a different secret", async () => {
     const token = await signSessionToken(user);
-    vi.stubEnv("SESSION_SECRET", "a-completely-different-secret-value!!");
-    vi.stubEnv("AUTH_GITHUB_SECRET", "a-completely-different-secret-value!!");
+    vi.stubEnv("AUTH_SECRET", "a-completely-different-secret-value!!");
     cookieStore.set("rows_session", token);
 
     expect(await getSession()).toBeNull();

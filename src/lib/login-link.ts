@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { and, eq, gt, isNull, lt, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { loginTokens, profiles, users } from "@/db/schema";
+import { loginTokens, users } from "@/db/schema";
 import { appUrl } from "@/lib/app-url";
 import { sendLoginEmail } from "@/lib/email";
 import { LOGIN_LINK_TTL_MS, generateLoginToken, hashToken, isRateLimited, loginTokenStatus } from "@/lib/login-token";
@@ -13,7 +13,7 @@ import type { SessionUser } from "@/lib/session";
 
 /** IPs are only kept as a salted hash, and only to count requests. */
 function hashIp(ip: string): string {
-  const salt = process.env.AUTH_SECRET ?? process.env.AUTH_GITHUB_SECRET ?? "";
+  const salt = process.env.AUTH_SECRET ?? "";
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex");
 }
 
@@ -81,25 +81,18 @@ export async function consumeLoginToken(token: string): Promise<string | null> {
   return row?.email ?? null;
 }
 
-/**
- * The account for a confirmed email, created on first login. `isNew` tells
- * the caller to send the user to onboarding (no handle chosen yet).
- */
-export async function findOrCreateUserByEmail(email: string): Promise<{ user: SessionUser; needsOnboarding: boolean }> {
+/** The account for a confirmed email, created on first login. */
+export async function findOrCreateUserByEmail(email: string): Promise<SessionUser> {
   await db.insert(users).values({ email, emailVerified: new Date() }).onConflictDoNothing({ target: users.email });
 
   const [row] = await db
-    .select({ id: users.id, name: users.name, email: users.email, image: users.image, verified: users.emailVerified, handle: profiles.username })
+    .select({ id: users.id, name: users.name, email: users.email, image: users.image, verified: users.emailVerified })
     .from(users)
-    .leftJoin(profiles, eq(profiles.userId, users.id))
     .where(eq(users.email, email))
     .limit(1);
 
   if (!row.verified) {
     await db.update(users).set({ emailVerified: new Date() }).where(eq(users.id, row.id));
   }
-  return {
-    user: { id: row.id, name: row.name, email: row.email, image: row.image },
-    needsOnboarding: !row.handle,
-  };
+  return { id: row.id, name: row.name, email: row.email, image: row.image };
 }

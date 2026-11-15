@@ -15,7 +15,7 @@ export async function confirmLogin(formData: FormData) {
     redirect(expiredLinkUrl(known));
   }
 
-  const { user, needsOnboarding } = await findOrCreateUserByEmail(email);
+  const user = await findOrCreateUserByEmail(email);
   await startSession(user);
-  redirect(needsOnboarding ? "/onboarding" : "/chat");
+  redirect("/chat");
 }
