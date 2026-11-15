@@ -8,7 +8,7 @@ import { ThreadChat } from "@/components/chat/thread-chat";
 import { aiEnabled } from "@/lib/ai";
 import { getThread } from "@/lib/dal";
 
-export const metadata: Metadata = { title: "Chat · Rows" };
+export const metadata: Metadata = { title: "Chat · Prepermint" };
 
 export default function ThreadPage({ params }: PageProps<"/chat/[threadId]">) {
   return (

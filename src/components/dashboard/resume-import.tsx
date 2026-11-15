@@ -60,7 +60,7 @@ export function ResumeImport({ aiEnabled }: { aiEnabled: boolean }) {
         </button>
       </div>
       <FormStatus state={state} />
-      <p className="text-[12px] text-fg-3">Rows copies what the file says. Nothing is added or embellished, and you can edit every entry.</p>
+      <p className="text-[12px] text-fg-3">Prepermint copies what the file says. Nothing is added or embellished, and you can edit every entry.</p>
     </form>
   );
 }

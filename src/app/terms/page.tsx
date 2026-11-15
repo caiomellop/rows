@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { Logo } from "@/components/logo";
 
-export const metadata: Metadata = { title: "Terms | Rows" };
+export const metadata: Metadata = { title: "Terms | Prepermint" };
 
 /** Placeholder: the legal text is still to be written (out of scope for MVP-23). */
 export default function Page() {

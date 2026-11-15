@@ -7,7 +7,7 @@ import { SiteNav } from "@/components/site-nav";
 import { appHref } from "@/lib/app-url";
 
 export const metadata: Metadata = {
-  title: "Pricing · Rows",
+  title: "Pricing · Prepermint",
   description: "Plans for developers, freelancers and small teams.",
 };
 

@@ -48,7 +48,7 @@ export function ResumeDocument({ profile, experiences, email }: { profile: Resum
   const contact = [profile.location, email].filter((x): x is string => Boolean(x));
 
   return (
-    <Document title={`${name} - Resume`} author={name} subject="Resume" creator="Rows" producer="Rows">
+    <Document title={`${name} - Resume`} author={name} subject="Resume" creator="Prepermint" producer="Prepermint">
       <Page size="A4" style={s.page}>
         <Text style={s.name}>{name}</Text>
         {profile.headline ? <Text style={s.headline}>{profile.headline}</Text> : null}

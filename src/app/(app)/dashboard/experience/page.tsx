@@ -9,7 +9,7 @@ import { ResumeImport } from "@/components/dashboard/resume-import";
 import { aiEnabled } from "@/lib/ai";
 import { formatRange } from "@/lib/experience-format";
 
-export const metadata: Metadata = { title: "Resume · Rows" };
+export const metadata: Metadata = { title: "Resume · Prepermint" };
 
 const SOURCE_LABEL = {
   resume: "from your resume",

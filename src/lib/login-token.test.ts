@@ -76,14 +76,14 @@ describe("isRateLimited", () => {
 
 describe("email", () => {
   it("normalizes with trim and lowercase", () => {
-    expect(normalizeEmail("  Caio@Rows.SO ")).toBe("caio@rows.so");
+    expect(normalizeEmail("  Caio@Prepermint.COM ")).toBe("caio@prepermint.com");
   });
 
-  it.each(["caio@rows.so", "a.b+tag@sub.example.com"])("accepts %s", (email) => {
+  it.each(["caio@prepermint.com", "a.b+tag@sub.example.com"])("accepts %s", (email) => {
     expect(isValidEmail(email)).toBe(true);
   });
 
-  it.each(["caio@", "caio", "@rows.so", "caio@rows", "a b@rows.so", ""])("rejects %s", (email) => {
+  it.each(["caio@", "caio", "@prepermint.com", "caio@prepermint", "a b@prepermint.com", ""])("rejects %s", (email) => {
     expect(isValidEmail(email)).toBe(false);
   });
 });

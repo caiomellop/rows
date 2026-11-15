@@ -26,11 +26,11 @@ export const PLANS: Plan[] = [
     monthly: 8,
     annualPerMonth: 6,
     features: [
-      { text: "Public profile at rows.so/in/@you" },
+      { text: "Public profile at prepermint.com/in/@you" },
       { text: "Automatic GitHub repo sync" },
       { text: "Unlimited experiences and projects" },
       { text: "3 profile themes" },
-      { text: "Rows badge on your profile", muted: true },
+      { text: "Prepermint badge on your profile", muted: true },
     ],
   },
   {
@@ -47,7 +47,7 @@ export const PLANS: Plan[] = [
       { text: "Every theme, plus custom accent colors" },
       { text: "Profile analytics: views, referrers, clicks" },
       { text: "Pin and reorder repos and experiences" },
-      { text: "No Rows badge" },
+      { text: "No Prepermint badge" },
     ],
   },
   {

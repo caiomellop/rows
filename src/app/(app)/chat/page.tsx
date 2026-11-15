@@ -6,7 +6,7 @@ import { PageSkeleton } from "@/app/(app)/dashboard/skeleton";
 import { NewChat } from "@/components/chat/new-chat";
 import { aiEnabled } from "@/lib/ai";
 
-export const metadata: Metadata = { title: "New chat · Rows" };
+export const metadata: Metadata = { title: "New chat · Prepermint" };
 
 export default function NewChatPage() {
   return (

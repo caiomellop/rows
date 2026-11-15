@@ -10,7 +10,7 @@ import { LOGIN_LINK_TTL_MINUTES } from "@/lib/login-token";
  * with SPF, DKIM and DMARC set up).
  */
 
-const FROM = process.env.EMAIL_FROM ?? "Rows <noreply@rows.so>";
+const FROM = process.env.EMAIL_FROM ?? "Prepermint <noreply@prepermint.com>";
 
 type Message = { to: string; subject: string; text: string; html: string };
 
@@ -41,9 +41,9 @@ export function loginEmail(link: string): Omit<Message, "to"> {
   const validity = `This link is valid for ${LOGIN_LINK_TTL_MINUTES} minutes and works once.`;
   const ignore = "If you didn't ask for it, you can ignore this email.";
   return {
-    subject: "Your link to log in to Rows",
-    text: `Log in to Rows:\n\n${link}\n\n${validity}\n${ignore}\n`,
-    html: `<p>Log in to Rows:</p><p><a href="${escapeHtml(link)}">Log in to Rows</a></p><p>${validity}<br>${ignore}</p>`,
+    subject: "Your link to log in to Prepermint",
+    text: `Log in to Prepermint:\n\n${link}\n\n${validity}\n${ignore}\n`,
+    html: `<p>Log in to Prepermint:</p><p><a href="${escapeHtml(link)}">Log in to Prepermint</a></p><p>${validity}<br>${ignore}</p>`,
   };
 }
 

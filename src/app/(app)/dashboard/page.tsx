@@ -6,7 +6,7 @@ import { loadEditor } from "@/app/(app)/dashboard/load";
 import { PageHeader, PageSkeleton } from "@/app/(app)/dashboard/skeleton";
 import { Check } from "@/components/icons";
 
-export const metadata: Metadata = { title: "Dashboard · Rows" };
+export const metadata: Metadata = { title: "Dashboard · Prepermint" };
 
 export default function DashboardPage() {
   return (

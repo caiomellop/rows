@@ -1,20 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { appUrl, hostsAreSplit, isAppPath, isSiteHost, needsSession, siteUrl } from "@/lib/app-url";
+import { appUrl, hostsAreSplit, isAppPath, isSiteHost, legacyHostTarget, needsSession, siteUrl } from "@/lib/app-url";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 /**
  * Two jobs, both of which must happen before a page starts rendering:
  *
- * 1. Host routing. The app (sign-in, chat, dashboard) lives on app.rows.so and
- *    everything else on rows.so; a path asked for on the wrong host is
- *    redirected to the right one.
+ * 1. Host routing. The app (sign-in, chat, dashboard) lives on
+ *    app.prepermint.com and everything else on prepermint.com; a path asked
+ *    for on the wrong host is redirected to the right one. The old rows.so
+ *    hosts only redirect to the new ones.
  * 2. The gate for the signed-in app (chat, memory, dashboard): without a valid
  *    session the visitor is redirected to /sign-in. Pages check the session
  *    again when they read data (src/lib/dal.ts).
  */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+
+  const renamed = legacyHostTarget(request.headers.get("host"), pathname);
+  if (renamed) return NextResponse.redirect(`${renamed}${search}`, 308);
 
   // The pre-MVP-23 sign-in address.
   if (pathname === "/auth/signin") {

@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Prepermint (prepermint.com) is an AI copilot for job candidates. It helps people prepare before an interview (mock interviews by voice, company research), learn after it (review of a real interview, study plan) and improve their résumé and LinkedIn. It never helps secretly during a live interview.
 
-This repo was called **Rows**. The rename is tracked in MVP-50. Until it lands, "Rows" in code and copy means Prepermint.
+This repo was called **Rows** (the GitHub repository name and the Vercel project may still say so). The old `rows.so` and `app.rows.so` hosts only redirect (308) to `prepermint.com` and `app.prepermint.com`.
 
 Read this whole file before you change anything. If a rule here conflicts with a request, stop and ask instead of picking one.
 

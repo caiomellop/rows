@@ -1,8 +1,8 @@
 /**
- * Rows is served on two hosts from one deployment:
+ * Prepermint is served on two hosts from one deployment:
  *
- * - the site (rows.so): landing, pricing, terms, privacy;
- * - the app (app.rows.so): sign-in, chat, memory, dashboard.
+ * - the site (prepermint.com): landing, pricing, terms, privacy;
+ * - the app (app.prepermint.com): sign-in, chat, memory, dashboard.
  *
  * `src/proxy.ts` keeps each path on its host. Locally and on preview
  * deployments both URLs are the same origin and nothing is redirected.
@@ -10,12 +10,12 @@
 
 const clean = (url: string) => url.replace(/\/$/, "");
 
-/** Origin of the platform, e.g. https://app.rows.so (no trailing slash). */
+/** Origin of the platform, e.g. https://app.prepermint.com (no trailing slash). */
 export function appUrl() {
   return clean(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
 }
 
-/** Origin of the public site, e.g. https://rows.so. Defaults to the app origin. */
+/** Origin of the public site, e.g. https://prepermint.com. Defaults to the app origin. */
 export function siteUrl() {
   return clean(process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
 }
@@ -35,7 +35,7 @@ export function siteHref(path: string) {
   return hostsAreSplit() ? `${siteUrl()}${path}` : path;
 }
 
-/** "rows.so", for showing a public address. */
+/** "prepermint.com", for showing a public address. */
 export function siteHost() {
   return siteUrl().replace(/^https?:\/\//, "");
 }
@@ -57,7 +57,7 @@ export function needsSession(pathname: string) {
 }
 
 /**
- * Cookie `Domain` that lets the session set on app.rows.so be read on rows.so
+ * Cookie `Domain` that lets the session set on app.prepermint.com be read on prepermint.com
  * too (for example, a signed-in nav on the site).
  * Undefined when the hosts are not split or the app is not a subdomain of the site.
  */
@@ -73,4 +73,27 @@ export function isSiteHost(host: string | null) {
   if (!host) return false;
   const site = new URL(siteUrl()).host.replace(/^www\./, "");
   return host === site || host === `www.${site}`;
+}
+
+/**
+ * Hosts the product used before the rename to Prepermint. They are only kept to
+ * redirect (308) to the current hosts; nothing is served on them.
+ */
+const LEGACY_SITE_HOSTS = ["rows.so", "www.rows.so"];
+const LEGACY_APP_HOSTS = ["app.rows.so"];
+
+/**
+ * Where a request to an old host should go, or null when `host` is not an old
+ * host. Skipped while the configured URLs still point at that host, so the
+ * redirect cannot loop before the environment variables are switched.
+ */
+export function legacyHostTarget(host: string | null, pathname: string): string | null {
+  if (!host) return null;
+  const hostname = host.split(":")[0];
+  const configured = [appUrl(), siteUrl()].map((url) => new URL(url).hostname);
+  if (configured.includes(hostname)) return null;
+
+  if (LEGACY_APP_HOSTS.includes(hostname)) return `${appUrl()}${pathname}`;
+  if (LEGACY_SITE_HOSTS.includes(hostname)) return `${isAppPath(pathname) ? appUrl() : siteUrl()}${pathname}`;
+  return null;
 }

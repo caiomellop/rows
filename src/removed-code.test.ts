@@ -35,4 +35,15 @@ describe("code that was only for the old Rows product", () => {
       .map((f) => relative(root, f));
     expect(hits).toEqual([]);
   });
+
+  it("no longer shows the Rows name or the rows.so domain", () => {
+    // The old hosts live on in app-url.ts (to redirect) and in the tests of that redirect.
+    const allowed = ["src/proxy.ts", "src/lib/app-url.ts", "src/lib/app-url.test.ts", "src/proxy.test.ts", "src/lib/session.test.ts", "src/removed-code.test.ts"];
+    const brand = /rows\.so|rows_session|Rows <|[·|] Rows\b|(?:to|inside|of a|in|"|>)\s?Rows\b|Rows home|RowsMark/;
+    const hits = sources
+      .filter((f) => !allowed.includes(relative(root, f)))
+      .filter((f) => brand.test(readFileSync(f, "utf8")))
+      .map((f) => relative(root, f));
+    expect(hits).toEqual([]);
+  });
 });
