@@ -18,6 +18,18 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - name: Migrations match schema.ts
+        env:
+          # drizzle-kit only needs a value here: check and generate never connect.
+          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+        run: |
+          npm run db:check
+          npm run db:generate
+          if [ -n "$(git status --porcelain drizzle)" ]; then
+            echo "::error::src/db/schema.ts changed without a migration. Run 'npm run db:generate' and commit drizzle/."
+            git status --short drizzle
+            exit 1
+          fi
       - run: npm run lint
       - run: npm test
       - run: npx next build
