@@ -1,12 +1,15 @@
 "use client";
 
-import { ExternalLink, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { useIconHover } from "@/components/icons/animated";
 import { ChevronsUpDownIcon } from "@/components/icons/chevrons-up-down";
 
-export type Account = { handle: string; name: string | null; email: string | null; image: string | null; publicHref: string };
+export type Account = { name: string | null; email: string | null; image: string | null };
+
+/** What the account button shows: the name, or the email while there is no name. */
+const label = (account: Account) => account.name?.trim() || account.email || "Account";
 
 const menuItem =
   "flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[14px] text-fg-2 outline-none hover:bg-ink/[0.05] hover:text-fg focus-visible:bg-ink/[0.05] focus-visible:text-fg";
@@ -18,12 +21,12 @@ function Avatar({ account }: { account: Account }) {
   }
   return (
     <span aria-hidden className="grid size-6 shrink-0 place-items-center rounded-full bg-ink text-[11px] font-medium uppercase text-page">
-      {account.handle[0]}
+      {label(account)[0]}
     </span>
   );
 }
 
-/** Avatar + handle. Opens a small menu above it: public page and sign out. */
+/** Avatar + name. Opens a small menu above it with the email and sign out. */
 export function AccountMenu({ account }: { account: Account }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
@@ -55,14 +58,10 @@ export function AccountMenu({ account }: { account: Account }) {
       {open ? (
         <div id={menuId} className="surface absolute bottom-full left-0 z-10 mb-2 w-60 rounded-xl p-1.5">
           <div className="border-b border-line px-2.5 pb-2 pt-1.5">
-            <p className="truncate text-[14px] font-medium text-fg">{account.name ?? `@${account.handle}`}</p>
-            {account.email ? <p className="truncate text-[13px] text-fg-3">{account.email}</p> : null}
+            <p className="truncate text-[14px] font-medium text-fg">{label(account)}</p>
+            {account.name && account.email ? <p className="truncate text-[13px] text-fg-3">{account.email}</p> : null}
           </div>
           <div className="pt-1.5">
-            <a href={account.publicHref} target="_blank" rel="noreferrer" className={menuItem} onClick={() => setOpen(false)}>
-              <ExternalLink aria-hidden size={16} strokeWidth={1.6} />
-              View public page
-            </a>
             <form action="/sign-out" method="post">
               <button type="submit" className={menuItem}>
                 <LogOut aria-hidden size={16} strokeWidth={1.6} />
@@ -77,13 +76,13 @@ export function AccountMenu({ account }: { account: Account }) {
         type="button"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        aria-label={`Account menu for @${account.handle}`}
+        aria-label={`Account menu for ${label(account)}`}
         onClick={() => setOpen((o) => !o)}
         className="flex h-9 w-full items-center gap-2 rounded-lg px-1.5 text-left text-[14px] text-fg outline-none transition-colors hover:bg-ink/[0.05] focus-visible:ring-2 focus-visible:ring-ink/60"
         {...hover}
       >
         <Avatar account={account} />
-        <span className="min-w-0 flex-1 truncate">@{account.handle}</span>
+        <span className="min-w-0 flex-1 truncate">{label(account)}</span>
         <ChevronsUpDownIcon ref={ref} size={14} className="shrink-0 text-fg-3" />
       </button>
     </div>

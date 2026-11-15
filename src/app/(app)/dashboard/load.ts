@@ -3,12 +3,10 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { profilePath } from "@/lib/profile-url";
 import { ensureProfile, getEditorData, requireUser, userTag } from "@/lib/dal";
 import { getSession } from "@/lib/session";
-import { siteUrl } from "@/lib/app-url";
 
-/** Session check + profile (or a redirect to onboarding), for pages that need nothing else. */
+/** Session check + profile (created on first use), for pages that need nothing else. */
 export async function loadViewer() {
   const user = await requireUser();
   const profile = await ensureProfile(user);
@@ -38,15 +36,11 @@ async function editorData() {
   return getEditorData(user.id);
 }
 
-/** Session check + all editor data. Signed-out users and users without a profile are redirected. */
+/** Session check + all editor data. Signed-out users are redirected; a user without a profile gets one. */
 export async function loadEditor() {
   const data = await editorData();
   if (!data) redirect("/sign-in");
-  const { profile, ...rest } = data;
-  if (!profile) redirect("/onboarding");
+  const { profile: cached, ...rest } = data;
+  const profile = cached ?? (await ensureProfile(await requireUser()));
   return { profile, ...rest };
-}
-
-export function publicUrl(username: string) {
-  return `${siteUrl()}${profilePath(username)}`;
 }
