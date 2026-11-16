@@ -1,0 +1,114 @@
+import { z } from "zod";
+
+/**
+ * Types and request schemas of the voice interview prototype (CAI-36).
+ * Nothing here is stored: the interview state lives in the browser and travels with each request.
+ */
+
+export const LANGUAGES = ["en", "pt"] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+export const LANGUAGE_NAMES: Record<Language, string> = { en: "English", pt: "Brazilian Portuguese" };
+
+export const DURATIONS = [10, 15, 20, 30] as const;
+
+/** Size limits shared by the form and the routes, so a pasted document can't run up the Claude bill. */
+export const LIMITS = { jobDescription: 12_000, resume: 12_000, turnText: 4_000, turns: 200 } as const;
+
+/** What the interviewer can do in one turn. The model writes it as a tag at the start of its reply. */
+export const MOVES = ["FOLLOW_UP", "NEXT", "END"] as const;
+export type Move = (typeof MOVES)[number];
+
+/* ------------------------------------------------------------------ */
+/* Question plan (written by Claude from the job description and CV)   */
+/* ------------------------------------------------------------------ */
+
+const PlanQuestionSchema = z.object({
+  topic: z.string().describe('Two or three words, e.g. "Team leadership".'),
+  question: z.string().describe("Exactly what the interviewer says: one natural spoken sentence."),
+  lookFor: z.string().describe("One sentence on what a strong answer contains."),
+});
+
+export const PlanSchema = z.object({
+  language: z.enum(LANGUAGES).describe('"pt" if the job description is written in Portuguese, "en" if it is in English.'),
+  roleTitle: z.string(),
+  companyName: z.string().nullable(),
+  questions: z.array(PlanQuestionSchema).describe("The questions, in the order they will be asked."),
+});
+export type Plan = z.infer<typeof PlanSchema>;
+
+/* ------------------------------------------------------------------ */
+/* Interview state                                                     */
+/* ------------------------------------------------------------------ */
+
+export const TurnSchema = z.object({
+  role: z.enum(["interviewer", "candidate"]),
+  text: z.string().max(LIMITS.turnText),
+  /** Seconds since the interview started. */
+  at: z.number().min(0),
+  /** The candidate cut the interviewer off: `text` is only the part they heard. */
+  interrupted: z.boolean().optional(),
+});
+export type Turn = z.infer<typeof TurnSchema>;
+
+export const STAGES = ["opening", "questions", "closing", "done"] as const;
+export type Stage = (typeof STAGES)[number];
+
+/**
+ * The interview state is the product: where the interview is, not only what was said.
+ * `questionIndex` is the planned question being discussed (the last one asked).
+ */
+export const InterviewStateSchema = z.object({
+  stage: z.enum(STAGES),
+  questionIndex: z.number().int().min(0).max(20),
+  followUps: z.number().int().min(0).max(20),
+  elapsedMs: z.number().min(0).max(4 * 3_600_000),
+  budgetMs: z.number().int().min(60_000).max(3_600_000),
+  transcript: z.array(TurnSchema).max(LIMITS.turns),
+});
+export type InterviewState = z.infer<typeof InterviewStateSchema>;
+
+/* ------------------------------------------------------------------ */
+/* Route requests                                                      */
+/* ------------------------------------------------------------------ */
+
+const jobDescription = z.string().trim().min(40, "Paste the job description (at least a few lines).").max(LIMITS.jobDescription);
+const resume = z.string().trim().max(LIMITS.resume).default("");
+// The plan comes back from the browser on later requests, so it is validated and capped again.
+const plan = PlanSchema.refine((p) => JSON.stringify(p).length < 20_000, "The plan is too large.");
+
+export const StartRequestSchema = z.object({
+  jobDescription,
+  resume,
+  durationMinutes: z.union(DURATIONS.map((d) => z.literal(d)) as [z.ZodLiteral<10>, z.ZodLiteral<15>, z.ZodLiteral<20>, z.ZodLiteral<30>]),
+});
+
+export const TurnRequestSchema = z.object({ jobDescription, resume, plan, state: InterviewStateSchema });
+
+export const FeedbackRequestSchema = z.object({
+  jobDescription,
+  plan,
+  transcript: z.array(TurnSchema).min(1).max(LIMITS.turns),
+});
+
+/* ------------------------------------------------------------------ */
+/* Feedback report (written by Claude after the interview)             */
+/* ------------------------------------------------------------------ */
+
+export const CRITERIA = ["relevance", "structure", "specificity", "communication", "roleFit"] as const;
+
+export const FeedbackSchema = z.object({
+  summary: z.string().describe("Two or three sentences with the overall impression."),
+  scores: z
+    .array(
+      z.object({
+        criterion: z.enum(CRITERIA),
+        score: z.number().describe("Integer from 1 to 5."),
+        note: z.string().describe("One sentence that points to something the candidate said."),
+      }),
+    )
+    .describe("One entry per criterion."),
+  strengths: z.array(z.string()).describe("Two or three items."),
+  improvements: z.array(z.string()).describe("Two or three concrete, actionable items."),
+});
+export type Feedback = z.infer<typeof FeedbackSchema>;
