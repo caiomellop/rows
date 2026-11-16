@@ -5,7 +5,7 @@ import { MoonIcon } from "@/components/icons/moon";
 import { SunIcon } from "@/components/icons/sun";
 
 /** Must match the inline script in src/app/layout.tsx. */
-export const THEME_KEY = "rows-theme";
+export const THEME_KEY = "prepermint-theme";
 
 export const footerButton =
   "grid size-9 shrink-0 place-items-center rounded-lg text-fg-2 outline-none transition-colors hover:bg-ink/[0.05] hover:text-fg focus-visible:ring-2 focus-visible:ring-ink/60";

@@ -46,8 +46,6 @@ export async function getEditorData(userId: string) {
   return { profile: profile as Profile | undefined, experiences: experienceRows };
 }
 
-export type EditorData = Awaited<ReturnType<typeof getEditorData>>;
-
 /** How many unpinned conversations the sidebar lists. */
 const RECENT_THREADS = 20;
 

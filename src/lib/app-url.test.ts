@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { appHref, legacyHostTarget, sessionCookieDomain, siteHref, siteUrl } from "@/lib/app-url";
+import { appHref, legacyHostTarget, sessionCookieDomain, siteUrl } from "@/lib/app-url";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -13,7 +13,6 @@ describe("split hosts", () => {
   it("links across hosts with absolute URLs", () => {
     split();
     expect(appHref("/sign-in")).toBe("https://app.prepermint.com/sign-in");
-    expect(siteHref("/pricing")).toBe("https://prepermint.com/pricing");
   });
 
   it("shares the session cookie with the site", () => {
@@ -42,7 +41,6 @@ describe("one host", () => {
 
     expect(siteUrl()).toBe("http://localhost:3000");
     expect(appHref("/sign-in")).toBe("/sign-in");
-    expect(siteHref("/pricing")).toBe("/pricing");
     expect(sessionCookieDomain()).toBeUndefined();
   });
 });

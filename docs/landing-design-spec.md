@@ -1,9 +1,9 @@
 # Landing design spec — nav bar, hero, pricing
 
 Reference: **eden.so** (home + `/pricing/`), studied 2026-11-14.
-Audience: coding agents building the Rows marketing pages (`/` and `/pricing`).
+Audience: coding agents building the Prepermint marketing pages (`/` and `/pricing`).
 
-This spec copies Eden's **layout, proportions, type scale, spacing and weights**. It does **not** copy Eden's copy, logo, product screenshots or brand. All text in the examples is Rows placeholder copy.
+This spec copies Eden's **layout, proportions, type scale, spacing and weights**. It does **not** copy Eden's copy, logo, product screenshots or brand. All text in the examples is Prepermint placeholder copy.
 
 > **How the numbers were measured.** Exact values (sizes, `clamp()`s, radii, shadows, colors) come from Eden's production HTML and its compiled Tailwind CSS. Nav-bar sizes come from screenshots: Eden renders its nav on the client, so the nav isn't in the server HTML. The screenshots were taken at **1.5× device scale (viewport ≈ 1263 CSS px)**, so every screenshot pixel was divided by 1.5. That ratio checks out: the hero subtitle `clamp(…,1.65vw,1.28rem)` measures 28 px line height = 20.5 px × 1.375. Values marked **≈** come from screenshots. Check them in a browser against the reference.
 
@@ -11,7 +11,7 @@ This spec copies Eden's **layout, proportions, type scale, spacing and weights**
 
 ## 1. Fonts
 
-Eden uses EB Garamond for headings and Figtree for everything else, plus a custom wordmark face. Rows uses the same split, with **Geist** taking the wordmark and "subtitle" roles.
+Eden uses EB Garamond for headings and Figtree for everything else, plus a custom wordmark face. Prepermint uses the same split, with **Geist** taking the wordmark and "subtitle" roles.
 
 | Role | Font | Weight | Notes |
 |---|---|---|---|
@@ -39,7 +39,7 @@ Eden's heading rule is worth copying as-is. It makes *every* heading Garamond by
 
 ## 2. Color tokens (light is the default)
 
-Eden stores colors as space-separated RGB channels so that `rgb(var(--x) / alpha)` works. It also aliases Tailwind's `white` to `--c-ink`, so the same `border-white/[0.14]` reads as a light hairline in dark mode and a dark hairline in light mode. In Rows, use an `ink` color for this instead of redefining `white`.
+Eden stores colors as space-separated RGB channels so that `rgb(var(--x) / alpha)` works. It also aliases Tailwind's `white` to `--c-ink`, so the same `border-white/[0.14]` reads as a light hairline in dark mode and a dark hairline in light mode. In Prepermint, use an `ink` color for this instead of redefining `white`.
 
 | Token | Light (default) | Dark | Used for |
 |---|---|---|---|
@@ -137,7 +137,7 @@ Measured from screenshots (≈). It looks the same on `/` and `/pricing`.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│ [■] Rows                          Features  Teams  Pricing  Download  Help  Sign in [Start] │  ≈66px
+│ [■] Prepermint                          Features  Teams  Pricing  Download  Help  Sign in [Start] │  ≈66px
 └──────────────────────────────────────────────────────────────────────────────────────────┘  1px border-bottom
 ```
 
@@ -150,7 +150,7 @@ Measured from screenshots (≈). It looks the same on `/` and `/pricing`.
 | Wordmark | **Geist 600**, ≈ 22px, `tracking-[-0.04em]`, `#111`. ≈ 7px gap after the mark |
 | Links | **Figtree 400, ≈ 15px**, color `--text-secondary` `#52504C`. Hover: `--text-primary`. ≈ 20px between labels (`gap-5`, or `px-2.5` hit areas with no gap). Right-aligned, grouped with the CTA |
 | Link set | Product links (Features, Pricing, …), then **Sign in** as a plain link, then the CTA. ≈ 20px from "Sign in" to the CTA |
-| CTA | Primary button (§3.1), ≈ 38px tall, 12px radius. Label changes by page: "Try risk-free" on home, "Start free" on pricing. Rows: "Get started" → `/auth/signin`, or the signed-in state from `LandingCta` |
+| CTA | Primary button (§3.1), ≈ 38px tall, 12px radius. Label changes by page: "Try risk-free" on home, "Start free" on pricing. Prepermint: "Get started" → `/auth/signin`, or the signed-in state from `LandingCta` |
 | Mobile (< `md`) | Not observed (the nav is client-rendered). Recommended: keep logo + CTA, put the links in a menu button that opens a full-width sheet styled like the cards |
 
 ---
@@ -208,7 +208,7 @@ Accessibility: put the full sentence in an `sr-only` span and mark the animated 
 
 | Property | Value |
 |---|---|
-| Font | **Geist 400** (Eden uses Figtree here; Geist per Rows' type mapping) |
+| Font | **Geist 400** (Eden uses Figtree here; Geist per Prepermint's type mapping) |
 | Size | `clamp(0.98rem, 1.65vw, 1.28rem)` → 15.7px … **20.5px** |
 | Line height | `1.375` (`leading-snug`) |
 | Color | `--text-secondary`. **Key phrases** wrapped in `<span class="text-fg">` (`#111`) so they read as a skim line |
@@ -262,7 +262,7 @@ The body below the hero sits inside a frame: `border-t border-line` plus the cor
 - Savings badge inside the active option: `ml-2 rounded-full bg-accent/12 px-1.5 py-0.5 text-[0.68rem]` (Geist). Text like "Save up to 17%". `capitalize` turns it into "Save Up To 17%".
 - Default is **annual**.
 
-**Plan group panel** (Eden has two: "Curator plans" with 2 cards and "Creator plans" with 3 cards. Rows can use a single group):
+**Plan group panel** (Eden has two: "Curator plans" with 2 cards and "Creator plans" with 3 cards. Prepermint can use a single group):
 
 - Panel: `rounded-[24px] border border-line p-4 sm:p-5 lg:p-6`, bg `ink/[0.015]` (a hair darker than the page). The highlighted group adds `radial-gradient(circle at 70% 0%, rgba(255,255,255,.05), transparent 38%)`.
 - Header row: `mb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1`.
