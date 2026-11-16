@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { isPublicJobUrl, MAX_JOB_URL_LENGTH } from "./job-url";
 import { DEFAULT_VOICE, LANGUAGES, VOICE_IDS } from "./languages";
 
 /**
@@ -93,6 +94,10 @@ export const FeedbackRequestSchema = z.object({
   transcript: z.array(TurnSchema).min(1).max(LIMITS.turns),
 });
 
+export const JobRequestSchema = z.object({
+  url: z.string().trim().max(MAX_JOB_URL_LENGTH).refine(isPublicJobUrl, "That link cannot be read. Paste the public address of the job posting."),
+});
+
 /* ------------------------------------------------------------------ */
 /* Feedback report (written by Claude after the interview)             */
 /* ------------------------------------------------------------------ */
@@ -116,6 +121,22 @@ export const FeedbackSchema = z.object({
 export type Feedback = z.infer<typeof FeedbackSchema>;
 
 /* ------------------------------------------------------------------ */
+/* Job posting read from a link (written by Claude from the page text) */
+/* ------------------------------------------------------------------ */
+
+export const JobSchema = z.object({
+  isJobPosting: z.boolean().describe("True only if the page describes one specific job and it is the job the link points to."),
+  roleTitle: z.string().describe("The job title as written. Empty when isJobPosting is false."),
+  companyName: z.string().nullable().describe("The employer, or null if the page does not say."),
+  seniority: z.string().nullable().describe("The level (for example Junior, Senior, Staff), only if the posting states it. Otherwise null."),
+  responsibilities: z.array(z.string()).describe("What the person will do, one short item each."),
+  requirements: z.array(z.string()).describe("The must-haves: skills, experience, education, languages, certifications."),
+  niceToHave: z.array(z.string()).describe("What the posting calls preferred, a plus or a differential."),
+  tools: z.array(z.string()).describe("Technologies, tools and methods named in the role."),
+});
+export type Job = z.infer<typeof JobSchema>;
+
+/* ------------------------------------------------------------------ */
 /* Route responses (the browser validates what it reads)               */
 /* ------------------------------------------------------------------ */
 
@@ -128,6 +149,10 @@ export const SessionResponseSchema = z.object({
   deepgram: z.object({ token: z.string(), listenUrl: z.string(), speakUrl: z.string() }),
 });
 export type SessionResponse = z.infer<typeof SessionResponseSchema>;
+
+/** The job route's answer: the text the interview is built from, and what the model call cost. */
+export const JobResponseSchema = z.object({ jobDescription: z.string(), usage: LlmUsageSchema });
+export type JobResponse = z.infer<typeof JobResponseSchema>;
 
 /** One line of the turn route's stream: the move, then the words to speak, then the usage. */
 export const TurnEventSchema = z.discriminatedUnion("t", [

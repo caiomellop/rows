@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { PcmPlayer, startMic } from "./audio";
 import { InterviewController, initialView, type StartForm, type View } from "./controller";
+import { jobUrlFrom } from "./job-url";
 import { DEFAULT_VOICE, VOICES } from "./languages";
 import { estimateCost, resultsMarkdown, summarizeLatency, type TurnLatency } from "./metrics";
 import { CRITERIA, DURATIONS, LIMITS } from "./schemas";
@@ -74,7 +75,8 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
   const [durationMinutes, setDurationMinutes] = useState<StartForm["durationMinutes"]>(15);
   const [voice, setVoice] = useState<StartForm["voice"]>(DEFAULT_VOICE);
   const starting = view.phase === "starting";
-  const ready = jobDescription.trim().length >= 40;
+  // A link is enough: the page reads the posting from it. Pasted text needs a few lines.
+  const ready = jobUrlFrom(jobDescription) !== null || jobDescription.trim().length >= 40;
 
   return (
     <form
@@ -84,7 +86,7 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
         if (ready && !starting) onStart({ jobDescription, resume, durationMinutes, voice });
       }}
     >
-      <Field label="Job description" hint="Paste the posting. The interview is held in the language of the voice you choose.">
+      <Field label="Job description" hint="Paste the posting or a link to it. The interview is held in the language of the voice you choose.">
         <textarea className={field} rows={9} required maxLength={LIMITS.jobDescription} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
       </Field>
       <Field label="Resume summary (optional)" hint="A few lines about your background. The interviewer only uses what you write here.">
@@ -125,7 +127,7 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
         </button>
         {starting && (
           <span role="status" className="text-[14px] text-fg-3">
-            Preparing the interview…
+            {view.progress ?? "Preparing the interview…"}
           </span>
         )}
       </div>
@@ -165,6 +167,13 @@ function Live({ view, onEnd }: { view: View; onEnd: () => void }) {
           End interview
         </button>
       </div>
+
+      {view.role && (
+        <p className="mt-4 text-[14px] text-fg-2">
+          Interview for {view.role.title}
+          {view.role.company ? ` at ${view.role.company}` : ""}
+        </p>
+      )}
 
       {view.error && (
         <p role="alert" className="mt-4 rounded-xl border border-line bg-panel px-4 py-3 text-[14px] text-fg">
