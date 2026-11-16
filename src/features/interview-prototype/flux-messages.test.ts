@@ -11,10 +11,10 @@ const turnInfo = (event: string, extra: Record<string, unknown> = {}) =>
     turn_index: 0,
     audio_window_start: 0,
     audio_window_end: 3.4,
-    transcript: "Então, é... eu tenho, tipo, cinco anos",
+    transcript: "So, um, I have, like, five years",
     words: [
-      { word: "Então,", confidence: 0.99, start: 0.1, end: 0.5 },
-      { word: "anos", confidence: 0.97, start: 3.0, end: 3.4 },
+      { word: "So,", confidence: 0.99, start: 0.1, end: 0.5 },
+      { word: "years", confidence: 0.97, start: 3.0, end: 3.4 },
     ],
     end_of_turn_confidence: 0.91,
     ...extra,
@@ -22,12 +22,12 @@ const turnInfo = (event: string, extra: Record<string, unknown> = {}) =>
 
 describe("speech recognition messages", () => {
   it("reads a turn: the event, the text so far, the end of the last word and the detected languages", () => {
-    expect(parseSttMessage(turnInfo("EndOfTurn", { languages: ["pt"] }))).toEqual({
+    expect(parseSttMessage(turnInfo("EndOfTurn", { languages: ["en"] }))).toEqual({
       kind: "turn",
       event: "EndOfTurn",
-      transcript: "Então, é... eu tenho, tipo, cinco anos",
+      transcript: "So, um, I have, like, five years",
       lastWordEndSec: 3.4,
-      languages: ["pt"],
+      languages: ["en"],
     });
   });
 

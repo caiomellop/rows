@@ -11,18 +11,14 @@ afterEach(() => {
 });
 
 describe("Deepgram addresses", () => {
-  it("opens Flux Multilingual with raw 16 kHz audio and an end-of-turn threshold", () => {
+  it("opens Flux Multilingual with raw 16 kHz audio, an end-of-turn threshold and the English hint", () => {
     const url = new URL(listenUrl());
     expect(url.origin + url.pathname).toBe("wss://api.deepgram.com/v2/listen");
     expect(url.searchParams.get("model")).toBe("flux-general-multi");
     expect(url.searchParams.get("encoding")).toBe("linear16");
     expect(url.searchParams.get("sample_rate")).toBe("16000");
     expect(url.searchParams.get("eot_threshold")).toBe("0.8");
-  });
-
-  it("sends no language hint, so Flux detects any of its ten languages (a hint outside its list is rejected with a 400)", () => {
-    const url = new URL(listenUrl());
-    expect(url.searchParams.has("language_hint")).toBe(false);
+    expect(url.searchParams.getAll("language_hint")).toEqual(["en"]);
   });
 
   it("opens the voice socket for one Flux voice with raw 24 kHz audio", () => {
@@ -40,7 +36,7 @@ describe("Deepgram addresses", () => {
   });
 
   it("leaves them out when they are not given, so the voice keeps its own pace", () => {
-    const url = new URL(speakUrl("flux-bruno-pt"));
+    const url = new URL(speakUrl("flux-cliff-en"));
     expect(url.searchParams.has("speed")).toBe(false);
     expect(url.searchParams.has("expressivity")).toBe(false);
   });
@@ -55,7 +51,7 @@ describe("Deepgram addresses", () => {
   });
 
   it("accepts only Flux voice names, so a setting cannot inject query parameters", () => {
-    expect(isFluxVoice("flux-bruno-pt")).toBe(true);
+    expect(isFluxVoice("flux-sienna-en")).toBe(true);
     expect(isFluxVoice("aura-2-thalia-en")).toBe(false);
     expect(isFluxVoice("flux-cliff-en&x=1")).toBe(false);
     expect(() => speakUrl("flux-cliff-en&x=1")).toThrow("not a Flux voice");

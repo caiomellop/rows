@@ -7,32 +7,32 @@ import type { InterviewState, Plan } from "./schemas";
 import { addTurn, applyMove, prepareTurn, startState } from "./state";
 
 const plan: Plan = {
-  language: "pt",
-  roleTitle: "Engenheira de Dados",
+  language: "en",
+  roleTitle: "Data Engineer",
   companyName: null,
   questions: [
-    { topic: "Início", question: "Fale um pouco sobre a sua trajetória.", lookFor: "Experiência relevante." },
-    { topic: "Pipelines", question: "Como você monitora um pipeline em produção?", lookFor: "Alertas e qualidade de dados." },
+    { topic: "Background", question: "Tell me a little about your background.", lookFor: "Relevant experience." },
+    { topic: "Pipelines", question: "How do you monitor a pipeline in production?", lookFor: "Alerts and data quality." },
   ],
 };
 
-const jobDescription = "Buscamos uma pessoa engenheira de dados para construir pipelines em Airflow e dbt.";
+const jobDescription = "We are looking for a data engineer to build pipelines in Airflow and dbt.";
 const text = (message: { content: unknown }) => (message.content as { text: string }[]).map((b) => b.text).join("\n");
 
 function inProgress(): InterviewState {
   let state = prepareTurn(startState(15 * 60_000), plan, 0);
-  state = addTurn(state, { role: "interviewer", text: "Olá! Fale um pouco sobre a sua trajetória.", at: 1 });
+  state = addTurn(state, { role: "interviewer", text: "Hello! Tell me a little about your background.", at: 1 });
   state = applyMove(state, "NEXT", plan);
-  return addTurn(state, { role: "candidate", text: "Então, é... eu trabalho com dados há cinco anos.", at: 20 });
+  return addTurn(state, { role: "candidate", text: "So, um, I have worked with data for five years.", at: 20 });
 }
 
 describe("interviewer prompt", () => {
   it("puts the job, the plan and the language in the cached system prompt", () => {
     const { system } = buildTurnPrompt({ jobDescription, resume: "", plan, state: startState(900_000) });
     expect(system).toContain(jobDescription);
-    expect(system).toContain("Brazilian Portuguese");
+    expect(system).toContain("Speak English.");
     expect(system).toContain("(none provided)");
-    expect(system).toContain("1. [Início] Fale um pouco sobre a sua trajetória.");
+    expect(system).toContain("1. [Background] Tell me a little about your background.");
   });
 
   it("opens with one user message that carries the briefing", () => {
@@ -47,21 +47,21 @@ describe("interviewer prompt", () => {
     const { messages } = buildTurnPrompt({ jobDescription, resume: "", plan, state: prepareTurn(inProgress(), plan, 30_000) });
     expect(messages.map((m) => m.role)).toEqual(["user", "assistant", "user"]);
     const last = text(messages[2]);
-    expect(last).toContain("<candidate_said>Então, é... eu trabalho com dados há cinco anos.</candidate_said>");
+    expect(last).toContain("<candidate_said>So, um, I have worked with data for five years.</candidate_said>");
     expect(last.indexOf("<candidate_said>")).toBeLessThan(last.indexOf("<interview_state>"));
     expect(last).toContain("Current question (1 of 2)");
   });
 
   it("marks an interrupted interviewer turn and joins consecutive candidate turns", () => {
     let state = prepareTurn(applyMove(startState(900_000), "NEXT", plan), plan, 5_000);
-    state = addTurn(state, { role: "interviewer", text: "Obrigada. Agora me conte sobre", at: 8, interrupted: true });
-    state = addTurn(state, { role: "candidate", text: "Só mais uma coisa.", at: 9 });
-    state = addTurn(state, { role: "candidate", text: "Esqueci de falar de dbt.", at: 12 });
+    state = addTurn(state, { role: "interviewer", text: "Thanks. Now tell me about", at: 8, interrupted: true });
+    state = addTurn(state, { role: "candidate", text: "Just one more thing.", at: 9 });
+    state = addTurn(state, { role: "candidate", text: "I forgot to mention dbt.", at: 12 });
     const { messages } = buildTurnPrompt({ jobDescription, resume: "", plan, state });
     expect(messages.map((m) => m.role)).toEqual(["user", "assistant", "user"]);
-    expect(text(messages[1])).toBe("Obrigada. Agora me conte sobre …");
-    expect(text(messages[2])).toContain("Só mais uma coisa.");
-    expect(text(messages[2])).toContain("Esqueci de falar de dbt.");
+    expect(text(messages[1])).toBe("Thanks. Now tell me about …");
+    expect(text(messages[2])).toContain("Just one more thing.");
+    expect(text(messages[2])).toContain("I forgot to mention dbt.");
     expect(text(messages[2])).toContain("cut off by the candidate");
   });
 
@@ -76,7 +76,7 @@ describe("interviewer prompt", () => {
 
   it("adds a neutral user turn when the interviewer spoke last, so the request still ends on the user", () => {
     let state = prepareTurn(applyMove(startState(900_000), "NEXT", plan), plan, 5_000);
-    state = addTurn(state, { role: "interviewer", text: "Pode me responder?", at: 6 });
+    state = addTurn(state, { role: "interviewer", text: "Could you tell me more?", at: 6 });
     const { messages } = buildTurnPrompt({ jobDescription, resume: "", plan, state });
     expect(messages[messages.length - 1].role).toBe("user");
     expect(text(messages[messages.length - 1])).toContain("has not said anything");

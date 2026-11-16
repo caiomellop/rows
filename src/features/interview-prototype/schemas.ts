@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { LANGUAGES } from "./languages";
 import { DEFAULT_VOICE, VOICE_IDS } from "./voices";
 
 /**
@@ -8,7 +7,11 @@ import { DEFAULT_VOICE, VOICE_IDS } from "./voices";
  * Nothing here is stored: the interview state lives in the browser and travels with each request.
  */
 
-export { LANGUAGES, LANGUAGE_NAMES, type Language } from "./languages";
+/** English only: the owner dropped Portuguese and the other languages (CAI-86). */
+export const LANGUAGES = ["en"] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+export const LANGUAGE_NAMES: Record<Language, string> = { en: "English" };
 
 export const DURATIONS = [10, 15, 20, 30] as const;
 
@@ -30,9 +33,7 @@ const PlanQuestionSchema = z.object({
 });
 
 export const PlanSchema = z.object({
-  language: z
-    .enum(LANGUAGES)
-    .describe('The language the job description is written in, as a code: en English, pt Portuguese, es Spanish, fr French, de German, it Italian, nl Dutch, hi Hindi, ru Russian, ja Japanese. Use "en" for any other language.'),
+  language: z.enum(LANGUAGES).describe('Always "en": the interview is held in English.'),
   roleTitle: z.string(),
   companyName: z.string().nullable(),
   questions: z.array(PlanQuestionSchema).describe("The questions, in the order they will be asked."),

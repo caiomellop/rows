@@ -5,7 +5,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { PcmPlayer, startMic } from "./audio";
 import { InterviewController, initialView, type StartForm, type View } from "./controller";
 import { estimateCost, resultsMarkdown, summarizeLatency, type TurnLatency } from "./metrics";
-import { LANGUAGE_NAMES, LANGUAGES } from "./languages";
 import { CRITERIA, DURATIONS, LIMITS } from "./schemas";
 import { connectStt, connectTts } from "./sockets";
 import { formatClock } from "./state";
@@ -23,12 +22,6 @@ const CRITERION_LABELS: Record<(typeof CRITERIA)[number], string> = {
   communication: "Communication",
   roleFit: "Role fit",
 };
-
-/** "English, Portuguese, Spanish ... or Japanese", from the language table. */
-const LANGUAGE_LIST = (() => {
-  const names = LANGUAGES.map((code) => LANGUAGE_NAMES[code].replace("Brazilian ", ""));
-  return `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
-})();
 
 const field = "w-full rounded-xl border border-line bg-card px-4 py-3 text-[15px] leading-relaxed text-fg placeholder:text-fg-3 focus:border-fg-3 focus:outline-none";
 const card = "rounded-2xl border border-line bg-card p-5";
@@ -91,37 +84,32 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
         if (ready && !starting) onStart({ jobDescription, resume, durationMinutes, voice });
       }}
     >
-      <Field label="Job description" hint={`Paste the posting. The interview is held in the language it is written in (${LANGUAGE_LIST}).`}>
+      <Field label="Job description" hint="Paste the posting. The interview is held in English.">
         <textarea className={field} rows={9} required maxLength={LIMITS.jobDescription} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
       </Field>
       <Field label="Resume summary (optional)" hint="A few lines about your background. The interviewer only uses what you write here.">
         <textarea className={field} rows={4} maxLength={LIMITS.resume} value={resume} onChange={(e) => setResume(e.target.value)} />
       </Field>
-      <Field label="Length">
-        <select className={`${field} max-w-[12rem]`} value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value) as StartForm["durationMinutes"])}>
-          {DURATIONS.map((minutes) => (
-            <option key={minutes} value={minutes}>
-              {minutes} minutes
-            </option>
-          ))}
-        </select>
-      </Field>
-
-      <fieldset>
-        <legend className="text-[14px] font-medium text-fg">Voice</legend>
-        <div className="mt-2 flex flex-wrap gap-3">
-          {VOICES.map((option) => (
-            <label
-              key={option.id}
-              className="flex cursor-pointer items-center gap-2 rounded-full border border-line bg-card px-5 py-2.5 text-[14px] text-fg-2 transition-colors has-[:checked]:border-fg has-[:checked]:text-fg has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
-            >
-              <input type="radio" name="voice" value={option.id} checked={voice === option.id} onChange={() => setVoice(option.id)} className="size-3.5 accent-accent" />
-              {option.label}
-            </label>
-          ))}
-        </div>
-        <p className="mt-2 text-[13px] text-fg-3">Both voices speak at 0.9x. Cliff and Sienna only exist in English, so in any other language you hear a native voice of the same kind.</p>
-      </fieldset>
+      <div className="grid gap-6 sm:grid-cols-[repeat(2,12rem)]">
+        <Field label="Length">
+          <select className={field} value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value) as StartForm["durationMinutes"])}>
+            {DURATIONS.map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {minutes} minutes
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Voice">
+          <select className={field} value={voice} onChange={(e) => setVoice(VOICES.find((option) => option.id === e.target.value)?.id ?? DEFAULT_VOICE)}>
+            {VOICES.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
 
       <p className="text-[13px] leading-relaxed text-fg-3">
         Use headphones. The microphone stays open while the interviewer speaks so you can interrupt, and speakers make it hear itself.
@@ -303,7 +291,7 @@ function Results({ view, onRetryFeedback, onNew }: { view: View; onRetryFeedback
         <h2 id="transcript-title" className="text-[1.5rem] text-fg">
           Transcript
         </h2>
-        <p className="mt-2 text-[13px] text-fg-3">Check that hesitations such as &ldquo;um&rdquo;, &ldquo;uh&rdquo;, &ldquo;é...&rdquo; and &ldquo;tipo&rdquo; were kept.</p>
+        <p className="mt-2 text-[13px] text-fg-3">Check that hesitations such as &ldquo;um&rdquo; and &ldquo;uh&rdquo; were kept.</p>
         <div className="mt-4 space-y-4">
           {view.turns.map((turn, index) => (
             <Message key={index} role={turn.role} text={turn.text} interrupted={turn.interrupted} />
