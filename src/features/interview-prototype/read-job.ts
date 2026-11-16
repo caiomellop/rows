@@ -33,11 +33,16 @@ export async function readJobPosting(input: unknown): Promise<ReadJobResult> {
   const url = jobUrlFrom(parsed.data.url) ?? parsed.data.url;
 
   try {
+    const readStartedAt = Date.now();
     const page = await readPage(url);
+    const readMs = Date.now() - readStartedAt;
     // A page that did not load (not found, gone, forbidden) has no posting, so the model is not asked.
     if (page.status !== null && page.status >= 400) return fail(NOT_A_POSTING);
 
+    const modelStartedAt = Date.now();
     const { job, usage } = await extractJob(page);
+    // Only numbers, so the next speed-up can be aimed at what is slow. Never the link, the text or the result.
+    console.info("[interview-prototype] read-job", { readMs, modelMs: Date.now() - modelStartedAt, inputTokens: usage.input, outputTokens: usage.output });
     if (!job.isJobPosting || (job.requirements.length === 0 && job.responsibilities.length === 0)) return fail(NOT_A_POSTING);
 
     return {
