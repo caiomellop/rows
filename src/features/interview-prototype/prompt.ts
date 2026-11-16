@@ -5,7 +5,8 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { loadPrompt, renderPrompt } from "@/lib/prompts";
 
 import { plannedQuestionsText } from "./feedback";
-import { LANGUAGE_NAMES, type InterviewState, type Plan } from "./schemas";
+import { LANGUAGE_NAMES } from "./languages";
+import type { InterviewState, Plan } from "./schemas";
 import { describeState } from "./state";
 
 const START = "The interview is starting now.";

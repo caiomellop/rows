@@ -1,4 +1,4 @@
-import { LANGUAGES } from "./schemas";
+import type { Language } from "./languages";
 
 /**
  * The Deepgram WebSocket addresses. No secret here: the browser opens both sockets with a
@@ -16,10 +16,9 @@ export const TTS_SAMPLE_RATE = 24_000;
  */
 const END_OF_TURN_THRESHOLD = "0.8";
 
-export function listenUrl(): string {
-  const query = new URLSearchParams({ model: STT_MODEL, encoding: "linear16", sample_rate: String(STT_SAMPLE_RATE), eot_threshold: END_OF_TURN_THRESHOLD });
-  // The interview is held in English, so English is the hint.
-  for (const language of LANGUAGES) query.append("language_hint", language);
+/** The recognizer is told which language to expect: the one of the voice the candidate chose. */
+export function listenUrl(language: Language): string {
+  const query = new URLSearchParams({ model: STT_MODEL, encoding: "linear16", sample_rate: String(STT_SAMPLE_RATE), eot_threshold: END_OF_TURN_THRESHOLD, language_hint: language });
   return `wss://api.deepgram.com/v2/listen?${query}`;
 }
 

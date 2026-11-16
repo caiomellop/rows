@@ -4,6 +4,7 @@ vi.mock("server-only", () => ({}));
 
 import { isFluxVoice, listenUrl, speakUrl } from "./deepgram-urls";
 import { mintBrowserToken } from "./deepgram";
+import { LANGUAGES } from "./languages";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -11,14 +12,17 @@ afterEach(() => {
 });
 
 describe("Deepgram addresses", () => {
-  it("opens Flux Multilingual with raw 16 kHz audio, an end-of-turn threshold and the English hint", () => {
-    const url = new URL(listenUrl());
+  it("opens Flux Multilingual with raw 16 kHz audio and an end-of-turn threshold", () => {
+    const url = new URL(listenUrl("en"));
     expect(url.origin + url.pathname).toBe("wss://api.deepgram.com/v2/listen");
     expect(url.searchParams.get("model")).toBe("flux-general-multi");
     expect(url.searchParams.get("encoding")).toBe("linear16");
     expect(url.searchParams.get("sample_rate")).toBe("16000");
     expect(url.searchParams.get("eot_threshold")).toBe("0.8");
-    expect(url.searchParams.getAll("language_hint")).toEqual(["en"]);
+  });
+
+  it("hints the language of the interview, whichever one it is", () => {
+    for (const language of LANGUAGES) expect(new URL(listenUrl(language)).searchParams.getAll("language_hint")).toEqual([language]);
   });
 
   it("opens the voice socket for one Flux voice with raw 24 kHz audio", () => {

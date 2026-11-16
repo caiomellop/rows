@@ -54,8 +54,8 @@ describe("results block for the Linear issue", () => {
   it("carries latency, the 30-minute cost and placeholders for the human verdict", () => {
     const usage = emptyUsage();
     usage.sttSeconds = 300;
-    const text = resultsMarkdown({ language: "en", minutes: 5, candidateTurns: 4, latencies: [turn(1, 1200), turn(2, 800)], usage });
-    expect(text).toContain("EN, 5.0 min, 4 candidate turns");
+    const text = resultsMarkdown({ language: "pt", minutes: 5, candidateTurns: 4, latencies: [turn(1, 1200), turn(2, 800)], usage });
+    expect(text).toContain("PT, 5.0 min, 4 candidate turns");
     expect(text).toContain("avg 1000 ms");
     expect(text).toContain("Under 1 s: 1/2");
     expect(text).toContain("Estimated cost for 30 min");

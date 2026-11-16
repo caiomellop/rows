@@ -1,17 +1,11 @@
 import { z } from "zod";
 
-import { DEFAULT_VOICE, VOICE_IDS } from "./voices";
+import { DEFAULT_VOICE, LANGUAGES, VOICE_IDS } from "./languages";
 
 /**
  * Types and request schemas of the voice interview prototype (CAI-36).
  * Nothing here is stored: the interview state lives in the browser and travels with each request.
  */
-
-/** English only: the owner dropped Portuguese and the other languages (CAI-86). */
-export const LANGUAGES = ["en"] as const;
-export type Language = (typeof LANGUAGES)[number];
-
-export const LANGUAGE_NAMES: Record<Language, string> = { en: "English" };
 
 export const DURATIONS = [10, 15, 20, 30] as const;
 
@@ -32,12 +26,16 @@ const PlanQuestionSchema = z.object({
   lookFor: z.string().describe("One sentence on what a strong answer contains."),
 });
 
-export const PlanSchema = z.object({
-  language: z.enum(LANGUAGES).describe('Always "en": the interview is held in English.'),
+/** What the planner model writes. The language is not its choice: it comes from the voice the candidate picked. */
+export const PlanDraftSchema = z.object({
   roleTitle: z.string(),
   companyName: z.string().nullable(),
   questions: z.array(PlanQuestionSchema).describe("The questions, in the order they will be asked."),
 });
+export type PlanDraft = z.infer<typeof PlanDraftSchema>;
+
+/** The plan that travels with the interview: the draft plus the language the interview is held in. */
+export const PlanSchema = PlanDraftSchema.extend({ language: z.enum(LANGUAGES) });
 export type Plan = z.infer<typeof PlanSchema>;
 
 /* ------------------------------------------------------------------ */

@@ -1,4 +1,4 @@
-import type { Language } from "./schemas";
+import type { Language } from "./languages";
 
 /* ------------------------------------------------------------------ */
 /* Latency: from the candidate's last word to the first audio heard    */

@@ -1,5 +1,6 @@
 import type { Mic, Player } from "./audio";
 import { heardText } from "./heard";
+import type { Language, VoiceId } from "./languages";
 import { addLlmUsage, emptyUsage, latencyFromMarks, type TurnLatency, type Usage } from "./metrics";
 import { SentenceChunker } from "./sentences";
 import {
@@ -7,7 +8,6 @@ import {
   SessionResponseSchema,
   TurnEventSchema,
   type Feedback,
-  type Language,
   type Move,
   type Plan,
   type SessionResponse,
@@ -16,7 +16,6 @@ import {
 } from "./schemas";
 import type { connectStt, connectTts, SttConnection, SttTurn, TtsConnection } from "./sockets";
 import { addTurn, allowedMoves, applyMove, coerceMove, OVERTIME_GRACE_MS, prepareTurn, startState } from "./state";
-import type { VoiceId } from "./voices";
 
 /**
  * The interview loop, in the browser: listen, decide the candidate has finished, think, speak, listen again.

@@ -4,11 +4,11 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { PcmPlayer, startMic } from "./audio";
 import { InterviewController, initialView, type StartForm, type View } from "./controller";
+import { DEFAULT_VOICE, VOICES } from "./languages";
 import { estimateCost, resultsMarkdown, summarizeLatency, type TurnLatency } from "./metrics";
 import { CRITERIA, DURATIONS, LIMITS } from "./schemas";
 import { connectStt, connectTts } from "./sockets";
 import { formatClock } from "./state";
-import { DEFAULT_VOICE, VOICES } from "./voices";
 
 /**
  * CAI-36: the whole prototype page. Paste a job description, press Começar and talk.
@@ -84,7 +84,7 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
         if (ready && !starting) onStart({ jobDescription, resume, durationMinutes, voice });
       }}
     >
-      <Field label="Job description" hint="Paste the posting. The interview is held in English.">
+      <Field label="Job description" hint="Paste the posting. The interview is held in the language of the voice you choose.">
         <textarea className={field} rows={9} required maxLength={LIMITS.jobDescription} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
       </Field>
       <Field label="Resume summary (optional)" hint="A few lines about your background. The interviewer only uses what you write here.">

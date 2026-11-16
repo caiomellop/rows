@@ -17,7 +17,7 @@ describe("prompts", () => {
 
   it("keeps the interview prompts and the code in step", () => {
     expect(placeholders(loadPrompt("interviews", "interviewer"))).toEqual(new Set(["language_name", "job_description", "resume", "plan"]));
-    expect(placeholders(loadPrompt("interviews", "planner"))).toEqual(new Set(["question_count"]));
+    expect(placeholders(loadPrompt("interviews", "planner"))).toEqual(new Set(["question_count", "language_name"]));
     expect(placeholders(loadPrompt("interviews", "feedback"))).toEqual(new Set(["language_name"]));
   });
 });

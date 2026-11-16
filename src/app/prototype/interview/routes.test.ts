@@ -16,14 +16,14 @@ vi.mock("@/features/interview-prototype/deepgram", async (importActual) => ({
 }));
 
 import { applyMove, startState } from "@/features/interview-prototype/state";
-import type { Plan } from "@/features/interview-prototype/schemas";
+import type { Plan, PlanDraft } from "@/features/interview-prototype/schemas";
 
 import { POST as feedback } from "./feedback/route";
 import { POST as session } from "./session/route";
 import { POST as turn } from "./turn/route";
 
-const plan: Plan = {
-  language: "en",
+// What the planner model writes has no language: the session route adds it from the chosen voice.
+const draft: PlanDraft = {
   roleTitle: "Backend Engineer",
   companyName: null,
   questions: [
@@ -32,6 +32,7 @@ const plan: Plan = {
     { topic: "Conflict", question: "Tell me about a disagreement.", lookFor: "Their own role." },
   ],
 };
+const plan: Plan = { ...draft, language: "en" };
 const jobDescription = "We are hiring a backend engineer to build and run payment APIs in Go and PostgreSQL.";
 const usage = { input: 1200, output: 40, cacheRead: 1000, cacheWrite: 0 };
 
@@ -81,7 +82,7 @@ describe("when enabled", () => {
     });
 
     it("returns the plan, the time budget and a browser token with the socket addresses", async () => {
-      ai.planInterview.mockResolvedValue({ plan, usage });
+      ai.planInterview.mockResolvedValue({ plan: draft, usage });
       deepgram.mintBrowserToken.mockResolvedValue("browser-token");
 
       const response = await session(post({ jobDescription, resume: "", durationMinutes: 15 }));
@@ -95,16 +96,23 @@ describe("when enabled", () => {
       expect(deepgram.mintBrowserToken).toHaveBeenCalledWith(15 * 60 + 600);
     });
 
-    it("uses the voice chosen on the form: Cliff by default, Sienna when picked, both at 0.9x with expressivity 1", async () => {
-      ai.planInterview.mockResolvedValue({ plan, usage });
+    it.each([
+      { name: "Cliff (the default)", voice: undefined, language: "en", model: "flux-cliff-en", speed: "0.9", expressivity: "1" },
+      { name: "Sienna", voice: "sienna", language: "en", model: "flux-sienna-en", speed: "0.9", expressivity: "1" },
+      { name: "Eduardo", voice: "eduardo", language: "es", model: "flux-eduardo-es", speed: "0.9", expressivity: "0" },
+      { name: "Roberto", voice: "roberto", language: "pt", model: "flux-roberto-pt", speed: "0.9", expressivity: "1" },
+      { name: "Mathieu", voice: "mathieu", language: "fr", model: "flux-mathieu-fr", speed: "0.9", expressivity: "0" },
+    ])("$name sets the interview language, the voice settings and the speech hint", async ({ voice, language, model, speed, expressivity }) => {
+      ai.planInterview.mockResolvedValue({ plan: draft, usage });
       deepgram.mintBrowserToken.mockResolvedValue("t");
-      const speakUrl = async (extra: object) => new URL((await (await session(post({ jobDescription, durationMinutes: 10, ...extra }))).json()).deepgram.speakUrl);
 
-      const byDefault = await speakUrl({});
-      expect([byDefault.searchParams.get("model"), byDefault.searchParams.get("speed"), byDefault.searchParams.get("expressivity")]).toEqual(["flux-cliff-en", "0.9", "1"]);
+      const body = await (await session(post({ jobDescription, durationMinutes: 10, voice }))).json();
 
-      const sienna = await speakUrl({ voice: "sienna" });
-      expect([sienna.searchParams.get("model"), sienna.searchParams.get("speed"), sienna.searchParams.get("expressivity")]).toEqual(["flux-sienna-en", "0.9", "1"]);
+      const speak = new URL(body.deepgram.speakUrl);
+      expect([speak.searchParams.get("model"), speak.searchParams.get("speed"), speak.searchParams.get("expressivity")]).toEqual([model, speed, expressivity]);
+      expect(new URL(body.deepgram.listenUrl).searchParams.getAll("language_hint")).toEqual([language]);
+      expect(ai.planInterview).toHaveBeenCalledWith(expect.objectContaining({ language }));
+      expect(body.plan.language).toBe(language);
     });
 
     it("refuses a voice that is not offered", async () => {
