@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+
+import { AlertCircle, Check, Spinner } from "@/components/icons";
 
 import { PcmPlayer, startMic } from "./audio";
 import { InterviewController, initialView, type StartForm, type View } from "./controller";
-import { jobUrlFrom } from "./job-url";
+import { JobLinkReader, type LinkState } from "./job-link-reader";
+import { jobUrlFrom, parseJobUrlInput } from "./job-url";
 import { DEFAULT_VOICE, VOICES } from "./languages";
 import { estimateCost, resultsMarkdown, summarizeLatency, type TurnLatency } from "./metrics";
+import { readJobPosting } from "./read-job";
 import { CRITERIA, DURATIONS, LIMITS } from "./schemas";
 import { connectStt, connectTts } from "./sockets";
 import { formatClock } from "./state";
 
 /**
- * CAI-36: the whole prototype page. Paste a job description, press Começar and talk.
+ * CAI-36: the whole prototype page. Paste the link to a job posting (or its text), press Começar and talk.
  * Nothing is saved: closing the page forgets the interview.
  */
 
@@ -70,25 +74,119 @@ export function InterviewPrototype() {
 /* ------------------------------------------------------------------ */
 
 function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => void }) {
-  const [jobDescription, setJobDescription] = useState("");
+  // One field for the job, in two modes. The link is the default; the text is for postings behind a login.
+  const [mode, setMode] = useState<"link" | "text">("link");
+  const [jobUrl, setJobUrl] = useState("");
+  const [jobText, setJobText] = useState("");
+  const [link, setLink] = useState<LinkState>({ status: "empty" });
+  const reader = useRef<JobLinkReader | null>(null);
+  const urlInput = useRef<HTMLInputElement>(null);
+  const textInput = useRef<HTMLTextAreaElement>(null);
+  const switched = useRef(false);
   const [resume, setResume] = useState("");
   const [durationMinutes, setDurationMinutes] = useState<StartForm["durationMinutes"]>(15);
   const [voice, setVoice] = useState<StartForm["voice"]>(DEFAULT_VOICE);
   const starting = view.phase === "starting";
-  // A link is enough: the page reads the posting from it. Pasted text needs a few lines.
-  const ready = jobUrlFrom(jobDescription) !== null || jobDescription.trim().length >= 40;
+
+  // The field reads the posting as soon as it holds a link (see JobLinkReader), so the button waits for that read.
+  useEffect(() => {
+    const next = new JobLinkReader(setLink, {
+      read: (url) => readJobPosting({ url }),
+      setTimer: (callback, ms) => setTimeout(callback, ms),
+      clearTimer: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+    });
+    reader.current = next;
+    return () => {
+      next.dispose();
+      reader.current = null;
+    };
+  }, []);
+
+  // After the person switches mode the cursor goes to the field that appeared.
+  useEffect(() => {
+    if (!switched.current) return;
+    (mode === "link" ? urlInput.current : textInput.current)?.focus();
+  }, [mode]);
+
+  const textIsLink = jobUrlFrom(jobText) !== null;
+  const textReady = jobText.trim().length >= 40 && !textIsLink;
+  const ready = mode === "link" ? link.status === "ok" : textReady;
+
+  function switchTo(next: "link" | "text") {
+    switched.current = true;
+    setMode(next);
+  }
+
+  function pasteLink(text: string) {
+    // The field holds one address: the pasted text is cut down to the address in it, or kept on one line.
+    const parsed = parseJobUrlInput(text);
+    const next = parsed.state === "valid" ? parsed.url : text.replace(/\s+/g, " ").trim().slice(0, 2_000);
+    setJobUrl(next);
+    reader.current?.pasted(next);
+  }
+
+  function start() {
+    if (!ready || starting) return;
+    const rest = { resume, durationMinutes, voice };
+    if (mode === "link" && link.status === "ok") onStart({ ...rest, jobDescription: link.read.jobDescription, readUsage: link.read.usage });
+    else onStart({ ...rest, jobDescription: jobText });
+  }
 
   return (
     <form
       className="mt-8 space-y-6"
       onSubmit={(event) => {
         event.preventDefault();
-        if (ready && !starting) onStart({ jobDescription, resume, durationMinutes, voice });
+        start();
       }}
     >
-      <Field label="Job description" hint="Paste the posting or a link to it. The interview is held in the language of the voice you choose.">
-        <textarea className={field} rows={9} required maxLength={LIMITS.jobDescription} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
-      </Field>
+      {mode === "link" ? (
+        <JobLinkField
+          value={jobUrl}
+          link={link}
+          inputRef={urlInput}
+          onChange={(value) => {
+            setJobUrl(value);
+            reader.current?.typed(value);
+          }}
+          onPaste={pasteLink}
+          onBlur={() => {
+            // Show the address in full once the person is done: "www.…" becomes "https://www.…".
+            const parsed = parseJobUrlInput(jobUrl);
+            if (parsed.state === "valid" && parsed.url !== jobUrl) setJobUrl(parsed.url);
+            reader.current?.blurred(jobUrl);
+          }}
+          onSwitch={() => switchTo("text")}
+        />
+      ) : (
+        <div>
+          <div className="flex items-baseline justify-between gap-4">
+            <label htmlFor="job-description" className="text-[14px] font-medium text-fg">
+              Job description
+            </label>
+            <TextButton onClick={() => switchTo("link")}>Use a link instead</TextButton>
+          </div>
+          <p id="job-description-hint" className="mt-0.5 text-[13px] text-fg-3">
+            Paste the text of the posting. The interview is held in the language of the voice you choose.
+          </p>
+          <textarea
+            id="job-description"
+            ref={textInput}
+            className={`${field} mt-2`}
+            rows={9}
+            required
+            maxLength={LIMITS.jobDescription}
+            aria-describedby="job-description-hint"
+            value={jobText}
+            onChange={(e) => setJobText(e.target.value)}
+          />
+          {textIsLink && (
+            <p role="status" className="mt-2 text-[13px] text-fg">
+              That is a link. <TextButton onClick={() => switchTo("link")}>Use a link instead</TextButton>
+            </p>
+          )}
+        </div>
+      )}
       <Field label="Resume summary (optional)" hint="A few lines about your background. The interviewer only uses what you write here.">
         <textarea className={field} rows={4} maxLength={LIMITS.resume} value={resume} onChange={(e) => setResume(e.target.value)} />
       </Field>
@@ -127,7 +225,7 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
         </button>
         {starting && (
           <span role="status" className="text-[14px] text-fg-3">
-            {view.progress ?? "Preparing the interview…"}
+            Preparing the interview…
           </span>
         )}
       </div>
@@ -142,6 +240,93 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       {hint && <span className="mt-0.5 block text-[13px] text-fg-3">{hint}</span>}
       <span className="mt-2 block">{children}</span>
     </label>
+  );
+}
+
+function TextButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} className="text-[13px] text-fg-2 underline underline-offset-2 transition-colors hover:text-fg">
+      {children}
+    </button>
+  );
+}
+
+/** The one-line field for the link to the posting. It reads the page itself and shows how that went. */
+function JobLinkField({
+  value,
+  link,
+  inputRef,
+  onChange,
+  onPaste,
+  onBlur,
+  onSwitch,
+}: {
+  value: string;
+  link: LinkState;
+  inputRef: RefObject<HTMLInputElement | null>;
+  onChange: (value: string) => void;
+  onPaste: (text: string) => void;
+  onBlur: () => void;
+  onSwitch: () => void;
+}) {
+  const failed = link.status === "invalid" || link.status === "error";
+  const message = link.status === "invalid" || link.status === "error" ? link.message : null;
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-4">
+        <label htmlFor="job-posting-url" className="text-[14px] font-medium text-fg">
+          Job posting URL
+        </label>
+        <TextButton onClick={onSwitch}>Do it by text</TextButton>
+      </div>
+      <p id="job-posting-url-hint" className="mt-0.5 text-[13px] text-fg-3">
+        Paste the link to the job posting. The interview is held in the language of the voice you choose.
+      </p>
+      <div className="relative mt-2">
+        <input
+          id="job-posting-url"
+          ref={inputRef}
+          type="text"
+          inputMode="url"
+          autoComplete="off"
+          spellCheck={false}
+          className={`${field} pr-11`}
+          value={value}
+          aria-invalid={failed}
+          aria-describedby="job-posting-url-hint job-posting-url-status"
+          onChange={(event) => onChange(event.target.value)}
+          onPaste={(event) => {
+            event.preventDefault();
+            onPaste(event.clipboardData.getData("text"));
+          }}
+          onBlur={onBlur}
+        />
+        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
+          {link.status === "reading" && <Spinner className="size-5 text-fg-3" />}
+          {link.status === "ok" && <Check className="size-5 text-emerald-600" />}
+          {failed && <AlertCircle className="size-5 text-fg" />}
+        </span>
+      </div>
+      {/* Always in the page, so a screen reader announces each change: reading, read, or why not. */}
+      <p id="job-posting-url-status" role="status" aria-live="polite" className="mt-2 min-h-5 text-[13px] text-fg-2">
+        {link.status === "reading" && "Reading the job posting…"}
+        {link.status === "ok" && (
+          <>
+            <span className="sr-only">Read: </span>
+            {link.read.roleTitle}
+            {link.read.companyName ? ` · ${link.read.companyName}` : ""}
+          </>
+        )}
+        {message}
+        {link.status === "error" && (
+          <>
+            {" "}
+            <TextButton onClick={onSwitch}>Do it by text</TextButton>
+          </>
+        )}
+      </p>
+    </div>
   );
 }
 

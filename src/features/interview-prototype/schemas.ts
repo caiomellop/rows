@@ -150,9 +150,13 @@ export const SessionResponseSchema = z.object({
 });
 export type SessionResponse = z.infer<typeof SessionResponseSchema>;
 
-/** The job route's answer: the text the interview is built from, and what the model call cost. */
-export const JobResponseSchema = z.object({ jobDescription: z.string(), usage: LlmUsageSchema });
-export type JobResponse = z.infer<typeof JobResponseSchema>;
+/**
+ * What reading a job link answers (the Server Action in read-job.ts): the text the interview is built from, the role
+ * and company for the form to show, and what the model call cost. A failure carries a message that is safe to show.
+ */
+export type ReadJobResult =
+  | { ok: true; jobDescription: string; roleTitle: string; companyName: string | null; usage: z.infer<typeof LlmUsageSchema> }
+  | { ok: false; error: string };
 
 /** One line of the turn route's stream: the move, then the words to speak, then the usage. */
 export const TurnEventSchema = z.discriminatedUnion("t", [

@@ -6,6 +6,9 @@ import { Suspense } from "react";
 import { prototypeEnabled } from "@/features/interview-prototype/gate";
 import { InterviewPrototype } from "@/features/interview-prototype/interview-prototype";
 
+/** Reading a job link (a Server Action used on this page) takes up to a minute: the page, then the model. */
+export const maxDuration = 60;
+
 export const metadata: Metadata = { title: "Mock interview prototype", robots: { index: false, follow: false } };
 
 /**
