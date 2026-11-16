@@ -10,7 +10,7 @@ import { JobLinkReader, type LinkState } from "./job-link-reader";
 import { jobUrlFrom, parseJobUrlInput } from "./job-url";
 import { DEFAULT_VOICE, VOICES } from "./languages";
 import { estimateCost, resultsMarkdown, summarizeLatency, type TurnLatency } from "./metrics";
-import { readJobPosting } from "./read-job";
+import { readJobPosting, warmUpJobReader } from "./read-job";
 import { CRITERIA, DURATIONS, LIMITS } from "./schemas";
 import { connectStt, connectTts } from "./sockets";
 import { formatClock } from "./state";
@@ -100,6 +100,11 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
       next.dispose();
       reader.current = null;
     };
+  }, []);
+
+  // Wake the Apify server now, while the person is still looking for the link. Nothing waits for it and nothing shows it.
+  useEffect(() => {
+    void warmUpJobReader().catch(() => {});
   }, []);
 
   // After the person switches mode the cursor goes to the field that appeared.

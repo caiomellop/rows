@@ -9,11 +9,15 @@ const ai = vi.hoisted(() => {
 vi.mock("@/lib/ai", () => ai);
 
 // Reading a page is mocked; the error type stays real, because the action decides what to show from it.
-const apify = vi.hoisted(() => ({ readPage: vi.fn() }));
-vi.mock("./apify", async (importActual) => ({ ...(await importActual<typeof import("./apify")>()), readPage: apify.readPage }));
+const apify = vi.hoisted(() => ({ readPage: vi.fn(), warmUp: vi.fn() }));
+vi.mock("./apify", async (importActual) => ({ ...(await importActual<typeof import("./apify")>()), readPage: apify.readPage, warmUp: apify.warmUp }));
+
+// after() runs a callback once the response is sent; here the test keeps the callbacks and runs them by hand.
+const next = vi.hoisted(() => ({ after: vi.fn() }));
+vi.mock("next/server", () => ({ after: next.after }));
 
 import { JobPageError } from "./apify";
-import { readJobPosting } from "./read-job";
+import { readJobPosting, warmUpJobReader } from "./read-job";
 
 const link = "https://jobs.lever.co/Flex/151e09c6-398f-4fe0-8da7-8fd7814d1bae";
 const page = { requestedUrl: link, finalUrl: link, title: "Flex - Senior Software Engineer, Backend", status: 200, text: "What You Need: NodeJS and TypeScript. Flex is building AI-native financial services." };
@@ -138,5 +142,34 @@ describe("reading a job posting from a link", () => {
     const result = await readJobPosting({ url: link });
     expect(result).toEqual({ ok: false, error: "Could not read that page. Paste the text of the posting instead." });
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain("SECRET");
+  });
+});
+
+describe("warming up when the page opens", () => {
+  it("does nothing where the prototype is not enabled", async () => {
+    vi.stubEnv("PROTOTYPE_ENABLED", "");
+    await warmUpJobReader();
+    expect(next.after).not.toHaveBeenCalled();
+    expect(apify.warmUp).not.toHaveBeenCalled();
+  });
+
+  it("answers at once and warms up after the response, not before", async () => {
+    // A warm-up that never ends: if the action waited for it, this would hang.
+    apify.warmUp.mockReturnValue(new Promise(() => {}));
+
+    await expect(warmUpJobReader()).resolves.toBeUndefined();
+
+    expect(apify.warmUp).not.toHaveBeenCalled();
+    expect(next.after).toHaveBeenCalledTimes(1);
+
+    const [afterResponse] = next.after.mock.calls[0];
+    void afterResponse();
+    expect(apify.warmUp).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not read a link, spend on the model, or take any input", async () => {
+    await warmUpJobReader();
+    expect(apify.readPage).not.toHaveBeenCalled();
+    expect(ai.extractJob).not.toHaveBeenCalled();
   });
 });

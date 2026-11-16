@@ -64,7 +64,7 @@ function apiToken(): string | null {
 }
 
 /** One read of the page: waits for the server's answer, and returns the page it loaded. */
-async function readOnce(requestedUrl: string, tool: Tool, token: string, deadline: number): Promise<Page> {
+async function readOnce(requestedUrl: string, tool: Tool, token: string, deadline: number, logLabel = "page read"): Promise<Page> {
   const timeoutSecs = Math.min(MAX_WAIT_SECS[tool], Math.floor((deadline - Date.now()) / 1000) - MODEL_RESERVE_SECS);
   if (timeoutSecs < 5) throw fail("timeout");
 
@@ -100,7 +100,7 @@ async function readOnce(requestedUrl: string, tool: Tool, token: string, deadlin
     text: item.markdown ?? "",
   };
   // Only numbers: how long it took and how much came back. Never the link or the text of the page.
-  console.info("[interview-prototype] page read", { tool, ms: Date.now() - startedAt, status: page.status, chars: page.text.length });
+  console.info(`[interview-prototype] ${logLabel}`, { tool, ms: Date.now() - startedAt, status: page.status, chars: page.text.length });
   return page;
 }
 
@@ -151,4 +151,40 @@ export async function readPage(requestedUrl: string, options: { deadline?: numbe
     if (plain) return plain;
     throw error;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Warming up                                                          */
+/* ------------------------------------------------------------------ */
+
+/** A fixed public page. Warming up sends nothing about the person or the job. */
+const WARM_UP_URL = "https://example.com/";
+/** At most one warm-up this often per server instance, so opening the page again and again does not spend money again and again. */
+export const WARM_UP_EVERY_MS = 4 * 60_000;
+let lastWarmUpAt = 0;
+
+/**
+ * Wakes the Actor's server before a link is pasted. After a quiet period the first reads were slow (a plain read that
+ * hung until its 15 s limit, a browser read that came back empty); a minute later the same links took a few seconds.
+ * It reads the fixed page both ways, plain and in a browser, at the same time. It never throws: a warm-up that fails
+ * changes nothing for the person. `now` is a parameter so the limit can be tested.
+ */
+export async function warmUp(now: number = Date.now()): Promise<void> {
+  const token = apiToken();
+  if (!token) return;
+  if (now - lastWarmUpAt < WARM_UP_EVERY_MS) return;
+  // Set before the first await, so a second call in the same instant sees it.
+  lastWarmUpAt = now;
+
+  await Promise.all(
+    (["raw-http", "browser-playwright"] as const).map(async (tool) => {
+      const startedAt = Date.now();
+      try {
+        await readOnce(WARM_UP_URL, tool, token, startedAt + (MAX_WAIT_SECS[tool] + MODEL_RESERVE_SECS) * 1000 + 1000, "warm-up");
+      } catch (error) {
+        // Only numbers and the kind of failure. A failed warm-up is not shown to anyone.
+        console.info("[interview-prototype] warm-up failed", { tool, ms: Date.now() - startedAt, code: error instanceof JobPageError ? error.code : "unknown" });
+      }
+    }),
+  );
 }

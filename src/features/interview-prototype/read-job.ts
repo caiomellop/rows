@@ -1,8 +1,10 @@
 "use server";
 
+import { after } from "next/server";
+
 import { extractJob } from "@/lib/ai";
 
-import { readPage } from "./apify";
+import { readPage, warmUp } from "./apify";
 import { prototypeEnabled } from "./gate";
 import { jobToText } from "./job-posting";
 import { jobUrlFrom } from "./job-url";
@@ -56,4 +58,14 @@ export async function readJobPosting(input: unknown): Promise<ReadJobResult> {
     logFailure("read-job", error);
     return fail(safeMessage(error, FAILED));
   }
+}
+
+/**
+ * Called when the page opens, so the Apify server is awake by the time a link is pasted. It answers at once and does
+ * the work after the response: Next.js sends Server Actions one at a time, and a warm-up that held the line would
+ * make a link pasted right after opening the page wait for it. Where the prototype is off, it does nothing.
+ */
+export async function warmUpJobReader(): Promise<void> {
+  if (!prototypeEnabled()) return;
+  after(() => warmUp());
 }
