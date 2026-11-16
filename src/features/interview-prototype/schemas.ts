@@ -112,3 +112,28 @@ export const FeedbackSchema = z.object({
   improvements: z.array(z.string()).describe("Two or three concrete, actionable items."),
 });
 export type Feedback = z.infer<typeof FeedbackSchema>;
+
+/* ------------------------------------------------------------------ */
+/* Route responses (the browser validates what it reads)               */
+/* ------------------------------------------------------------------ */
+
+export const LlmUsageSchema = z.object({ input: z.number(), output: z.number(), cacheRead: z.number(), cacheWrite: z.number() });
+
+export const SessionResponseSchema = z.object({
+  plan: PlanSchema,
+  budgetMs: z.number(),
+  usage: LlmUsageSchema,
+  deepgram: z.object({ token: z.string(), listenUrl: z.string(), speakUrl: z.string() }),
+});
+export type SessionResponse = z.infer<typeof SessionResponseSchema>;
+
+/** One line of the turn route's stream: the move, then the words to speak, then the usage. */
+export const TurnEventSchema = z.discriminatedUnion("t", [
+  z.object({ t: z.literal("move"), move: z.enum(MOVES).nullable() }),
+  z.object({ t: z.literal("text"), text: z.string() }),
+  z.object({ t: z.literal("done"), usage: LlmUsageSchema }),
+  z.object({ t: z.literal("error"), message: z.string() }),
+]);
+export type TurnEvent = z.infer<typeof TurnEventSchema>;
+
+export const FeedbackResponseSchema = z.object({ feedback: FeedbackSchema, usage: LlmUsageSchema });

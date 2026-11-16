@@ -6,6 +6,10 @@ import type { BetaContentBlockParam, BetaMessageParam } from "@anthropic-ai/sdk/
 import { z } from "zod";
 
 import type { AssistantMessage, Experience, Profile } from "@/db/schema";
+import { normalizeFeedback, plannedQuestionsText, transcriptText } from "@/features/interview-prototype/feedback";
+import type { LlmUsage } from "@/features/interview-prototype/metrics";
+import { FeedbackSchema, LANGUAGE_NAMES, PlanSchema, type Feedback, type Plan, type Turn } from "@/features/interview-prototype/schemas";
+import { loadPrompt, renderPrompt } from "@/lib/prompts";
 
 /**
  * Every AI feature in Prepermint: the summary draft, resume import and the CV interview.
@@ -16,6 +20,10 @@ import type { AssistantMessage, Experience, Profile } from "@/db/schema";
  */
 
 const MODEL = "claude-opus-5-5";
+// The voice interview prototype (CAI-36) has about 500 ms between the end of the candidate's answer and the first
+// word of the reply, so its live turns and its question plan run on the small model with thinking off.
+// The feedback report has no such pressure and uses MODEL.
+const INTERVIEW_MODEL = "claude-haiku-5-5";
 // Server-side refusal fallback: if a safety classifier declines, the API
 // re-runs the request on a fallback model inside the same call.
 const fallback = () => ({ betas: ["server-side-fallback-2026-07-01"] as Anthropic.AnthropicBeta[], fallbacks: "default" as const });
@@ -35,19 +43,29 @@ function anthropic() {
   return client;
 }
 
-/** Structured call: returns the parsed object or throws AiError. */
-async function structured<T extends z.ZodType>(opts: {
+type StructuredOptions<T extends z.ZodType> = {
   schema: T;
   system: string;
   content: BetaContentBlockParam[];
   effort: "low" | "medium" | "high";
   maxTokens?: number;
-}): Promise<z.infer<T>> {
+  /** Defaults to MODEL. */
+  model?: string;
+};
+
+function toLlmUsage(usage: { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number | null; cache_read_input_tokens?: number | null }): LlmUsage {
+  return { input: usage.input_tokens, output: usage.output_tokens, cacheRead: usage.cache_read_input_tokens ?? 0, cacheWrite: usage.cache_creation_input_tokens ?? 0 };
+}
+
+/** Structured call: returns the parsed object and what it cost in tokens, or throws AiError. */
+async function structuredWithUsage<T extends z.ZodType>(opts: StructuredOptions<T>): Promise<{ parsed: z.infer<T>; usage: LlmUsage }> {
+  const model = opts.model ?? MODEL;
   try {
     const res = await anthropic().beta.messages.parse({
-      model: MODEL,
+      model,
       max_tokens: opts.maxTokens ?? 16000,
-      ...fallback(),
+      // The refusal fallback is for the main model. The small interview model has none and runs without thinking.
+      ...(model === MODEL ? fallback() : { thinking: { type: "disabled" as const } }),
       system: opts.system,
       output_config: { effort: opts.effort, format: betaZodOutputFormat(opts.schema) },
       messages: [{ role: "user", content: opts.content }],
@@ -55,10 +73,15 @@ async function structured<T extends z.ZodType>(opts: {
     if (res.stop_reason === "refusal") throw new AiError("The AI declined this request. Try editing the text by hand.");
     if (res.stop_reason === "max_tokens") throw new AiError("The AI response was cut off. Try again with a shorter input.");
     if (!res.parsed_output) throw new AiError("The AI returned an unreadable answer. Try again.");
-    return res.parsed_output as z.infer<T>;
+    return { parsed: res.parsed_output as z.infer<T>, usage: toLlmUsage(res.usage) };
   } catch (err) {
     throw toAiError(err);
   }
+}
+
+/** Structured call: returns the parsed object or throws AiError. */
+async function structured<T extends z.ZodType>(opts: StructuredOptions<T>): Promise<z.infer<T>> {
+  return (await structuredWithUsage(opts)).parsed;
 }
 
 function toAiError(err: unknown): Error {
@@ -230,4 +253,74 @@ Write strong, concise CV bullets (action verb first, result where the candidate 
 Use only facts the candidate stated or confirmed. Suggestions the assistant made that the candidate did not confirm don't count. Never invent numbers. If a field is unknown, use null.`,
     content: [{ type: "text", text: `<transcript>\n${transcript}\n</transcript>` }],
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* Voice interview prototype (CAI-36)                                  */
+/* ------------------------------------------------------------------ */
+
+/** The question plan, built from the job description and the resume summary. */
+export async function planInterview(input: { jobDescription: string; resume: string; durationMinutes: number }): Promise<{ plan: Plan; usage: LlmUsage }> {
+  // About two minutes per question, so the plan fits the time budget.
+  const questionCount = Math.min(10, Math.max(4, Math.round(input.durationMinutes / 2.2)));
+  const { parsed, usage } = await structuredWithUsage({
+    schema: PlanSchema,
+    model: INTERVIEW_MODEL,
+    effort: "low",
+    maxTokens: 3000,
+    system: renderPrompt(loadPrompt("interviews", "planner"), { question_count: String(questionCount) }),
+    content: [{ type: "text", text: `<job_description>\n${input.jobDescription}\n</job_description>\n\n<resume>\n${input.resume || "(none provided)"}\n</resume>` }],
+  });
+  return { plan: parsed, usage };
+}
+
+export type InterviewerEvent = { type: "text"; text: string } | { type: "done"; usage: LlmUsage };
+
+/**
+ * One spoken turn of the interviewer, streamed. No thinking, lowest effort and a cached briefing keep
+ * the time to the first token short. Aborting `signal` stops the model, so a barge-in stops the spending too.
+ */
+export async function* streamInterviewerTurn(input: { system: string; messages: Anthropic.MessageParam[]; signal?: AbortSignal }): AsyncGenerator<InterviewerEvent> {
+  try {
+    const stream = anthropic().messages.stream(
+      {
+        model: INTERVIEW_MODEL,
+        max_tokens: 400,
+        thinking: { type: "disabled" },
+        output_config: { effort: "low" },
+        system: [{ type: "text", text: input.system, cache_control: { type: "ephemeral" } }],
+        messages: input.messages,
+      },
+      { signal: input.signal },
+    );
+    for await (const event of stream) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") yield { type: "text", text: event.delta.text };
+    }
+    const message = await stream.finalMessage();
+    if (message.stop_reason === "refusal") throw new AiError("The interviewer declined to continue. End the interview and try again.");
+    yield { type: "done", usage: toLlmUsage(message.usage) };
+  } catch (err) {
+    throw toAiError(err);
+  }
+}
+
+/** The feedback report: the whole transcript and a scoring rubric. It runs after the interview, off the real-time path. */
+export async function interviewFeedback(input: { jobDescription: string; plan: Plan; transcript: Turn[] }): Promise<{ feedback: Feedback; usage: LlmUsage }> {
+  const { parsed, usage } = await structuredWithUsage({
+    schema: FeedbackSchema,
+    effort: "medium",
+    maxTokens: 4000,
+    system: renderPrompt(loadPrompt("interviews", "feedback"), { language_name: LANGUAGE_NAMES[input.plan.language] }),
+    content: [
+      {
+        type: "text",
+        text: [
+          `<job_description>\n${input.jobDescription}\n</job_description>`,
+          `<planned_questions>\n${plannedQuestionsText(input.plan)}\n</planned_questions>`,
+          `<transcript>\n${transcriptText(input.transcript)}\n</transcript>`,
+        ].join("\n\n"),
+      },
+    ],
+  });
+  return { feedback: normalizeFeedback(parsed), usage };
 }
