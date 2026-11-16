@@ -28,3 +28,10 @@ A job page has to be loaded the way a browser loads it. Some boards answer plain
 
 - The form reads the link as soon as the "Job posting URL" field holds a complete one (on paste, or after a pause in typing), not when the interview starts, so the person sees at once whether it worked. The read is a Server Action (`read-job.ts`) used by the interview page; the separate route for it is gone. The decision above is unchanged.
 - Cost: a read now happens even if no interview follows. The form reads one link at a time, never reads the same link twice in a visit, and reads nothing while the person is typing. Next.js sends Server Actions one at a time, so a read that was started for a link the person has since replaced delays the next one. There is still no rate limit, and the page still has no login.
+
+## Update: the Actor's own server instead of a run per link (CAI-94, 16 Nov 2026)
+
+- Each read used to start an Actor run (`run-sync-get-dataset-items`), and the run starts a container first. A plain read of a static Lever page took **8.1 s** of run time for a page that loads in about 1 s, and a link took 12 to 15 s from paste to green check (Ashby 24 s).
+- The Actor also runs as a server that is always up. The app now calls it directly: `GET https://rag-web-browser.apify.actor/search` with the link as the `query`, `maxResults=1`, `outputFormats=markdown` and `scrapingTool` (`raw-http`, then `browser-playwright` as before). The token is still a Bearer header and never part of the address. The answer has the same items as before. Only the way of calling it changed; the vendor, the Actor and what is sent are the same.
+- Cost: the server is multi-tenant and bills per page read (US$ 0.00228 on the free tier), with no start event, so a read costs a little less than before.
+- The function now logs how long each read took and how long the model took (milliseconds, status, text length and tokens), never the link or the text, so the next speed-up is aimed at what is slow.

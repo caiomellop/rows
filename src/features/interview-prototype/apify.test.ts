@@ -17,7 +17,7 @@ const item = (over: { markdown?: string; status?: number; url?: string; title?: 
   metadata: { title: over.title ?? "Flex - Senior Engineer", url: over.url ?? LINK },
   crawl: { httpStatusCode: over.status ?? 200 },
 });
-const reply = (body: unknown, status = 201) => new Response(JSON.stringify(body), { status });
+const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
 /** Answers the calls in order; an Error is thrown instead of returned, like a failed network call. */
 function stub(...responses: (Response | Error)[]) {
@@ -30,22 +30,26 @@ function stub(...responses: (Response | Error)[]) {
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
-const sentTool = (fetchMock: ReturnType<typeof stub>, call: number) => JSON.parse(fetchMock.mock.calls[call][1].body as string).scrapingTool;
+const sentTool = (fetchMock: ReturnType<typeof stub>, call: number) => new URL(fetchMock.mock.calls[call][0]).searchParams.get("scrapingTool");
 const failure = async () => (await readPage(LINK).catch((error: unknown) => error)) as JobPageError;
 const timeout = () => new DOMException("The operation timed out.", "TimeoutError");
 
 describe("reading a page", () => {
-  it("asks Apify's RAG Web Browser for the link, plain HTTP first, with the token in a header and not in the address", async () => {
+  it("asks the RAG Web Browser's server for the link, plain HTTP first, with the token in a header and not in the address", async () => {
     vi.stubEnv("APIFY_TOKEN", "secret-token");
     const fetchMock = stub(reply([item()]));
 
     const page = await readPage(LINK);
 
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toContain("https://api.apify.com/v2/acts/apify~rag-web-browser/run-sync-get-dataset-items");
+    const address = new URL(url);
+    // The Actor's own server, which is always running: a new run per link would start a container first.
+    expect(`${address.origin}${address.pathname}`).toBe("https://rag-web-browser.apify.actor/search");
     expect(url).not.toContain("secret-token");
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer secret-token");
-    expect(JSON.parse(init.body as string)).toMatchObject({ query: LINK, maxResults: 1, outputFormats: ["markdown"], scrapingTool: "raw-http" });
+    expect(init.method).toBeUndefined();
+    expect(init.body).toBeUndefined();
+    expect(Object.fromEntries(address.searchParams)).toEqual({ query: LINK, maxResults: "1", outputFormats: "markdown", scrapingTool: "raw-http", removeCookieWarnings: "false" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(page).toEqual({ requestedUrl: LINK, finalUrl: LINK, title: "Flex - Senior Engineer", status: 200, text: LONG });
   });
@@ -56,6 +60,24 @@ describe("reading a page", () => {
     const page = await readPage("https://job-boards.greenhouse.io/reddit/jobs/8093006");
     expect(page.finalUrl).toBe("https://job-boards.greenhouse.io/reddit?error=true");
     expect(page.requestedUrl).toBe("https://job-boards.greenhouse.io/reddit/jobs/8093006");
+  });
+});
+
+describe("what is logged", () => {
+  it("is only how long a read took and how much came back, never the link or the text", async () => {
+    vi.stubEnv("APIFY_TOKEN", "secret-token");
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    stub(reply([item({ markdown: LONG })]));
+
+    await readPage(LINK);
+
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(info.mock.calls[0][1]).toEqual({ tool: "raw-http", ms: expect.any(Number), status: 200, chars: LONG.length });
+    const logged = JSON.stringify(info.mock.calls);
+    expect(logged).not.toContain("lever.co");
+    expect(logged).not.toContain("secret-token");
+    expect(logged).not.toContain("Requirement text");
+    info.mockRestore();
   });
 });
 

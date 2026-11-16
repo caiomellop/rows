@@ -5,8 +5,11 @@ import { z } from "zod";
 import { isThinPage, type Page } from "./job-posting";
 
 /**
- * The only place the app talks to Apify (docs/adr/0002). It runs Apify's RAG Web Browser on one link and
+ * The only place the app talks to Apify (docs/adr/0002). It asks Apify's RAG Web Browser for one link and
  * gets the page back as Markdown. Only the link is sent, never the résumé or anything from the interview.
+ *
+ * It uses the Actor's own server (always running), not a new run per link: a run starts a container first, which
+ * took about 8 s even for a page that loads in one.
  */
 
 export type JobPageFailure = "not-configured" | "rejected" | "no-credit" | "timeout" | "failed" | "empty";
@@ -34,7 +37,7 @@ export class JobPageError extends Error {
 
 const fail = (code: JobPageFailure) => new JobPageError(MESSAGES[code], code);
 
-const ENDPOINT = "https://api.apify.com/v2/acts/apify~rag-web-browser/run-sync-get-dataset-items";
+const ENDPOINT = "https://rag-web-browser.apify.actor/search";
 
 /** The whole job route has to fit in one function call (60 s): the read, a browser retry, and the model. */
 export const READ_BUDGET_MS = 50_000;
@@ -45,11 +48,8 @@ const MIN_BROWSER_SECS = 15;
 
 type Tool = "raw-http" | "browser-playwright";
 
-/** Plain HTTP takes about 8 s and costs a fifth of a browser run; the browser takes 20 to 40 s. */
-const RUNS: Record<Tool, { maxSecs: number; memoryMb: number }> = {
-  "raw-http": { maxSecs: 20, memoryMb: 1024 },
-  "browser-playwright": { maxSecs: 40, memoryMb: 2048 },
-};
+/** The longest to wait for each way of reading. The server answers a plain read in a few seconds; a browser takes longer. */
+const MAX_WAIT_SECS: Record<Tool, number> = { "raw-http": 15, "browser-playwright": 30 };
 
 const ItemsSchema = z.array(
   z.object({
@@ -63,20 +63,20 @@ function apiToken(): string | null {
   return process.env.APIFY_TOKEN?.trim() || null;
 }
 
-/** One run of the Actor: waits for it, and returns the page it loaded. */
-async function runActor(requestedUrl: string, tool: Tool, token: string, deadline: number): Promise<Page> {
-  const { maxSecs, memoryMb } = RUNS[tool];
-  const timeoutSecs = Math.min(maxSecs, Math.floor((deadline - Date.now()) / 1000) - MODEL_RESERVE_SECS);
+/** One read of the page: waits for the server's answer, and returns the page it loaded. */
+async function readOnce(requestedUrl: string, tool: Tool, token: string, deadline: number): Promise<Page> {
+  const timeoutSecs = Math.min(MAX_WAIT_SECS[tool], Math.floor((deadline - Date.now()) / 1000) - MODEL_RESERVE_SECS);
   if (timeoutSecs < 5) throw fail("timeout");
 
+  // The link is sent as a query parameter, like any search; the token goes in a header, never in the address.
+  const query = new URLSearchParams({ query: requestedUrl, maxResults: "1", outputFormats: "markdown", scrapingTool: tool, removeCookieWarnings: "false" });
+  const startedAt = Date.now();
   let response: Response;
   try {
-    response = await fetch(`${ENDPOINT}?timeout=${timeoutSecs}&memory=${memoryMb}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ query: requestedUrl, maxResults: 1, outputFormats: ["markdown"], scrapingTool: tool, requestTimeoutSecs: Math.max(5, timeoutSecs - 3) }),
-      // The run has its own timeout; this one only guards against an answer that never comes.
-      signal: AbortSignal.timeout((timeoutSecs + 5) * 1000),
+    response = await fetch(`${ENDPOINT}?${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      // The server has no time limit of its own to set, so this one is the limit.
+      signal: AbortSignal.timeout(timeoutSecs * 1000),
       cache: "no-store",
     });
   } catch (error) {
@@ -92,13 +92,16 @@ async function runActor(requestedUrl: string, tool: Tool, token: string, deadlin
   const item = items.success ? items.data[0] : undefined;
   if (!item) throw fail("empty");
 
-  return {
+  const page: Page = {
     requestedUrl,
     finalUrl: item.metadata?.url || item.metadata?.redirectedUrl || requestedUrl,
     title: item.metadata?.title ?? "",
     status: item.crawl?.httpStatusCode ?? null,
     text: item.markdown ?? "",
   };
+  // Only numbers: how long it took and how much came back. Never the link or the text of the page.
+  console.info("[interview-prototype] page read", { tool, ms: Date.now() - startedAt, status: page.status, chars: page.text.length });
+  return page;
 }
 
 /** The page really is gone: a browser would only read the same error page. */
@@ -127,7 +130,7 @@ export async function readPage(requestedUrl: string, options: { deadline?: numbe
   let plain: Page | null = null;
   let plainError: JobPageError | null = null;
   try {
-    plain = await runActor(requestedUrl, "raw-http", token, deadline);
+    plain = await readOnce(requestedUrl, "raw-http", token, deadline);
   } catch (error) {
     if (!(error instanceof JobPageError) || !RETRYABLE.has(error.code)) throw error;
     plainError = error;
@@ -142,7 +145,7 @@ export async function readPage(requestedUrl: string, options: { deadline?: numbe
   }
 
   try {
-    const browser = await runActor(requestedUrl, "browser-playwright", token, deadline);
+    const browser = await readOnce(requestedUrl, "browser-playwright", token, deadline);
     return !plain || browser.text.length > plain.text.length ? browser : plain;
   } catch (error) {
     if (plain) return plain;

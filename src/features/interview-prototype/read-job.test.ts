@@ -32,6 +32,7 @@ const job = {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "info").mockImplementation(() => {});
   vi.stubEnv("PROTOTYPE_ENABLED", "true");
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -74,6 +75,17 @@ describe("reading a job posting from a link", () => {
     });
     expect(apify.readPage).toHaveBeenCalledWith(link);
     expect(ai.extractJob).toHaveBeenCalledWith(page);
+  });
+
+  it("logs how long the page and the model took, and how many tokens, and nothing about the posting", async () => {
+    apify.readPage.mockResolvedValue(page);
+    ai.extractJob.mockResolvedValue({ job, usage });
+
+    await readJobPosting({ url: link });
+
+    expect(console.info).toHaveBeenCalledWith("[interview-prototype] read-job", { readMs: expect.any(Number), modelMs: expect.any(Number), inputTokens: 1200, outputTokens: 40 });
+    const logged = JSON.stringify(vi.mocked(console.info).mock.calls);
+    for (const secret of ["lever.co", "Flex", "NodeJS", "card processing"]) expect(logged).not.toContain(secret);
   });
 
   it("has no company to show when the page does not name one", async () => {
