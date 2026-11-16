@@ -83,12 +83,16 @@ function harness(options: { budgetMs?: number } = {}) {
   const handlers: { stt?: SttHandlers } = {};
   const voices: { tts: FakeTts; handlers: TtsHandlers }[] = [];
   const turns: TurnRequest[] = [];
-  const replies = { session: { status: 200, body: {} as unknown } };
+  const replies = {
+    session: { status: 200, body: {} as unknown },
+    job: { status: 200, body: { jobDescription: "Role: Backend Engineer\n\nRequirements:\n- Go and PostgreSQL", usage: { input: 400, output: 120, cacheRead: 0, cacheWrite: 0 } } as unknown },
+  };
   replies.session.body = { plan, budgetMs: options.budgetMs ?? 15 * 60_000, usage, deepgram: { token: "t", listenUrl: "wss://listen", speakUrl: "wss://speak" } };
 
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
+    if (url.endsWith("/job")) return json(replies.job.body, replies.job.status);
     if (url.endsWith("/session")) return json(replies.session.body, replies.session.status);
     if (url.endsWith("/feedback")) return json({ feedback: report, usage: { input: 5000, output: 900, cacheRead: 0, cacheWrite: 0 } });
     let stream!: ReadableStreamDefaultController<Uint8Array>;
@@ -166,6 +170,52 @@ describe("starting", () => {
     const start = h.fetchMock.mock.calls.find(([url]) => String(url).endsWith("/session"));
     expect(JSON.parse((start?.[1] as RequestInit).body as string)).toMatchObject({ voice: "sienna", durationMinutes: 15 });
     expect(h.turns[0].body).not.toHaveProperty("voice");
+  });
+
+  it("reads a pasted link into the text of the posting, plans the interview from that text, and keeps it for every turn", async () => {
+    const h = harness();
+    await h.controller.start({ ...form, jobDescription: "https://jobs.lever.co/acme/123" });
+    await vi.waitFor(() => expect(h.turns).toHaveLength(1));
+
+    expect(h.fetchMock.mock.calls.slice(0, 2).map(([url]) => String(url))).toEqual(["/prototype/interview/job", "/prototype/interview/session"]);
+    expect(JSON.parse((h.fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({ url: "https://jobs.lever.co/acme/123" });
+    const start = JSON.parse((h.fetchMock.mock.calls[1][1] as RequestInit).body as string);
+    expect(start.jobDescription).toBe("Role: Backend Engineer\n\nRequirements:\n- Go and PostgreSQL");
+    expect((h.turns[0].body as unknown as { jobDescription: string }).jobDescription).toBe(start.jobDescription);
+    expect(h.view().usage.llm.input).toBe(1400); // 400 for reading the posting, 1000 for the plan
+  });
+
+  it("shows what it is doing while it reads the link, and which job it understood once the interview is live", async () => {
+    const h = harness();
+    let during: string | null = null;
+    const original = h.deps.fetch;
+    h.deps.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith("/job")) during = h.view().progress;
+      return original(input, init);
+    }) as typeof fetch;
+
+    await h.controller.start({ ...form, jobDescription: "https://jobs.lever.co/acme/123" });
+    await vi.waitFor(() => expect(h.turns).toHaveLength(1));
+
+    expect(during).toBe("Reading the job posting. This can take up to a minute…");
+    expect(h.view()).toMatchObject({ progress: null, role: { title: "Backend Engineer", company: null } });
+  });
+
+  it("reads nothing from the web for pasted text", async () => {
+    const h = harness();
+    await h.controller.start(form);
+    await vi.waitFor(() => expect(h.turns).toHaveLength(1));
+    expect(h.fetchMock.mock.calls.some(([url]) => String(url).endsWith("/job"))).toBe(false);
+    expect(h.view().usage.llm.input).toBe(1000);
+  });
+
+  it("shows the server's own message when the link cannot be read, and goes back to the form", async () => {
+    const h = harness();
+    h.replies.job = { status: 422, body: { error: "No job posting was found at that address. Paste the text of the posting instead." } };
+    await h.controller.start({ ...form, jobDescription: "https://jobs.lever.co/acme/123" });
+    expect(h.view()).toMatchObject({ phase: "setup", error: "No job posting was found at that address. Paste the text of the posting instead.", progress: null });
+    expect(h.fetchMock.mock.calls.some(([url]) => String(url).endsWith("/session"))).toBe(false);
+    expect(h.mic.stop).toHaveBeenCalled();
   });
 
   it("feeds microphone frames to speech recognition once it is connected", async () => {

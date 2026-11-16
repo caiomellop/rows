@@ -4,9 +4,16 @@ vi.mock("server-only", () => ({}));
 
 const ai = vi.hoisted(() => {
   class AiError extends Error {}
-  return { AiError, planInterview: vi.fn(), streamInterviewerTurn: vi.fn(), interviewFeedback: vi.fn() };
+  return { AiError, planInterview: vi.fn(), streamInterviewerTurn: vi.fn(), interviewFeedback: vi.fn(), extractJob: vi.fn() };
 });
 vi.mock("@/lib/ai", () => ai);
+
+// Reading a page is mocked; the error type stays real, because the route decides what to show from it.
+const apify = vi.hoisted(() => ({ readPage: vi.fn() }));
+vi.mock("@/features/interview-prototype/apify", async (importActual) => ({
+  ...(await importActual<typeof import("@/features/interview-prototype/apify")>()),
+  readPage: apify.readPage,
+}));
 
 // The token call is mocked; the choice of voice runs for real.
 const deepgram = vi.hoisted(() => ({ mintBrowserToken: vi.fn() }));
@@ -15,10 +22,12 @@ vi.mock("@/features/interview-prototype/deepgram", async (importActual) => ({
   mintBrowserToken: deepgram.mintBrowserToken,
 }));
 
+import { JobPageError } from "@/features/interview-prototype/apify";
 import { applyMove, startState } from "@/features/interview-prototype/state";
 import type { Plan, PlanDraft } from "@/features/interview-prototype/schemas";
 
 import { POST as feedback } from "./feedback/route";
+import { POST as readJob } from "./job/route";
 import { POST as session } from "./session/route";
 import { POST as turn } from "./turn/route";
 
@@ -55,9 +64,11 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("when the prototype is not enabled", () => {
   it("answers 404 on every route and calls nobody", async () => {
-    for (const route of [session, turn, feedback]) expect((await route(post({}))).status).toBe(404);
+    for (const route of [session, turn, feedback, readJob]) expect((await route(post({}))).status).toBe(404);
     expect(ai.planInterview).not.toHaveBeenCalled();
     expect(ai.streamInterviewerTurn).not.toHaveBeenCalled();
+    expect(ai.extractJob).not.toHaveBeenCalled();
+    expect(apify.readPage).not.toHaveBeenCalled();
     expect(deepgram.mintBrowserToken).not.toHaveBeenCalled();
   });
 
@@ -199,6 +210,103 @@ describe("when enabled", () => {
       const response = await feedback(post(body));
       expect(response.status).toBe(502);
       expect(JSON.stringify(await response.json())).not.toContain("SECRET");
+    });
+  });
+
+  describe("job from a link", () => {
+    const link = "https://jobs.lever.co/Flex/151e09c6-398f-4fe0-8da7-8fd7814d1bae";
+    const page = { requestedUrl: link, finalUrl: link, title: "Flex - Senior Software Engineer, Backend", status: 200, text: "What You Need: NodeJS and TypeScript. Flex is building AI-native financial services." };
+    const job = {
+      isJobPosting: true,
+      roleTitle: "Senior Software Engineer, Backend",
+      companyName: "Flex",
+      seniority: "Senior",
+      responsibilities: ["Own card processing"],
+      requirements: ["Proficiency in NodeJS and TypeScript"],
+      niceToHave: [],
+      tools: ["NodeJS"],
+    };
+
+    it("reads the page and returns what the model kept as the job description, with what the model cost", async () => {
+      apify.readPage.mockResolvedValue(page);
+      ai.extractJob.mockResolvedValue({ job, usage });
+
+      const response = await readJob(post({ url: ` ${link} ` }));
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.usage).toEqual(usage);
+      expect(body.jobDescription).toBe(
+        [
+          "Role: Senior Software Engineer, Backend",
+          "Company: Flex",
+          "Level: Senior",
+          "",
+          "What the person will do:",
+          "- Own card processing",
+          "",
+          "Requirements:",
+          "- Proficiency in NodeJS and TypeScript",
+          "",
+          "Tools and technologies: NodeJS",
+        ].join("\n"),
+      );
+      expect(apify.readPage).toHaveBeenCalledWith(link);
+      expect(ai.extractJob).toHaveBeenCalledWith(page);
+    });
+
+    it("says no posting was found when the model sees a list, a closed job or a wall", async () => {
+      apify.readPage.mockResolvedValue({ ...page, finalUrl: "https://job-boards.greenhouse.io/reddit?error=true" });
+      ai.extractJob.mockResolvedValue({ job: { ...job, isJobPosting: false, roleTitle: "", responsibilities: [], requirements: [] }, usage });
+
+      const response = await readJob(post({ url: link }));
+
+      expect(response.status).toBe(422);
+      expect((await response.json()).error).toContain("No job posting was found");
+    });
+
+    it("says the same when the page lists neither the work nor the requirements", async () => {
+      apify.readPage.mockResolvedValue(page);
+      ai.extractJob.mockResolvedValue({ job: { ...job, responsibilities: [], requirements: [], niceToHave: ["A plus"] }, usage });
+      expect((await readJob(post({ url: link }))).status).toBe(422);
+    });
+
+    it("does not ask the model about a page that did not load", async () => {
+      apify.readPage.mockResolvedValue({ ...page, status: 404, text: "Page not found" });
+      const response = await readJob(post({ url: link }));
+      expect(response.status).toBe(422);
+      expect(ai.extractJob).not.toHaveBeenCalled();
+    });
+
+    it.each(["", "not a link", "http://localhost:3000/jobs/1", "http://192.168.0.1/admin", "ftp://example.com/job", "https://user:pw@example.com/job"])(
+      "refuses %j before spending anything",
+      async (bad) => {
+        const response = await readJob(post({ url: bad }));
+        expect(response.status).toBe(400);
+        expect(apify.readPage).not.toHaveBeenCalled();
+        expect(ai.extractJob).not.toHaveBeenCalled();
+      },
+    );
+
+    it("shows our own message when the page cannot be read, and 503 when links are not set up", async () => {
+      apify.readPage.mockRejectedValueOnce(new JobPageError("Reading the page took too long. Paste the text of the posting instead.", "timeout"));
+      const slow = await readJob(post({ url: link }));
+      expect(slow.status).toBe(502);
+      expect((await slow.json()).error).toContain("took too long");
+
+      apify.readPage.mockRejectedValueOnce(new JobPageError("Reading a link is not set up yet. Paste the text of the posting instead.", "not-configured"));
+      const notSetUp = await readJob(post({ url: link }));
+      expect(notSetUp.status).toBe(503);
+      expect((await notSetUp.json()).error).toContain("not set up yet");
+    });
+
+    it("hides raw errors from Apify or the model", async () => {
+      apify.readPage.mockRejectedValue(new Error("401 apify_api_SECRET"));
+      const response = await readJob(post({ url: link }));
+      expect(response.status).toBe(502);
+      const text = JSON.stringify(await response.json());
+      expect(text).toContain("Could not read that page");
+      expect(text).not.toContain("SECRET");
     });
   });
 });

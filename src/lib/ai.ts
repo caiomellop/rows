@@ -7,9 +7,10 @@ import { z } from "zod";
 
 import type { AssistantMessage, Experience, Profile } from "@/db/schema";
 import { normalizeFeedback, plannedQuestionsText, transcriptText } from "@/features/interview-prototype/feedback";
+import { pageForModel, type Page } from "@/features/interview-prototype/job-posting";
 import { LANGUAGE_NAMES, type Language } from "@/features/interview-prototype/languages";
 import type { LlmUsage } from "@/features/interview-prototype/metrics";
-import { FeedbackSchema, PlanDraftSchema, type Feedback, type Plan, type PlanDraft, type Turn } from "@/features/interview-prototype/schemas";
+import { FeedbackSchema, JobSchema, PlanDraftSchema, type Feedback, type Job, type Plan, type PlanDraft, type Turn } from "@/features/interview-prototype/schemas";
 import { loadPrompt, renderPrompt } from "@/lib/prompts";
 
 /**
@@ -273,6 +274,22 @@ export async function planInterview(input: { jobDescription: string; resume: str
     content: [{ type: "text", text: `<job_description>\n${input.jobDescription}\n</job_description>\n\n<resume>\n${input.resume || "(none provided)"}\n</resume>` }],
   });
   return { plan: parsed, usage };
+}
+
+/**
+ * Reads a scraped job page and keeps only what a job interview needs: the role, the work and the
+ * requirements. It says so when the page is not one specific posting.
+ */
+export async function extractJob(page: Page): Promise<{ job: Job; usage: LlmUsage }> {
+  const { parsed, usage } = await structuredWithUsage({
+    schema: JobSchema,
+    model: INTERVIEW_MODEL,
+    effort: "low",
+    maxTokens: 3000,
+    system: loadPrompt("interviews", "job-extractor"),
+    content: [{ type: "text", text: pageForModel(page) }],
+  });
+  return { job: parsed, usage };
 }
 
 export type InterviewerEvent = { type: "text"; text: string } | { type: "done"; usage: LlmUsage };
