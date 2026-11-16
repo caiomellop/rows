@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { JobPageError, readPage } from "./apify";
+import { JobPageError, readPage, warmUp, WARM_UP_EVERY_MS } from "./apify";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -182,5 +182,89 @@ describe("when Apify cannot help", () => {
     stub(reply({}, 500), new Error("socket hang up"));
     const error = await failure();
     expect(error.code).toBe("failed");
+  });
+});
+
+describe("warming up", () => {
+  // The limit is kept per server instance, so every test starts later than the last one by more than the limit.
+  let clock = 1_000_000_000;
+  const later = () => (clock += WARM_UP_EVERY_MS * 2);
+  const tools = (fetchMock: ReturnType<typeof stub>) => fetchMock.mock.calls.map((_, call) => sentTool(fetchMock, call)).sort();
+
+  it("reads a fixed public page both ways, plain and in a browser, and sends nothing about the person or a job", async () => {
+    vi.stubEnv("APIFY_TOKEN", "secret-token");
+    const fetchMock = stub(reply([item({ markdown: "Example Domain" })]), reply([item({ markdown: "Example Domain" })]));
+
+    await warmUp(later());
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(tools(fetchMock)).toEqual(["browser-playwright", "raw-http"]);
+    for (const [url, init] of fetchMock.mock.calls) {
+      const address = new URL(url);
+      expect(`${address.origin}${address.pathname}`).toBe("https://rag-web-browser.apify.actor/search");
+      expect(address.searchParams.get("query")).toBe("https://example.com/");
+      expect(url).not.toContain("secret-token");
+      expect((init.headers as Record<string, string>).Authorization).toBe("Bearer secret-token");
+    }
+  });
+
+  it("wakes the server at most once every four minutes", async () => {
+    vi.stubEnv("APIFY_TOKEN", "t");
+    const fetchMock = stub(reply([item()]), reply([item()]), reply([item()]), reply([item()]));
+    const start = later();
+
+    await warmUp(start);
+    await warmUp(start + 1_000);
+    await warmUp(start + WARM_UP_EVERY_MS - 1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    await warmUp(start + WARM_UP_EVERY_MS);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it("does not run twice for two calls in the same instant", async () => {
+    vi.stubEnv("APIFY_TOKEN", "t");
+    const fetchMock = stub(reply([item()]), reply([item()]), reply([item()]), reply([item()]));
+    const now = later();
+    await Promise.all([warmUp(now), warmUp(now)]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("calls nobody without a token, and does not use up the limit", async () => {
+    const fetchMock = stub();
+    const now = later();
+    await warmUp(now);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    vi.stubEnv("APIFY_TOKEN", "t");
+    const second = stub(reply([item()]), reply([item()]));
+    await warmUp(now + 1_000);
+    expect(second).toHaveBeenCalledTimes(2);
+  });
+
+  it("never throws, whatever Apify answers, and logs only the tool, the time and the kind of failure", async () => {
+    vi.stubEnv("APIFY_TOKEN", "secret-token");
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    stub(reply({ error: { message: "secret-token is bad" } }, 401), new Error("socket hang up"));
+
+    await expect(warmUp(later())).resolves.toBeUndefined();
+
+    const failures = info.mock.calls.filter(([label]) => String(label).includes("warm-up failed")).map(([, details]) => details);
+    expect(failures).toHaveLength(2);
+    expect(failures).toEqual(expect.arrayContaining([{ tool: expect.any(String), ms: expect.any(Number), code: "rejected" }, { tool: expect.any(String), ms: expect.any(Number), code: "failed" }]));
+    const logged = JSON.stringify(info.mock.calls);
+    expect(logged).not.toContain("secret-token");
+    expect(logged).not.toContain("example.com");
+    info.mockRestore();
+  });
+
+  it("logs a warm-up read under its own name, so it is not mistaken for a link", async () => {
+    vi.stubEnv("APIFY_TOKEN", "t");
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    stub(reply([item({ markdown: "Example Domain" })]), reply([item({ markdown: "Example Domain" })]));
+    await warmUp(later());
+    const labels = info.mock.calls.map(([label]) => label);
+    expect(labels).toEqual(["[interview-prototype] warm-up", "[interview-prototype] warm-up"]);
+    info.mockRestore();
   });
 });

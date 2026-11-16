@@ -35,3 +35,10 @@ A job page has to be loaded the way a browser loads it. Some boards answer plain
 - The Actor also runs as a server that is always up. The app now calls it directly: `GET https://rag-web-browser.apify.actor/search` with the link as the `query`, `maxResults=1`, `outputFormats=markdown` and `scrapingTool` (`raw-http`, then `browser-playwright` as before). The token is still a Bearer header and never part of the address. The answer has the same items as before. Only the way of calling it changed; the vendor, the Actor and what is sent are the same.
 - Cost: the server is multi-tenant and bills per page read (US$ 0.00228 on the free tier), with no start event, so a read costs a little less than before.
 - The function now logs how long each read took and how long the model took (milliseconds, status, text length and tokens), never the link or the text, so the next speed-up is aimed at what is slow.
+
+## Update: waking the Actor's server when the page opens (CAI-95, 16 Nov 2026)
+
+- After hours without use, the first reads on the current build were slow even though warm reads take 1 to 4 s for the page: LinkedIn's plain read took 7 s, Lever's plain read hung until its 15 s limit, and Ashby's browser read came back with 26 characters, so Ashby was reported as "no posting found".
+- When the interview page opens it now asks the server, without waiting, to read a fixed public page (`https://example.com/`) both ways, plain and in a browser. It is a Server Action that answers at once and does the reads after the response (`after()`): Next.js sends Server Actions one at a time, so a warm-up that held the line would delay a link pasted right after the page opens. The reads are in `apify.ts` (`warmUp`), the only file that talks to Apify.
+- Nothing about the person or the job is sent: only the fixed address, with the same token header. A warm-up that fails is ignored and logged as a number and a kind of failure.
+- Cost: two page reads, about US$ 0.0046 on the free tier, at most once every 4 minutes per server instance. The page has no login, so anyone who opens it can start one; the limit keeps that bounded but is per instance, not global.
