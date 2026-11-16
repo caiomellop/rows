@@ -79,10 +79,11 @@ export function applyMove(state: InterviewState, move: Move, plan: Plan): Interv
   }
 }
 
-const clock = (ms: number) => {
+/** 125000 -> "2:05". */
+export function formatClock(ms: number): string {
   const total = Math.max(0, Math.round(ms / 1000));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-};
+}
 
 function lastInterviewerTurn(state: InterviewState): Turn | undefined {
   return [...state.transcript].reverse().find((t) => t.role === "interviewer");
@@ -93,7 +94,7 @@ export function describeState(state: InterviewState, plan: Plan): string {
   const total = plan.questions.length;
   const current = plan.questions[state.questionIndex];
   const next = plan.questions[state.questionIndex + 1];
-  const lines = [`Stage: ${state.stage}`, `Time: ${clock(state.elapsedMs)} used of ${clock(state.budgetMs)} (${clock(remainingMs(state))} left)`];
+  const lines = [`Stage: ${state.stage}`, `Time: ${formatClock(state.elapsedMs)} used of ${formatClock(state.budgetMs)} (${formatClock(remainingMs(state))} left)`];
 
   if (state.stage === "opening") {
     lines.push(
