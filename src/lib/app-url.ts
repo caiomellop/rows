@@ -30,16 +30,6 @@ export function appHref(path: string) {
   return hostsAreSplit() ? `${appUrl()}${path}` : path;
 }
 
-/** Link to a site page. Relative while everything shares one origin. */
-export function siteHref(path: string) {
-  return hostsAreSplit() ? `${siteUrl()}${path}` : path;
-}
-
-/** "prepermint.com", for showing a public address. */
-export function siteHost() {
-  return siteUrl().replace(/^https?:\/\//, "");
-}
-
 /** Paths that belong to the app host. Everything else belongs to the site. */
 const APP_PATHS = ["/sign-in", "/sign-out", "/dashboard", "/chat", "/memory"];
 

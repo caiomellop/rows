@@ -35,17 +35,6 @@ export async function signSessionToken(user: SessionUser) {
     .sign(getSecret());
 }
 
-export function attachSessionCookie(response: NextResponse, token: string) {
-  response.cookies.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    domain: sessionCookieDomain(),
-    maxAge: 60 * 60 * 24 * 30,
-  });
-}
-
 /** Signs the user in from a Server Action (no NextResponse to attach to). */
 export async function startSession(user: SessionUser) {
   const jar = await cookies();

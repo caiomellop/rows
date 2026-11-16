@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 
 // Applies the saved theme before the first paint, so there is no flash.
 // The key must match THEME_KEY in src/components/app-shell/theme-toggle.tsx.
-const themeScript = `(function(){try{var t=localStorage.getItem("rows-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
+const themeScript = `(function(){try{var t=localStorage.getItem("prepermint-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

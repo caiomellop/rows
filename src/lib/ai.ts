@@ -194,7 +194,7 @@ export async function interviewReply(input: { profile: Profile; experiences: Exp
       output_config: { effort: "medium" },
       system: [
         { type: "text", text: INTERVIEW_SYSTEM },
-        { type: "text", text: `<what_rows_knows>\n${interviewContext(input.profile, input.experiences)}\n</what_rows_knows>` },
+        { type: "text", text: `<what_prepermint_knows>\n${interviewContext(input.profile, input.experiences)}\n</what_prepermint_knows>` },
       ],
       messages: history,
     });
