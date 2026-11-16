@@ -23,7 +23,7 @@ import { addTurn, allowedMoves, applyMove, coerceMove, OVERTIME_GRACE_MS, prepar
  * tested with fakes. Nothing is stored: the state lives here until the page is closed.
  */
 
-const BASE = "/prototype/interview";
+const BASE = "/interview";
 const JSON_HEADERS = { "Content-Type": "application/json" };
 /** Words this long, heard while the interviewer is speaking, count as the candidate talking over it. */
 const BARGE_IN_MIN_CHARS = 3;

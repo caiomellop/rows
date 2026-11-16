@@ -36,7 +36,7 @@ const plan: Plan = { ...draft, language: "en" };
 const jobDescription = "We are hiring a backend engineer to build and run payment APIs in Go and PostgreSQL.";
 const usage = { input: 1200, output: 40, cacheRead: 1000, cacheWrite: 0 };
 
-const post = (body: unknown) => new Request("http://localhost/prototype", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json" } });
+const post = (body: unknown) => new Request("http://localhost/interview", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json" } });
 const lines = async (response: Response) =>
   (await response.text())
     .trim()

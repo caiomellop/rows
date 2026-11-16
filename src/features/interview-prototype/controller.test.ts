@@ -176,7 +176,7 @@ describe("starting", () => {
     await vi.waitFor(() => expect(h.turns).toHaveLength(1));
 
     const start = JSON.parse((h.fetchMock.mock.calls[0][1] as RequestInit).body as string);
-    expect(String(h.fetchMock.mock.calls[0][0])).toBe("/prototype/interview/session");
+    expect(String(h.fetchMock.mock.calls[0][0])).toBe("/interview/session");
     expect(start.jobDescription).toBe("Role: Backend Engineer\n\nRequirements:\n- Go and PostgreSQL");
     expect((h.turns[0].body as unknown as { jobDescription: string }).jobDescription).toBe(start.jobDescription);
     expect(h.view().role).toEqual({ title: "Backend Engineer", company: null });

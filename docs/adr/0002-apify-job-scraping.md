@@ -26,5 +26,5 @@ A job page has to be loaded the way a browser loads it. Some boards answer plain
 
 ## Update: the link is read when it is entered (CAI-89, 16 Nov 2026)
 
-- The form reads the link as soon as the "Job posting URL" field holds a complete one (on paste, or after a pause in typing), not when the interview starts, so the person sees at once whether it worked. The read is a Server Action (`read-job.ts`) used by the prototype page; the `/prototype/interview/job` route is gone. The decision above is unchanged.
+- The form reads the link as soon as the "Job posting URL" field holds a complete one (on paste, or after a pause in typing), not when the interview starts, so the person sees at once whether it worked. The read is a Server Action (`read-job.ts`) used by the interview page; the separate route for it is gone. The decision above is unchanged.
 - Cost: a read now happens even if no interview follows. The form reads one link at a time, never reads the same link twice in a visit, and reads nothing while the person is typing. Next.js sends Server Actions one at a time, so a read that was started for a link the person has since replaced delays the next one. There is still no rate limit, and the page still has no login.

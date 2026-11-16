@@ -41,7 +41,8 @@ export function siteHost() {
 }
 
 /** Paths that belong to the app host. Everything else belongs to the site. */
-const APP_PATHS = ["/sign-in", "/sign-out", "/dashboard", "/chat", "/memory"];
+/** The interview prototype is on the app host but needs no session: it is open where PROTOTYPE_ENABLED is true. */
+const APP_PATHS = ["/sign-in", "/sign-out", "/dashboard", "/chat", "/memory", "/interview"];
 
 const matches = (paths: string[], pathname: string) => paths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
