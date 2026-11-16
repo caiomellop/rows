@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { appHref, legacyHostTarget, sessionCookieDomain, siteHref, siteUrl } from "@/lib/app-url";
+import { appHref, isAppPath, legacyHostTarget, needsSession, sessionCookieDomain, siteHref, siteUrl } from "@/lib/app-url";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -31,6 +31,29 @@ describe("split hosts", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://prepermint.com");
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com");
     expect(sessionCookieDomain()).toBeUndefined();
+  });
+});
+
+describe("the interview page", () => {
+  it("belongs to the app host, like the rest of the product, and its routes with it", () => {
+    for (const path of ["/interview", "/interview/session", "/interview/turn", "/interview/feedback"]) expect(isAppPath(path)).toBe(true);
+  });
+
+  it("needs no session: it is open where the prototype is switched on", () => {
+    for (const path of ["/interview", "/interview/session", "/interview/turn", "/interview/feedback"]) expect(needsSession(path)).toBe(false);
+    expect(needsSession("/chat")).toBe(true);
+  });
+
+  it("is not claimed by a path that only starts with the same letters", () => {
+    expect(isAppPath("/interviews")).toBe(false);
+    expect(isAppPath("/prototype/interview")).toBe(false);
+  });
+
+  it("is sent from the old rows.so hosts to the app host", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://prepermint.com");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.prepermint.com");
+    expect(legacyHostTarget("rows.so", "/interview")).toBe("https://app.prepermint.com/interview");
+    expect(legacyHostTarget("app.rows.so", "/interview")).toBe("https://app.prepermint.com/interview");
   });
 });
 
