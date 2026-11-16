@@ -1,8 +1,9 @@
-import { mintBrowserToken, ttsSettings } from "@/features/interview-prototype/deepgram";
+import { mintBrowserToken } from "@/features/interview-prototype/deepgram";
 import { listenUrl, speakUrl } from "@/features/interview-prototype/deepgram-urls";
 import { disabledResponse, prototypeEnabled } from "@/features/interview-prototype/gate";
 import { logFailure, safeMessage } from "@/features/interview-prototype/route-utils";
 import { StartRequestSchema, type SessionResponse } from "@/features/interview-prototype/schemas";
+import { voiceFor } from "@/features/interview-prototype/voices";
 import { planInterview } from "@/lib/ai";
 
 /** Starts an interview: writes the question plan and mints the browser's short-lived Deepgram token. */
@@ -21,8 +22,8 @@ export async function POST(request: Request) {
     ]);
     if (plan.questions.length < 3) return Response.json({ error: "The interview plan came back too short. Try again." }, { status: 502 });
 
-    // The voice follows the interview language: the chosen English voice, or the Portuguese voice.
-    const tts = ttsSettings(plan.language, voice);
+    // The voice follows the interview language: the chosen voice's native counterpart in that language.
+    const tts = voiceFor(plan.language, voice);
     const body: SessionResponse = {
       plan,
       budgetMs: durationMinutes * 60_000,

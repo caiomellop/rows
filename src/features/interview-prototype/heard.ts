@@ -18,9 +18,11 @@ export function heardText(segments: Segment[], playedMs: number): string {
       continue;
     }
     if (playedMs > start && segment.audioMs > 0) {
-      const words = segment.text.split(/\s+/).filter(Boolean);
-      const count = Math.floor((words.length * (playedMs - start)) / segment.audioMs);
-      if (count > 0) heard.push(words.slice(0, count).join(" "));
+      // Words, or characters for scripts written without spaces (Japanese).
+      const spaced = /\s/.test(segment.text.trim());
+      const units = spaced ? segment.text.split(/\s+/).filter(Boolean) : Array.from(segment.text.trim());
+      const count = Math.floor((units.length * (playedMs - start)) / segment.audioMs);
+      if (count > 0) heard.push(units.slice(0, count).join(spaced ? " " : ""));
     }
     break;
   }

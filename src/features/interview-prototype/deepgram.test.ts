@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import { isFluxVoice, listenUrl, speakUrl } from "./deepgram-urls";
-import { DEFAULT_PT_VOICE, DeepgramError, mintBrowserToken, ttsSettings } from "./deepgram";
+import { mintBrowserToken } from "./deepgram";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -11,14 +11,18 @@ afterEach(() => {
 });
 
 describe("Deepgram addresses", () => {
-  it("opens Flux Multilingual with raw 16 kHz audio, an end-of-turn threshold and both language hints", () => {
+  it("opens Flux Multilingual with raw 16 kHz audio and an end-of-turn threshold", () => {
     const url = new URL(listenUrl());
     expect(url.origin + url.pathname).toBe("wss://api.deepgram.com/v2/listen");
     expect(url.searchParams.get("model")).toBe("flux-general-multi");
     expect(url.searchParams.get("encoding")).toBe("linear16");
     expect(url.searchParams.get("sample_rate")).toBe("16000");
     expect(url.searchParams.get("eot_threshold")).toBe("0.8");
-    expect(url.searchParams.getAll("language_hint")).toEqual(["en", "pt"]);
+  });
+
+  it("sends no language hint, so Flux detects any of its ten languages (a hint outside its list is rejected with a 400)", () => {
+    const url = new URL(listenUrl());
+    expect(url.searchParams.has("language_hint")).toBe(false);
   });
 
   it("opens the voice socket for one Flux voice with raw 24 kHz audio", () => {
@@ -55,31 +59,6 @@ describe("Deepgram addresses", () => {
     expect(isFluxVoice("aura-2-thalia-en")).toBe(false);
     expect(isFluxVoice("flux-cliff-en&x=1")).toBe(false);
     expect(() => speakUrl("flux-cliff-en&x=1")).toThrow("not a Flux voice");
-  });
-});
-
-describe("which voice an interview uses", () => {
-  it("English uses the chosen voice with its own speed and expressivity", () => {
-    expect(ttsSettings("en", "cliff")).toEqual({ model: "flux-cliff-en", speed: 0.9, expressivity: 1 });
-    expect(ttsSettings("en", "sienna")).toEqual({ model: "flux-sienna-en", speed: 0.9, expressivity: 1 });
-  });
-
-  it("Portuguese uses a Portuguese voice whichever English voice was chosen, because English voices cannot read it", () => {
-    expect(DEFAULT_PT_VOICE).toMatch(/-pt$/);
-    expect(ttsSettings("pt", "cliff")).toEqual({ model: DEFAULT_PT_VOICE });
-    expect(ttsSettings("pt", "sienna")).toEqual({ model: DEFAULT_PT_VOICE });
-  });
-
-  it("the Portuguese voice can be changed by environment variable, and a bad value is refused", () => {
-    vi.stubEnv("DEEPGRAM_TTS_VOICE_PT", " flux-mateus-pt ");
-    expect(ttsSettings("pt", "cliff")).toEqual({ model: "flux-mateus-pt" });
-    vi.stubEnv("DEEPGRAM_TTS_VOICE_PT", "mateus");
-    expect(() => ttsSettings("pt", "cliff")).toThrow(DeepgramError);
-  });
-
-  it("ignores the old English voice variable: the page chooses English voices now", () => {
-    vi.stubEnv("DEEPGRAM_TTS_VOICE_EN", "flux-alexis-en");
-    expect(ttsSettings("en", "cliff").model).toBe("flux-cliff-en");
   });
 });
 

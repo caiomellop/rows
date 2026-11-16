@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { PcmPlayer, startMic } from "./audio";
 import { InterviewController, initialView, type StartForm, type View } from "./controller";
 import { estimateCost, resultsMarkdown, summarizeLatency, type TurnLatency } from "./metrics";
+import { LANGUAGE_NAMES, LANGUAGES } from "./languages";
 import { CRITERIA, DURATIONS, LIMITS } from "./schemas";
 import { connectStt, connectTts } from "./sockets";
 import { formatClock } from "./state";
@@ -22,6 +23,12 @@ const CRITERION_LABELS: Record<(typeof CRITERIA)[number], string> = {
   communication: "Communication",
   roleFit: "Role fit",
 };
+
+/** "English, Portuguese, Spanish ... or Japanese", from the language table. */
+const LANGUAGE_LIST = (() => {
+  const names = LANGUAGES.map((code) => LANGUAGE_NAMES[code].replace("Brazilian ", ""));
+  return `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
+})();
 
 const field = "w-full rounded-xl border border-line bg-card px-4 py-3 text-[15px] leading-relaxed text-fg placeholder:text-fg-3 focus:border-fg-3 focus:outline-none";
 const card = "rounded-2xl border border-line bg-card p-5";
@@ -84,7 +91,7 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
         if (ready && !starting) onStart({ jobDescription, resume, durationMinutes, voice });
       }}
     >
-      <Field label="Job description" hint="Paste the posting. The interview is held in the language it is written in (Portuguese or English).">
+      <Field label="Job description" hint={`Paste the posting. The interview is held in the language it is written in (${LANGUAGE_LIST}).`}>
         <textarea className={field} rows={9} required maxLength={LIMITS.jobDescription} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
       </Field>
       <Field label="Resume summary (optional)" hint="A few lines about your background. The interviewer only uses what you write here.">
@@ -113,7 +120,7 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
             </label>
           ))}
         </div>
-        <p className="mt-2 text-[13px] text-fg-3">Both voices speak English at 0.9x. A Portuguese job description gets a Portuguese voice instead.</p>
+        <p className="mt-2 text-[13px] text-fg-3">Both voices speak at 0.9x. Cliff and Sienna only exist in English, so in any other language you hear a native voice of the same kind.</p>
       </fieldset>
 
       <p className="text-[13px] leading-relaxed text-fg-3">

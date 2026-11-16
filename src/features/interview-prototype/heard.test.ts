@@ -26,6 +26,13 @@ describe("heard text after an interruption", () => {
     expect(heardText(segments, 99_999)).toBe("Thanks for that answer. Now tell me about a time you led a small team. What was the outcome?");
   });
 
+  it("counts characters for a language written without spaces", () => {
+    const japanese: Segment[] = [{ text: "共有してくださってありがとうございます。", audioMs: 2000 }];
+    // Half of the 20 characters were heard: the first 10.
+    expect(heardText(japanese, 1000)).toBe("共有してくださってあ");
+    expect(heardText(japanese, 2000)).toBe("共有してくださってありがとうございます。");
+  });
+
   it("never invents words for a piece without audio", () => {
     expect(heardText([{ text: "Hello there", audioMs: 0 }], 500)).toBe("");
   });

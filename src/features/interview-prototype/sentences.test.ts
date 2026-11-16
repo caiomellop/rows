@@ -43,6 +43,20 @@ describe("sentence chunker", () => {
     expect(chunker.flush()).toEqual(["Tell me about a time you led a team"]);
   });
 
+  it("cuts Japanese at the full stop, which has no space after it, so the voice can start on the first sentence", () => {
+    const chunker = new SentenceChunker();
+    expect(chunker.push("共有してくださってありがとうございます。")).toEqual(["共有してくださってありがとうございます。"]);
+    expect(chunker.push("アーキテクチャのどの部分を担当しましたか？")).toEqual(["アーキテクチャのどの部分を担当しましたか？"]);
+  });
+
+  it("cuts Japanese streamed in small pieces only when a sentence is complete", () => {
+    expect(chunk(["共有してくださって", "ありがとうございます", "。アーキテクチャの", "どの部分を担当しましたか", "？"])).toEqual(["共有してくださってありがとうございます。", "アーキテクチャのどの部分を担当しましたか？"]);
+  });
+
+  it("cuts Hindi at the danda", () => {
+    expect(chunk(["साझा करने के लिए धन्यवाद। आर्किटेक्चर का कौन सा हिस्सा आपकी ज़िम्मेदारी था?"])).toEqual(["साझा करने के लिए धन्यवाद।", "आर्किटेक्चर का कौन सा हिस्सा आपकी ज़िम्मेदारी था?"]);
+  });
+
   it("returns nothing for an empty stream", () => {
     expect(chunk([])).toEqual([]);
     expect(chunk(["   "])).toEqual([]);

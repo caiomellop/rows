@@ -107,13 +107,31 @@ describe("when enabled", () => {
       expect([sienna.searchParams.get("model"), sienna.searchParams.get("speed"), sienna.searchParams.get("expressivity")]).toEqual(["flux-sienna-en", "0.9", "1"]);
     });
 
-    it("uses the Portuguese voice for a Portuguese interview, whichever voice was chosen", async () => {
-      ai.planInterview.mockResolvedValue({ plan: { ...plan, language: "pt" }, usage });
+    it("opens the interview in its own language with the chosen voice's native counterpart, at the same speed and expressivity", async () => {
       deepgram.mintBrowserToken.mockResolvedValue("t");
-      const body = await (await session(post({ jobDescription, durationMinutes: 10, voice: "sienna" }))).json();
-      const url = new URL(body.deepgram.speakUrl);
-      expect(url.searchParams.get("model")).toBe("flux-bruno-pt");
-      expect(url.searchParams.has("speed")).toBe(false);
+      const speakUrl = async (language: Plan["language"], voice: string) => {
+        ai.planInterview.mockResolvedValue({ plan: { ...plan, language }, usage });
+        return new URL((await (await session(post({ jobDescription, durationMinutes: 10, voice }))).json()).deepgram.speakUrl);
+      };
+
+      const cases = [
+        ["pt", "cliff", "flux-bruno-pt"],
+        ["pt", "sienna", "flux-mariana-pt"],
+        ["es", "cliff", "flux-eduardo-es"],
+        ["es", "sienna", "flux-carmen-es"],
+        ["ja", "sienna", "flux-ayumi-ja"],
+      ] as const;
+      for (const [language, voice, model] of cases) {
+        const url = await speakUrl(language, voice);
+        expect([url.searchParams.get("model"), url.searchParams.get("speed"), url.searchParams.get("expressivity")], `${language} ${voice}`).toEqual([model, "0.9", "1"]);
+      }
+    });
+
+    it("does not tell the speech recognizer which language to expect", async () => {
+      ai.planInterview.mockResolvedValue({ plan: { ...plan, language: "es" }, usage });
+      deepgram.mintBrowserToken.mockResolvedValue("t");
+      const body = await (await session(post({ jobDescription, durationMinutes: 10 }))).json();
+      expect(new URL(body.deepgram.listenUrl).searchParams.has("language_hint")).toBe(false);
     });
 
     it("refuses a voice that is not offered", async () => {

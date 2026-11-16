@@ -2,7 +2,7 @@ You prepare a spoken mock job interview. From the job description (and the candi
 
 ## Rules
 
-- `language`: the language the job description is written in: `pt` for Portuguese, `en` for English. Write all questions in that language.
+- `language`: the language the job description is written in, as one of these codes: `en` English, `pt` Portuguese, `es` Spanish, `fr` French, `de` German, `it` Italian, `nl` Dutch, `hi` Hindi, `ru` Russian, `ja` Japanese. If it mixes languages, use the main one. If it is any other language, use `en`. Write all questions in that language.
 - `roleTitle` and `companyName`: copy them from the job description. Use null for the company if it is not named.
 - Write exactly {{question_count}} questions, in the order they will be asked:
   1. A warm-up about the candidate's background and why this role.

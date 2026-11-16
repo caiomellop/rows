@@ -8,6 +8,10 @@ const MIN_PIECE = 12;
 const MIN_FIRST_CLAUSE = 28;
 const SENTENCE_END = new Set([".", "!", "?", "…"]);
 const CLAUSE_END = new Set([",", ";", ":", "—", "–"]);
+// Scripts that do not put a space after punctuation (Japanese and Chinese, the Hindi danda): cut right after it,
+// or the voice would wait for the whole reply before it could start.
+const SPACELESS_SENTENCE_END = new Set(["。", "！", "？", "।", "॥"]);
+const SPACELESS_CLAUSE_END = new Set(["、", "，", "；", "："]);
 
 export class SentenceChunker {
   private buffer = "";
@@ -44,12 +48,14 @@ export class SentenceChunker {
   /** Index just after the next place to cut, or -1 if the buffer has no safe cut yet. */
   private findCut(): number {
     const text = this.buffer;
-    for (let i = 0; i < text.length - 1; i += 1) {
+    for (let i = 0; i < text.length; i += 1) {
       const char = text[i];
-      const nextIsSpace = /\s/.test(text[i + 1]);
       const length = i + 1;
       if (char === "\n" && length >= MIN_PIECE) return length;
-      if (!nextIsSpace) continue;
+      if (SPACELESS_SENTENCE_END.has(char) && length >= MIN_PIECE) return length;
+      if (this.emitted === 0 && SPACELESS_CLAUSE_END.has(char) && length >= MIN_FIRST_CLAUSE) return length;
+      // Everywhere else a boundary needs the space after it, so "3.5" and "e.g." are not cut.
+      if (i + 1 >= text.length || !/\s/.test(text[i + 1])) continue;
       if (SENTENCE_END.has(char) && length >= MIN_PIECE && !this.isAbbreviation(text, i)) return length;
       if (this.emitted === 0 && CLAUSE_END.has(char) && length >= MIN_FIRST_CLAUSE) return length;
     }
