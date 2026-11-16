@@ -1,12 +1,10 @@
 import type { Mic, Player } from "./audio";
 import { heardText } from "./heard";
-import { jobUrlFrom } from "./job-url";
 import type { Language, VoiceId } from "./languages";
-import { addLlmUsage, emptyUsage, latencyFromMarks, type TurnLatency, type Usage } from "./metrics";
+import { addLlmUsage, emptyUsage, latencyFromMarks, type LlmUsage, type TurnLatency, type Usage } from "./metrics";
 import { SentenceChunker } from "./sentences";
 import {
   FeedbackResponseSchema,
-  JobResponseSchema,
   SessionResponseSchema,
   TurnEventSchema,
   type Feedback,
@@ -30,7 +28,10 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 /** Words this long, heard while the interviewer is speaking, count as the candidate talking over it. */
 const BARGE_IN_MIN_CHARS = 3;
 
-export type StartForm = { jobDescription: string; resume: string; durationMinutes: 10 | 15 | 20 | 30; voice: VoiceId };
+/** What the interview is built from. `jobDescription` is the text of the posting, pasted or already read from a link. */
+export type SessionForm = { jobDescription: string; resume: string; durationMinutes: 10 | 15 | 20 | 30; voice: VoiceId };
+/** `readUsage` is what reading the link cost, so the cost of the whole interview adds up. It is not sent to the server. */
+export type StartForm = SessionForm & { readUsage?: LlmUsage };
 
 export type Phase = "setup" | "starting" | "live" | "done";
 export type Status = "listening" | "thinking" | "speaking";
@@ -49,8 +50,6 @@ export type View = {
   language: Language | null;
   /** The job the interview is for, as the planner understood it. */
   role: { title: string; company: string | null } | null;
-  /** While the interview starts: what the page is doing, when that takes a while. */
-  progress: string | null;
   /** From the last word to the first audio, one entry per reply to the candidate. */
   latencies: TurnLatency[];
   /** From pressing the button to hearing the opening question. */
@@ -80,7 +79,6 @@ export const initialView = (): View => ({
   budgetMs: 0,
   language: null,
   role: null,
-  progress: null,
   latencies: [],
   startupMs: null,
   usage: emptyUsage(),
@@ -107,7 +105,7 @@ type ActiveTurn = {
 export class InterviewController {
   private view = initialView();
   private state = startState(60_000);
-  private setup: { form: StartForm; plan: Plan; deepgram: SessionResponse["deepgram"] } | null = null;
+  private setup: { form: SessionForm; plan: Plan; deepgram: SessionResponse["deepgram"] } | null = null;
   private player: Player | null = null;
   private mic: Mic | null = null;
   private stt: SttConnection | null = null;
@@ -133,12 +131,12 @@ export class InterviewController {
     if (this.view.phase !== "setup") return;
     this.clickAt = this.deps.now();
     this.set({ ...initialView(), phase: "starting" });
+    // The link, if there was one, was read before the button was pressed. Its cost belongs to this interview.
+    const { readUsage, ...request } = form;
+    if (readUsage) this.usage = { ...this.usage, llm: addLlmUsage(this.usage.llm, readUsage) };
     try {
       this.player = this.deps.createPlayer();
       this.mic = await this.deps.startMic((frame) => this.stt?.send(frame));
-
-      // The interview is built from the text of the posting: pasted as it is, or read from the link.
-      const request: StartForm = { ...form, jobDescription: await this.jobDescriptionFrom(form.jobDescription) };
 
       const response = await this.deps.fetch(`${BASE}/session`, { method: "POST", headers: JSON_HEADERS, body: JSON.stringify(request) });
       if (!response.ok) throw new Error(await errorFrom(response, "Could not start the interview."));
@@ -157,27 +155,11 @@ export class InterviewController {
 
       this.startedAt = this.deps.now();
       this.timer = setInterval(() => this.tick(), 1000);
-      this.set({ phase: "live", status: "thinking", language: plan.language, role: { title: plan.roleTitle, company: plan.companyName }, progress: null, budgetMs, usage: this.usage });
+      this.set({ phase: "live", status: "thinking", language: plan.language, role: { title: plan.roleTitle, company: plan.companyName }, budgetMs, usage: this.usage });
       void this.interviewerTurn();
     } catch (error) {
       this.fail(messageOf(error));
     }
-  }
-
-  /** Pasted text is used as it is. A link is read by the job route, which keeps only what the interview needs. */
-  private async jobDescriptionFrom(input: string): Promise<string> {
-    const url = jobUrlFrom(input);
-    if (!url) return input;
-
-    this.set({ progress: "Reading the job posting. This can take up to a minute…" });
-    const response = await this.deps.fetch(`${BASE}/job`, { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ url }) });
-    if (!response.ok) throw new Error(await errorFrom(response, "Could not read that page. Paste the text of the posting instead."));
-    const job = JobResponseSchema.safeParse(await response.json().catch(() => null));
-    if (!job.success) throw new Error("The server answered in an unexpected way.");
-
-    this.usage = { ...this.usage, llm: addLlmUsage(this.usage.llm, job.data.usage) };
-    this.set({ progress: "Preparing the interview…" });
-    return job.data.jobDescription;
   }
 
   /** The candidate ends the interview from the page. */
@@ -418,7 +400,7 @@ export class InterviewController {
   private fail(message: string) {
     if (this.view.phase === "starting") {
       this.cleanup();
-      this.set({ phase: "setup", status: "listening", error: message, progress: null });
+      this.set({ phase: "setup", status: "listening", error: message });
     } else if (this.view.phase === "live") {
       this.set({ error: message });
       void this.finish();
