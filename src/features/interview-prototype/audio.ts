@@ -71,13 +71,19 @@ export async function startMic(onFrame: (pcm: ArrayBuffer) => void): Promise<Mic
       URL.revokeObjectURL(url);
     }
     const source = context.createMediaStreamSource(stream);
-    const node = new AudioWorkletNode(context, "pcm-capture", { numberOfInputs: 1, numberOfOutputs: 0 });
+    const node = new AudioWorkletNode(context, "pcm-capture", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
     node.port.onmessage = (event: MessageEvent<ArrayBuffer>) => onFrame(event.data);
+    // Some browsers only run a node that reaches the speakers. A muted gain keeps it running without a sound.
+    const mute = context.createGain();
+    mute.gain.value = 0;
     source.connect(node);
+    node.connect(mute);
+    mute.connect(context.destination);
     return {
       stop() {
         source.disconnect();
         node.disconnect();
+        mute.disconnect();
         release();
       },
     };

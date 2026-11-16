@@ -11,6 +11,8 @@ import type { Segment } from "./heard";
 const OPEN = 1;
 /** The microphone sends 80 ms frames. */
 const FRAME_MS = 80;
+/** How long a finished message waits for the voice's last "Flushed" before moving on. */
+const FINISH_TIMEOUT_MS = 4000;
 
 export type OpenSocket = (url: string, protocols: string[]) => WebSocket;
 const defaultOpen: OpenSocket = (url, protocols) => new WebSocket(url, protocols);
@@ -128,9 +130,13 @@ export function connectTts(url: string, token: string, handlers: TtsHandlers, op
       },
       finish() {
         return new Promise((done) => {
+          // If Deepgram ever answers with fewer "Flushed" than pieces sent, do not wait for ever.
+          const timer = setTimeout(done, FINISH_TIMEOUT_MS);
           const check = () => {
-            if (ended || flushed >= pieces.length) done();
-            else waiters.push(check);
+            if (ended || flushed >= pieces.length) {
+              clearTimeout(timer);
+              done();
+            } else waiters.push(check);
           };
           check();
         });

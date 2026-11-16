@@ -155,6 +155,24 @@ describe("voice socket", () => {
     expect(done).toBe(true);
   });
 
+  it("does not wait for ever if the voice flushes fewer pieces than were sent", async () => {
+    vi.useFakeTimers();
+    try {
+      const { tts, socket } = await connected();
+      tts.speak("One.");
+      tts.speak("Two.");
+      socket.json({ type: "Flushed", speech_id: "a" });
+      let done = false;
+      void tts.finish().then(() => (done = true));
+      await vi.advanceTimersByTimeAsync(3900);
+      expect(done).toBe(false);
+      await vi.advanceTimersByTimeAsync(200);
+      expect(done).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("finishes at once when nothing was sent", async () => {
     const { tts } = await connected();
     await expect(tts.finish()).resolves.toBeUndefined();

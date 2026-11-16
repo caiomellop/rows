@@ -322,7 +322,7 @@ function Feedback({ view, onRetry }: { view: View; onRetry: () => void }) {
       <ul className="space-y-2">
         {report.scores.map((score) => (
           <li key={score.criterion} className="flex gap-3 text-[14px] leading-relaxed">
-            <span className="w-28 shrink-0 text-fg">
+            <span className="w-44 shrink-0 text-fg">
               {CRITERION_LABELS[score.criterion]} <span className="font-mono tabular-nums text-fg-2">{score.score}/5</span>
             </span>
             <span className="text-fg-2">{score.note}</span>
