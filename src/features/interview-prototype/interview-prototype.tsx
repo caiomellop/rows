@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { PcmPlayer, startMic } from "./audio";
 import { InterviewController, initialView, type StartForm, type View } from "./controller";
+import { DEFAULT_VOICE, VOICES } from "./languages";
 import { estimateCost, resultsMarkdown, summarizeLatency, type TurnLatency } from "./metrics";
 import { CRITERIA, DURATIONS, LIMITS } from "./schemas";
 import { connectStt, connectTts } from "./sockets";
@@ -71,6 +72,7 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
   const [jobDescription, setJobDescription] = useState("");
   const [resume, setResume] = useState("");
   const [durationMinutes, setDurationMinutes] = useState<StartForm["durationMinutes"]>(15);
+  const [voice, setVoice] = useState<StartForm["voice"]>(DEFAULT_VOICE);
   const starting = view.phase === "starting";
   const ready = jobDescription.trim().length >= 40;
 
@@ -79,24 +81,35 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
       className="mt-8 space-y-6"
       onSubmit={(event) => {
         event.preventDefault();
-        if (ready && !starting) onStart({ jobDescription, resume, durationMinutes });
+        if (ready && !starting) onStart({ jobDescription, resume, durationMinutes, voice });
       }}
     >
-      <Field label="Job description" hint="Paste the posting. The interview is held in the language it is written in (Portuguese or English).">
+      <Field label="Job description" hint="Paste the posting. The interview is held in the language of the voice you choose.">
         <textarea className={field} rows={9} required maxLength={LIMITS.jobDescription} value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} />
       </Field>
       <Field label="Resume summary (optional)" hint="A few lines about your background. The interviewer only uses what you write here.">
         <textarea className={field} rows={4} maxLength={LIMITS.resume} value={resume} onChange={(e) => setResume(e.target.value)} />
       </Field>
-      <Field label="Length">
-        <select className={`${field} max-w-[12rem]`} value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value) as StartForm["durationMinutes"])}>
-          {DURATIONS.map((minutes) => (
-            <option key={minutes} value={minutes}>
-              {minutes} minutes
-            </option>
-          ))}
-        </select>
-      </Field>
+      <div className="grid gap-6 sm:grid-cols-[repeat(2,12rem)]">
+        <Field label="Length">
+          <select className={field} value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value) as StartForm["durationMinutes"])}>
+            {DURATIONS.map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {minutes} minutes
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Voice">
+          <select className={field} value={voice} onChange={(e) => setVoice(VOICES.find((option) => option.id === e.target.value)?.id ?? DEFAULT_VOICE)}>
+            {VOICES.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
 
       <p className="text-[13px] leading-relaxed text-fg-3">
         Use headphones. The microphone stays open while the interviewer speaks so you can interrupt, and speakers make it hear itself.
@@ -278,7 +291,7 @@ function Results({ view, onRetryFeedback, onNew }: { view: View; onRetryFeedback
         <h2 id="transcript-title" className="text-[1.5rem] text-fg">
           Transcript
         </h2>
-        <p className="mt-2 text-[13px] text-fg-3">Check that hesitations such as &ldquo;um&rdquo;, &ldquo;uh&rdquo;, &ldquo;é...&rdquo; and &ldquo;tipo&rdquo; were kept.</p>
+        <p className="mt-2 text-[13px] text-fg-3">Check that hesitations such as &ldquo;um&rdquo; and &ldquo;uh&rdquo; were kept.</p>
         <div className="mt-4 space-y-4">
           {view.turns.map((turn, index) => (
             <Message key={index} role={turn.role} text={turn.text} interrupted={turn.interrupted} />

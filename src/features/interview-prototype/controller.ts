@@ -1,5 +1,6 @@
 import type { Mic, Player } from "./audio";
 import { heardText } from "./heard";
+import type { Language, VoiceId } from "./languages";
 import { addLlmUsage, emptyUsage, latencyFromMarks, type TurnLatency, type Usage } from "./metrics";
 import { SentenceChunker } from "./sentences";
 import {
@@ -7,7 +8,6 @@ import {
   SessionResponseSchema,
   TurnEventSchema,
   type Feedback,
-  type Language,
   type Move,
   type Plan,
   type SessionResponse,
@@ -28,7 +28,7 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 /** Words this long, heard while the interviewer is speaking, count as the candidate talking over it. */
 const BARGE_IN_MIN_CHARS = 3;
 
-export type StartForm = { jobDescription: string; resume: string; durationMinutes: 10 | 15 | 20 | 30 };
+export type StartForm = { jobDescription: string; resume: string; durationMinutes: 10 | 15 | 20 | 30; voice: VoiceId };
 
 export type Phase = "setup" | "starting" | "live" | "done";
 export type Status = "listening" | "thinking" | "speaking";

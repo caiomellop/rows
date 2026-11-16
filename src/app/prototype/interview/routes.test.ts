@@ -8,21 +8,22 @@ const ai = vi.hoisted(() => {
 });
 vi.mock("@/lib/ai", () => ai);
 
-const deepgram = vi.hoisted(() => {
-  class DeepgramError extends Error {}
-  return { DeepgramError, mintBrowserToken: vi.fn(), ttsVoice: vi.fn() };
-});
-vi.mock("@/features/interview-prototype/deepgram", () => deepgram);
+// The token call is mocked; the choice of voice runs for real.
+const deepgram = vi.hoisted(() => ({ mintBrowserToken: vi.fn() }));
+vi.mock("@/features/interview-prototype/deepgram", async (importActual) => ({
+  ...(await importActual<typeof import("@/features/interview-prototype/deepgram")>()),
+  mintBrowserToken: deepgram.mintBrowserToken,
+}));
 
 import { applyMove, startState } from "@/features/interview-prototype/state";
-import type { Plan } from "@/features/interview-prototype/schemas";
+import type { Plan, PlanDraft } from "@/features/interview-prototype/schemas";
 
 import { POST as feedback } from "./feedback/route";
 import { POST as session } from "./session/route";
 import { POST as turn } from "./turn/route";
 
-const plan: Plan = {
-  language: "en",
+// What the planner model writes has no language: the session route adds it from the chosen voice.
+const draft: PlanDraft = {
   roleTitle: "Backend Engineer",
   companyName: null,
   questions: [
@@ -31,6 +32,7 @@ const plan: Plan = {
     { topic: "Conflict", question: "Tell me about a disagreement.", lookFor: "Their own role." },
   ],
 };
+const plan: Plan = { ...draft, language: "en" };
 const jobDescription = "We are hiring a backend engineer to build and run payment APIs in Go and PostgreSQL.";
 const usage = { input: 1200, output: 40, cacheRead: 1000, cacheWrite: 0 };
 
@@ -48,7 +50,6 @@ async function* modelStream(...events: unknown[]) {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.spyOn(console, "error").mockImplementation(() => {});
-  deepgram.ttsVoice.mockReturnValue("flux-cliff-en");
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -81,7 +82,7 @@ describe("when enabled", () => {
     });
 
     it("returns the plan, the time budget and a browser token with the socket addresses", async () => {
-      ai.planInterview.mockResolvedValue({ plan, usage });
+      ai.planInterview.mockResolvedValue({ plan: draft, usage });
       deepgram.mintBrowserToken.mockResolvedValue("browser-token");
 
       const response = await session(post({ jobDescription, resume: "", durationMinutes: 15 }));
@@ -93,6 +94,29 @@ describe("when enabled", () => {
       expect(body.deepgram.listenUrl).toContain("wss://api.deepgram.com/v2/listen");
       expect(body.deepgram.speakUrl).toContain("model=flux-cliff-en");
       expect(deepgram.mintBrowserToken).toHaveBeenCalledWith(15 * 60 + 600);
+    });
+
+    it.each([
+      { name: "Cliff (the default)", voice: undefined, language: "en", model: "flux-cliff-en", speed: "0.9", expressivity: "1" },
+      { name: "Sienna", voice: "sienna", language: "en", model: "flux-sienna-en", speed: "0.9", expressivity: "1" },
+      { name: "Eduardo", voice: "eduardo", language: "es", model: "flux-eduardo-es", speed: "0.9", expressivity: "0" },
+      { name: "Roberto", voice: "roberto", language: "pt", model: "flux-roberto-pt", speed: "0.9", expressivity: "1" },
+      { name: "Mathieu", voice: "mathieu", language: "fr", model: "flux-mathieu-fr", speed: "0.9", expressivity: "0" },
+    ])("$name sets the interview language, the voice settings and the speech hint", async ({ voice, language, model, speed, expressivity }) => {
+      ai.planInterview.mockResolvedValue({ plan: draft, usage });
+      deepgram.mintBrowserToken.mockResolvedValue("t");
+
+      const body = await (await session(post({ jobDescription, durationMinutes: 10, voice }))).json();
+
+      const speak = new URL(body.deepgram.speakUrl);
+      expect([speak.searchParams.get("model"), speak.searchParams.get("speed"), speak.searchParams.get("expressivity")]).toEqual([model, speed, expressivity]);
+      expect(new URL(body.deepgram.listenUrl).searchParams.getAll("language_hint")).toEqual([language]);
+      expect(ai.planInterview).toHaveBeenCalledWith(expect.objectContaining({ language }));
+      expect(body.plan.language).toBe(language);
+    });
+
+    it("refuses a voice that is not offered", async () => {
+      expect((await session(post({ jobDescription, durationMinutes: 10, voice: "alexis" }))).status).toBe(400);
     });
 
     it("shows our own message for a known failure and a generic one for anything else", async () => {

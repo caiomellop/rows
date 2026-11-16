@@ -1,4 +1,4 @@
-import type { Language } from "./schemas";
+import type { Language } from "./languages";
 
 /* ------------------------------------------------------------------ */
 /* Latency: from the candidate's last word to the first audio heard    */
@@ -174,7 +174,7 @@ export function resultsMarkdown(input: { language: Language; minutes: number; ca
     cost.per30MinUsd === null
       ? `- Cost of this run: ${usd(cost.totalUsd)} (too short to scale to 30 min).`
       : `- Estimated cost for 30 min: ${usd(cost.per30MinUsd)} (this run ${usd(cost.totalUsd)}: speech recognition ${usd(cost.sttUsd)}, voice ${usd(cost.ttsUsd)}, Claude live turns ${usd(cost.llmUsd)}, feedback report ${usd(cost.feedbackUsd)}). Rates are estimates.`,
-    "- Transcription quality, Portuguese: _fill in_. English: _fill in_.",
+    "- Transcription quality: _fill in_.",
     '- Verdict, "is the experience good enough?": _fill in_.',
   );
   return lines.join("\n");

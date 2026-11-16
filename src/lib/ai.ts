@@ -7,8 +7,9 @@ import { z } from "zod";
 
 import type { AssistantMessage, Experience, Profile } from "@/db/schema";
 import { normalizeFeedback, plannedQuestionsText, transcriptText } from "@/features/interview-prototype/feedback";
+import { LANGUAGE_NAMES, type Language } from "@/features/interview-prototype/languages";
 import type { LlmUsage } from "@/features/interview-prototype/metrics";
-import { FeedbackSchema, LANGUAGE_NAMES, PlanSchema, type Feedback, type Plan, type Turn } from "@/features/interview-prototype/schemas";
+import { FeedbackSchema, PlanDraftSchema, type Feedback, type Plan, type PlanDraft, type Turn } from "@/features/interview-prototype/schemas";
 import { loadPrompt, renderPrompt } from "@/lib/prompts";
 
 /**
@@ -259,16 +260,16 @@ Use only facts the candidate stated or confirmed. Suggestions the assistant made
 /* Voice interview prototype (CAI-36)                                  */
 /* ------------------------------------------------------------------ */
 
-/** The question plan, built from the job description and the resume summary. */
-export async function planInterview(input: { jobDescription: string; resume: string; durationMinutes: number }): Promise<{ plan: Plan; usage: LlmUsage }> {
+/** The question plan, built from the job description and the resume summary and written in the interview's language. */
+export async function planInterview(input: { jobDescription: string; resume: string; durationMinutes: number; language: Language }): Promise<{ plan: PlanDraft; usage: LlmUsage }> {
   // About two minutes per question, so the plan fits the time budget.
   const questionCount = Math.min(10, Math.max(4, Math.round(input.durationMinutes / 2.2)));
   const { parsed, usage } = await structuredWithUsage({
-    schema: PlanSchema,
+    schema: PlanDraftSchema,
     model: INTERVIEW_MODEL,
     effort: "low",
     maxTokens: 3000,
-    system: renderPrompt(loadPrompt("interviews", "planner"), { question_count: String(questionCount) }),
+    system: renderPrompt(loadPrompt("interviews", "planner"), { question_count: String(questionCount), language_name: LANGUAGE_NAMES[input.language] }),
     content: [{ type: "text", text: `<job_description>\n${input.jobDescription}\n</job_description>\n\n<resume>\n${input.resume || "(none provided)"}\n</resume>` }],
   });
   return { plan: parsed, usage };
