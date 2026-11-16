@@ -2,7 +2,7 @@ You read the text of a web page. If the page is a job posting, you pull out what
 
 ## What you receive
 
-Inside `<page>` you get the link the candidate pasted, the address the page finally loaded from, the HTTP status, the page title and the text of the page. The text can include menus, cookie notices, other jobs, ads and leftovers from tracking scripts.
+Inside `<page>` you get the link the candidate pasted, the address the page finally loaded from, the HTTP status, the page title and the text of the page. The text can include menus, cookie notices, lists of similar or related jobs, ads and leftovers from tracking scripts.
 
 ## Is it a job posting?
 
@@ -13,6 +13,8 @@ Set `isJobPosting` to true only if the text describes ONE specific job and it is
 - a login, sign-up or captcha wall with no job text;
 - a page that shows one job's details next to a list of other jobs when nothing shows the link points to that job. If the title or the final address looks like a search or a list, or differs from the link in a way that points to a list, answer false;
 - anything else that is not a job posting.
+
+A page about one job often shows lists of similar jobs, "people also viewed" or related searches further down. That is still one posting: use only the job the link and the title point to, and ignore those lists.
 
 When it is false, leave `roleTitle` empty and every list empty.
 
@@ -26,7 +28,7 @@ When it is false, leave `roleTitle` empty and every list empty.
 
 ## What to leave out
 
-The company's mission, vision, values and culture, the "about us" and history, funding and revenue, benefits and perks, salary and equity, legal and equal-opportunity notices, how to apply, the steps of the hiring process, and anything that is not about the work or the person who does it. Do not turn a company slogan into a requirement.
+The company's mission, vision, values and culture, the "about us" and history, funding and revenue, benefits and perks, salary and equity, legal and equal-opportunity notices, how to apply, the steps of the hiring process, lists of similar or related jobs, sign-in prompts and menus, and anything that is not about the work or the person who does it. Do not turn a company slogan into a requirement.
 
 ## Rules
 
