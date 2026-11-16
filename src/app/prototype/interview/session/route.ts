@@ -1,4 +1,4 @@
-import { mintBrowserToken, ttsVoice } from "@/features/interview-prototype/deepgram";
+import { mintBrowserToken, ttsSettings } from "@/features/interview-prototype/deepgram";
 import { listenUrl, speakUrl } from "@/features/interview-prototype/deepgram-urls";
 import { disabledResponse, prototypeEnabled } from "@/features/interview-prototype/gate";
 import { logFailure, safeMessage } from "@/features/interview-prototype/route-utils";
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
   const parsed = StartRequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
-  const { jobDescription, resume, durationMinutes } = parsed.data;
+  const { jobDescription, resume, durationMinutes, voice } = parsed.data;
 
   try {
     const [{ plan, usage }, token] = await Promise.all([
@@ -21,11 +21,13 @@ export async function POST(request: Request) {
     ]);
     if (plan.questions.length < 3) return Response.json({ error: "The interview plan came back too short. Try again." }, { status: 502 });
 
+    // The voice follows the interview language: the chosen English voice, or the Portuguese voice.
+    const tts = ttsSettings(plan.language, voice);
     const body: SessionResponse = {
       plan,
       budgetMs: durationMinutes * 60_000,
       usage,
-      deepgram: { token, listenUrl: listenUrl(), speakUrl: speakUrl(ttsVoice(plan.language)) },
+      deepgram: { token, listenUrl: listenUrl(), speakUrl: speakUrl(tts.model, { speed: tts.speed, expressivity: tts.expressivity }) },
     };
     return Response.json(body);
   } catch (error) {

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { DEFAULT_VOICE, VOICE_IDS } from "./voices";
+
 /**
  * Types and request schemas of the voice interview prototype (CAI-36).
  * Nothing here is stored: the interview state lives in the browser and travels with each request.
@@ -80,6 +82,7 @@ const plan = PlanSchema.refine((p) => JSON.stringify(p).length < 20_000, "The pl
 export const StartRequestSchema = z.object({
   jobDescription,
   resume,
+  voice: z.enum(VOICE_IDS).default(DEFAULT_VOICE),
   durationMinutes: z.union(DURATIONS.map((d) => z.literal(d)) as [z.ZodLiteral<10>, z.ZodLiteral<15>, z.ZodLiteral<20>, z.ZodLiteral<30>]),
 });
 

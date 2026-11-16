@@ -8,6 +8,7 @@ import { estimateCost, resultsMarkdown, summarizeLatency, type TurnLatency } fro
 import { CRITERIA, DURATIONS, LIMITS } from "./schemas";
 import { connectStt, connectTts } from "./sockets";
 import { formatClock } from "./state";
+import { DEFAULT_VOICE, VOICES } from "./voices";
 
 /**
  * CAI-36: the whole prototype page. Paste a job description, press Começar and talk.
@@ -71,6 +72,7 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
   const [jobDescription, setJobDescription] = useState("");
   const [resume, setResume] = useState("");
   const [durationMinutes, setDurationMinutes] = useState<StartForm["durationMinutes"]>(15);
+  const [voice, setVoice] = useState<StartForm["voice"]>(DEFAULT_VOICE);
   const starting = view.phase === "starting";
   const ready = jobDescription.trim().length >= 40;
 
@@ -79,7 +81,7 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
       className="mt-8 space-y-6"
       onSubmit={(event) => {
         event.preventDefault();
-        if (ready && !starting) onStart({ jobDescription, resume, durationMinutes });
+        if (ready && !starting) onStart({ jobDescription, resume, durationMinutes, voice });
       }}
     >
       <Field label="Job description" hint="Paste the posting. The interview is held in the language it is written in (Portuguese or English).">
@@ -97,6 +99,22 @@ function Setup({ view, onStart }: { view: View; onStart: (form: StartForm) => vo
           ))}
         </select>
       </Field>
+
+      <fieldset>
+        <legend className="text-[14px] font-medium text-fg">Voice</legend>
+        <div className="mt-2 flex flex-wrap gap-3">
+          {VOICES.map((option) => (
+            <label
+              key={option.id}
+              className="flex cursor-pointer items-center gap-2 rounded-full border border-line bg-card px-5 py-2.5 text-[14px] text-fg-2 transition-colors has-[:checked]:border-fg has-[:checked]:text-fg has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
+            >
+              <input type="radio" name="voice" value={option.id} checked={voice === option.id} onChange={() => setVoice(option.id)} className="size-3.5 accent-accent" />
+              {option.label}
+            </label>
+          ))}
+        </div>
+        <p className="mt-2 text-[13px] text-fg-3">Both voices speak English at 0.9x. A Portuguese job description gets a Portuguese voice instead.</p>
+      </fieldset>
 
       <p className="text-[13px] leading-relaxed text-fg-3">
         Use headphones. The microphone stays open while the interviewer speaks so you can interrupt, and speakers make it hear itself.

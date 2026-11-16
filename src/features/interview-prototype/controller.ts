@@ -16,6 +16,7 @@ import {
 } from "./schemas";
 import type { connectStt, connectTts, SttConnection, SttTurn, TtsConnection } from "./sockets";
 import { addTurn, allowedMoves, applyMove, coerceMove, OVERTIME_GRACE_MS, prepareTurn, startState } from "./state";
+import type { VoiceId } from "./voices";
 
 /**
  * The interview loop, in the browser: listen, decide the candidate has finished, think, speak, listen again.
@@ -28,7 +29,7 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 /** Words this long, heard while the interviewer is speaking, count as the candidate talking over it. */
 const BARGE_IN_MIN_CHARS = 3;
 
-export type StartForm = { jobDescription: string; resume: string; durationMinutes: 10 | 15 | 20 | 30 };
+export type StartForm = { jobDescription: string; resume: string; durationMinutes: 10 | 15 | 20 | 30; voice: VoiceId };
 
 export type Phase = "setup" | "starting" | "live" | "done";
 export type Status = "listening" | "thinking" | "speaking";

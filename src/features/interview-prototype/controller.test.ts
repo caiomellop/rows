@@ -16,7 +16,7 @@ const plan: Plan = {
     { topic: "Conflict", question: "Tell me about a disagreement.", lookFor: "Their own role." },
   ],
 };
-const form: StartForm = { jobDescription: "We are hiring a backend engineer to build payment APIs in Go.", resume: "", durationMinutes: 15 };
+const form: StartForm = { jobDescription: "We are hiring a backend engineer to build payment APIs in Go.", resume: "", durationMinutes: 15, voice: "sienna" };
 const usage = { input: 1000, output: 30, cacheRead: 800, cacheWrite: 0 };
 const report = { summary: "Solid.", scores: [], strengths: ["clear"], improvements: ["add numbers"] };
 const encoder = new TextEncoder();
@@ -157,6 +157,15 @@ describe("starting", () => {
     expect(h.deps.connectStt).toHaveBeenCalledWith("wss://listen", "t", expect.any(Object));
     expect(h.turns[0].body.state).toMatchObject({ stage: "opening", transcript: [] });
     expect(h.view().usage.llm.input).toBe(1000); // the plan's usage is counted
+  });
+
+  it("sends the chosen voice with the start request, and not with the turns", async () => {
+    const h = harness();
+    await h.controller.start(form);
+    await vi.waitFor(() => expect(h.turns).toHaveLength(1));
+    const start = h.fetchMock.mock.calls.find(([url]) => String(url).endsWith("/session"));
+    expect(JSON.parse((start?.[1] as RequestInit).body as string)).toMatchObject({ voice: "sienna", durationMinutes: 15 });
+    expect(h.turns[0].body).not.toHaveProperty("voice");
   });
 
   it("feeds microphone frames to speech recognition once it is connected", async () => {

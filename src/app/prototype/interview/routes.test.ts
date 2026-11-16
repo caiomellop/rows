@@ -8,11 +8,12 @@ const ai = vi.hoisted(() => {
 });
 vi.mock("@/lib/ai", () => ai);
 
-const deepgram = vi.hoisted(() => {
-  class DeepgramError extends Error {}
-  return { DeepgramError, mintBrowserToken: vi.fn(), ttsVoice: vi.fn() };
-});
-vi.mock("@/features/interview-prototype/deepgram", () => deepgram);
+// The token call is mocked; the choice of voice runs for real.
+const deepgram = vi.hoisted(() => ({ mintBrowserToken: vi.fn() }));
+vi.mock("@/features/interview-prototype/deepgram", async (importActual) => ({
+  ...(await importActual<typeof import("@/features/interview-prototype/deepgram")>()),
+  mintBrowserToken: deepgram.mintBrowserToken,
+}));
 
 import { applyMove, startState } from "@/features/interview-prototype/state";
 import type { Plan } from "@/features/interview-prototype/schemas";
@@ -48,7 +49,6 @@ async function* modelStream(...events: unknown[]) {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.spyOn(console, "error").mockImplementation(() => {});
-  deepgram.ttsVoice.mockReturnValue("flux-cliff-en");
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -93,6 +93,31 @@ describe("when enabled", () => {
       expect(body.deepgram.listenUrl).toContain("wss://api.deepgram.com/v2/listen");
       expect(body.deepgram.speakUrl).toContain("model=flux-cliff-en");
       expect(deepgram.mintBrowserToken).toHaveBeenCalledWith(15 * 60 + 600);
+    });
+
+    it("uses the voice chosen on the form: Cliff by default, Sienna when picked, both at 0.9x with expressivity 1", async () => {
+      ai.planInterview.mockResolvedValue({ plan, usage });
+      deepgram.mintBrowserToken.mockResolvedValue("t");
+      const speakUrl = async (extra: object) => new URL((await (await session(post({ jobDescription, durationMinutes: 10, ...extra }))).json()).deepgram.speakUrl);
+
+      const byDefault = await speakUrl({});
+      expect([byDefault.searchParams.get("model"), byDefault.searchParams.get("speed"), byDefault.searchParams.get("expressivity")]).toEqual(["flux-cliff-en", "0.9", "1"]);
+
+      const sienna = await speakUrl({ voice: "sienna" });
+      expect([sienna.searchParams.get("model"), sienna.searchParams.get("speed"), sienna.searchParams.get("expressivity")]).toEqual(["flux-sienna-en", "0.9", "1"]);
+    });
+
+    it("uses the Portuguese voice for a Portuguese interview, whichever voice was chosen", async () => {
+      ai.planInterview.mockResolvedValue({ plan: { ...plan, language: "pt" }, usage });
+      deepgram.mintBrowserToken.mockResolvedValue("t");
+      const body = await (await session(post({ jobDescription, durationMinutes: 10, voice: "sienna" }))).json();
+      const url = new URL(body.deepgram.speakUrl);
+      expect(url.searchParams.get("model")).toBe("flux-bruno-pt");
+      expect(url.searchParams.has("speed")).toBe(false);
+    });
+
+    it("refuses a voice that is not offered", async () => {
+      expect((await session(post({ jobDescription, durationMinutes: 10, voice: "alexis" }))).status).toBe(400);
     });
 
     it("shows our own message for a known failure and a generic one for anything else", async () => {

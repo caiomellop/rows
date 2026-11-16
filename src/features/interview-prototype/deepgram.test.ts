@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import { isFluxVoice, listenUrl, speakUrl } from "./deepgram-urls";
-import { DEFAULT_VOICES, DeepgramError, mintBrowserToken, ttsVoice } from "./deepgram";
+import { DEFAULT_PT_VOICE, DeepgramError, mintBrowserToken, ttsSettings } from "./deepgram";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -28,6 +28,28 @@ describe("Deepgram addresses", () => {
     expect(url.searchParams.get("sample_rate")).toBe("24000");
   });
 
+  it("sends the voice's speed and expressivity when they are given", () => {
+    const url = new URL(speakUrl("flux-sienna-en", { speed: 0.9, expressivity: 1 }));
+    expect(url.searchParams.get("model")).toBe("flux-sienna-en");
+    expect(url.searchParams.get("speed")).toBe("0.9");
+    expect(url.searchParams.get("expressivity")).toBe("1");
+  });
+
+  it("leaves them out when they are not given, so the voice keeps its own pace", () => {
+    const url = new URL(speakUrl("flux-bruno-pt"));
+    expect(url.searchParams.has("speed")).toBe(false);
+    expect(url.searchParams.has("expressivity")).toBe(false);
+  });
+
+  it("refuses values Deepgram would reject with a 400, instead of closing the voice socket mid-interview", () => {
+    expect(() => speakUrl("flux-cliff-en", { speed: 2 })).toThrow("Speed 2 is not valid");
+    expect(() => speakUrl("flux-cliff-en", { speed: 0.42 })).toThrow("Speed 0.42 is not valid");
+    expect(() => speakUrl("flux-cliff-en", { expressivity: 3 })).toThrow("Expressivity 3 is not valid");
+    expect(() => speakUrl("flux-cliff-en", { expressivity: 0.5 })).toThrow("Expressivity 0.5 is not valid");
+    expect(() => speakUrl("flux-cliff-en", { speed: 0.5, expressivity: -2 })).not.toThrow();
+    expect(() => speakUrl("flux-cliff-en", { speed: 1.5, expressivity: 2 })).not.toThrow();
+  });
+
   it("accepts only Flux voice names, so a setting cannot inject query parameters", () => {
     expect(isFluxVoice("flux-bruno-pt")).toBe(true);
     expect(isFluxVoice("aura-2-thalia-en")).toBe(false);
@@ -36,18 +58,28 @@ describe("Deepgram addresses", () => {
   });
 });
 
-describe("voices", () => {
-  it("defaults to Cliff in English and a Portuguese voice in Portuguese", () => {
-    expect(ttsVoice("en")).toBe("flux-cliff-en");
-    expect(ttsVoice("pt")).toBe(DEFAULT_VOICES.pt);
-    expect(DEFAULT_VOICES.pt).toMatch(/-pt$/);
+describe("which voice an interview uses", () => {
+  it("English uses the chosen voice with its own speed and expressivity", () => {
+    expect(ttsSettings("en", "cliff")).toEqual({ model: "flux-cliff-en", speed: 0.9, expressivity: 1 });
+    expect(ttsSettings("en", "sienna")).toEqual({ model: "flux-sienna-en", speed: 0.9, expressivity: 1 });
   });
 
-  it("can be changed by environment variable and rejects a bad value", () => {
+  it("Portuguese uses a Portuguese voice whichever English voice was chosen, because English voices cannot read it", () => {
+    expect(DEFAULT_PT_VOICE).toMatch(/-pt$/);
+    expect(ttsSettings("pt", "cliff")).toEqual({ model: DEFAULT_PT_VOICE });
+    expect(ttsSettings("pt", "sienna")).toEqual({ model: DEFAULT_PT_VOICE });
+  });
+
+  it("the Portuguese voice can be changed by environment variable, and a bad value is refused", () => {
     vi.stubEnv("DEEPGRAM_TTS_VOICE_PT", " flux-mateus-pt ");
-    expect(ttsVoice("pt")).toBe("flux-mateus-pt");
-    vi.stubEnv("DEEPGRAM_TTS_VOICE_EN", "cliff");
-    expect(() => ttsVoice("en")).toThrow(DeepgramError);
+    expect(ttsSettings("pt", "cliff")).toEqual({ model: "flux-mateus-pt" });
+    vi.stubEnv("DEEPGRAM_TTS_VOICE_PT", "mateus");
+    expect(() => ttsSettings("pt", "cliff")).toThrow(DeepgramError);
+  });
+
+  it("ignores the old English voice variable: the page chooses English voices now", () => {
+    vi.stubEnv("DEEPGRAM_TTS_VOICE_EN", "flux-alexis-en");
+    expect(ttsSettings("en", "cliff").model).toBe("flux-cliff-en");
   });
 });
 
