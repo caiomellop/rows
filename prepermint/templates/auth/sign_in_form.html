@@ -1,0 +1,19 @@
+{# One big email field. Enter submits; there is no visible button. HTMX swaps this block for the answer. #}
+<div id="sign-in-body" class="mt-8 w-full">
+  {% if sent_to %}
+  <p role="status" class="text-[17px] leading-relaxed text-fg">
+    We sent a link to <span class="font-medium">{{ sent_to }}</span>. It's valid for {{ ttl_minutes }} minutes.
+  </p>
+  {% else %}
+  <form action="/sign-in" method="post" hx-post="/sign-in" hx-target="#sign-in-body" hx-swap="outerHTML" hx-disabled-elt="find input" class="w-full">
+    <label for="email" class="sr-only">Email</label>
+    <input id="email" name="email" type="email" required autofocus autocomplete="email" inputmode="email" enterkeyhint="go"
+      autocapitalize="none" spellcheck="false" placeholder="you@email.com" value="{{ email }}"
+      aria-invalid="{{ 'true' if error else 'false' }}" {% if error %}aria-describedby="email-error"{% endif %}
+      class="h-14 w-full rounded-xl border bg-card px-5 text-center text-[19px] text-fg outline-none placeholder:text-fg-3 focus:border-ink/50 disabled:opacity-60 {{ 'border-red-700/60' if error else 'border-line' }}">
+    {% if error %}<p id="email-error" role="alert" class="mt-2 text-[14px] text-red-700">{{ error }}</p>{% endif %}
+    {# Kept for assistive tech and for browsers that need a submit control. #}
+    <button type="submit" class="sr-only">Send login link</button>
+  </form>
+  {% endif %}
+</div>

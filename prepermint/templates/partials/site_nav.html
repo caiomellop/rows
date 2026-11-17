@@ -1,0 +1,21 @@
+{# Spec §4: full-width, ~66px, hairline bottom border, sticky with blur. #}
+{% set nav_link = "text-[15px] text-fg-2 transition-colors hover:text-fg" %}
+<header class="sticky top-0 z-50 border-b border-line bg-page/80 backdrop-blur-md">
+  <div class="flex h-[66px] items-center justify-between px-5 md:px-8">
+    {% include "partials/logo.html" %}
+    <nav aria-label="Main" class="flex items-center gap-5">
+      <a href="/" class="{{ nav_link }} hidden sm:inline">Product</a>
+      <a href="/pricing" class="{{ nav_link }}">Pricing</a>
+      {% if viewer %}
+        <span class="hidden max-w-40 truncate text-[15px] text-fg-2 sm:inline">{{ viewer.name or "Signed in" }}</span>
+        <form action="{{ app_href('/sign-out') }}" method="post">
+          <button type="submit" class="{{ nav_link }}">Sign out</button>
+        </form>
+        <a href="{{ app_href('/dashboard') }}" class="btn-primary h-[38px] rounded-xl px-5 text-[15px]">Dashboard</a>
+      {% else %}
+        <a href="{{ app_href('/sign-in') }}" class="{{ nav_link }} hidden sm:inline">Sign in</a>
+        <a href="{{ app_href('/sign-in') }}" class="btn-primary h-[38px] rounded-xl px-5 text-[15px]">Get started</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>

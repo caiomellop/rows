@@ -1,0 +1,28 @@
+{# Pinned and recent conversations, each with its title and date. #}
+{% set path = current_path() %}
+{% macro section(label, rows) %}
+{% if rows %}
+<div class="space-y-0.5">
+  <p class="px-2.5 pb-1 pt-0.5 text-[12px] font-medium text-fg-3">{{ label }}</p>
+  {% for t in rows %}
+  {% set href = "/chat/" ~ t.id %}
+  <a href="{{ href }}" {% if path == href %}aria-current="page"{% endif %}
+    class="flex h-9 items-center gap-2 rounded-lg px-2.5 text-[14px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink/60 aria-[current=page]:bg-ink/[0.08] aria-[current=page]:font-medium aria-[current=page]:text-fg {{ '' if path == href else 'text-fg-2 hover:bg-ink/[0.05] hover:text-fg' }}">
+    <span class="min-w-0 flex-1 truncate">{{ t.title }}</span>
+    <span class="shrink-0 text-[12px] font-normal text-fg-3">{{ t.date }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}
+{% if not threads.pinned and not threads.recent %}
+<div class="space-y-0.5">
+  <p class="px-2.5 pb-1 pt-0.5 text-[12px] font-medium text-fg-3">Recents</p>
+  <p class="px-2.5 text-[13px] leading-relaxed text-fg-3">Your conversations will show up here.</p>
+</div>
+{% else %}
+<div class="space-y-4" data-thread-list>
+  {{ section("Pinned", threads.pinned) }}
+  {{ section("Recents", threads.recent) }}
+</div>
+{% endif %}

@@ -4,9 +4,18 @@ version = "0.1.0"
 description = "Prepermint, the FastAPI app (docs/adr/0003-python-fastapi.md)"
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.20.1",
+    "anthropic>=2.10.0",
     "asyncpg>=0.32.0",
     "fastapi>=0.163.2",
+    "fpdf2>=2.9.0",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "mammoth>=1.13.0",
     "pydantic-settings>=2.16.3",
+    "pyjwt>=2.15.1",
+    "pytailwindcss>=0.4.2",
+    "python-multipart>=0.0.34",
     "sqlalchemy[asyncio]>=2.1.9",
     "uvicorn>=0.54.0",
 ]
@@ -24,16 +33,20 @@ dev = [
     "httpx>=0.28.1",
     "mypy>=2.4.1",
     "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+    "respx>=0.23.1",
     "ruff>=0.17.5",
 ]
 
 [tool.ruff]
 line-length = 120
 target-version = "py313"
-extend-exclude = ["node_modules"]
+extend-exclude = ["node_modules", "web"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "ANN", "S", "SIM", "RUF"]
+# Product copy and prompts use typographic dashes and quotes on purpose.
+ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106"]
@@ -41,8 +54,15 @@ select = ["E", "F", "W", "I", "B", "UP", "ANN", "S", "SIM", "RUF"]
 [tool.mypy]
 strict = true
 python_version = "3.13"
-files = ["prepermint", "tests"]
+files = ["prepermint", "tests", "migrations"]
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# mammoth ships no type information; prepermint/lib/actions.py wraps its one call.
+module = ["mammoth"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

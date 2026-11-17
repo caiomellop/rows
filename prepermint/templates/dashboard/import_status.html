@@ -1,0 +1,3 @@
+<div id="import-status" class="text-[13px]" {% if oob_import %}hx-swap-oob="true"{% endif %}>
+  {% if import_result %}{% if import_result.ok %}<p role="status" class="text-fg-3">{{ import_result.message }}</p>{% else %}<p role="alert" class="text-red-700">{{ import_result.error }}</p>{% endif %}{% endif %}
+</div>

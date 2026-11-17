@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found · Prepermint{% endblock %}
+{% block body %}
+<main class="flex min-h-full flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+  {% include "partials/logo.html" %}
+  <h1 class="mt-8 text-[2.2rem] leading-[1.1] text-fg">This page could not be found.</h1>
+  <p class="mt-4 text-[15px] text-fg-2"><a href="/" class="underline underline-offset-2 hover:text-fg">Go home</a></p>
+</main>
+{% endblock %}

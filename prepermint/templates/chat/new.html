@@ -1,0 +1,26 @@
+{% extends "app/layout.html" %}
+{% block page %}
+{# The empty chat screen: a composer, and the starters as one-click shortcuts. #}
+<div class="mx-auto flex w-full max-w-[640px] flex-1 flex-col justify-center pb-[10vh]">
+  <h1 class="text-center text-[2.2rem] leading-[1.1] text-fg">{{ greeting }}</h1>
+  {% if ai_enabled %}
+  <form action="/chat" method="post" class="surface mt-8 flex items-end gap-2 p-3" data-pending-form>
+    <textarea name="text" required rows="2" maxlength="4000" autofocus data-enter-submits
+      placeholder="Ask anything about your profile, resume or next interview…" aria-label="Your message"
+      class="field flex-1 resize-none border-transparent bg-transparent focus:border-transparent focus:shadow-none"></textarea>
+    <button type="submit" class="btn-primary h-10 rounded-lg px-4 text-[14px]" data-pending-label="Starting…">Send</button>
+  </form>
+  <div class="mt-5 grid gap-2 sm:grid-cols-2">
+    {% for s in starters %}
+    <form action="/chat/starters/{{ s.id }}" method="post">
+      <button type="submit" class="has-icon flex h-full w-full items-center gap-3 rounded-xl border border-line bg-card px-4 py-3 text-left text-[14px] text-fg-2 outline-none transition-colors hover:border-ink/20 hover:text-fg focus-visible:ring-2 focus-visible:ring-ink/60">
+        {{ icon(s.icon, size=18, cls="shrink-0") }}{{ s.title }}
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="surface mt-8 p-5 text-center text-[14px] text-fg-2">The assistant needs ANTHROPIC_KEYS to be set.</p>
+  {% endif %}
+</div>
+{% endblock %}

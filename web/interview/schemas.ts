@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 import { isPublicJobUrl, MAX_JOB_URL_LENGTH } from "./job-url";
 import { DEFAULT_VOICE, LANGUAGES, VOICE_IDS } from "./languages";

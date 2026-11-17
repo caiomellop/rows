@@ -1,10 +1,15 @@
-"""The database engine. Tables and queries come with the models (CAI-101)."""
+"""The database engine and the per-request session. The tables are in prepermint/db/models.py."""
 
+from collections.abc import AsyncIterator
+from typing import Annotated
 from uuid import uuid4
 
+from fastapi import Depends
 from sqlalchemy.engine import URL, make_url
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
+
+from prepermint.settings import get_settings
 
 _POSTGRES_SCHEMES = {"postgres", "postgresql", "postgresql+asyncpg"}
 
@@ -41,3 +46,32 @@ def engine_for(raw_url: str) -> AsyncEngine:
     if raw_url not in _engines:
         _engines[raw_url] = create_engine(raw_url)
     return _engines[raw_url]
+
+
+_sessionmakers: dict[str, async_sessionmaker[AsyncSession]] = {}
+
+
+def sessionmaker_for(raw_url: str) -> async_sessionmaker[AsyncSession]:
+    if raw_url not in _sessionmakers:
+        # Rows stay readable after commit: pages render what they just wrote.
+        _sessionmakers[raw_url] = async_sessionmaker(engine_for(raw_url), expire_on_commit=False)
+    return _sessionmakers[raw_url]
+
+
+def database_url() -> str:
+    url = get_settings().database_url
+    if url is None:
+        raise RuntimeError(
+            "DATABASE_URL is not set. On Vercel: Project → Settings → Environment Variables (Production AND Preview). "
+            "Locally: copy .env.example to .env.local."
+        )
+    return url.get_secret_value()
+
+
+async def get_db() -> AsyncIterator[AsyncSession]:
+    """FastAPI dependency: one session per request, committed by the code that writes."""
+    async with sessionmaker_for(database_url())() as session:
+        yield session
+
+
+DB = Annotated[AsyncSession, Depends(get_db)]

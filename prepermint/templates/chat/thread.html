@@ -1,0 +1,33 @@
+{% extends "app/layout.html" %}
+{% block page %}
+{# One conversation with the assistant. #}
+<div class="flex flex-1 flex-col">
+  <div class="mb-4 flex items-center gap-2">
+    <h1 class="min-w-0 flex-1 truncate font-sans text-[17px] font-medium text-fg">{{ thread.title }}</h1>
+    {% include "chat/pin.html" %}
+  </div>
+
+  <div class="surface flex min-h-[60vh] flex-1 flex-col">
+    {% with thread_id=thread.id %}{% include "chat/messages.html" %}{% endwith %}
+
+    <form id="composer" class="flex items-end gap-2 border-t border-line p-3" action="/chat/{{ thread.id }}/messages" method="post"
+      hx-post="/chat/{{ thread.id }}/messages" hx-target="#messages" hx-swap="outerHTML" hx-disabled-elt="find button" hx-indicator="#thinking"
+      data-chat-composer>
+      <textarea name="text" rows="2" {% if not ai_enabled %}disabled{% endif %} required data-enter-submits
+        placeholder="Your message… (Enter to send, Shift+Enter for a new line)" aria-label="Your message"
+        class="field flex-1 resize-none"></textarea>
+      <button type="submit" class="btn-primary h-10 rounded-lg px-4 text-[14px]" {% if not ai_enabled %}disabled{% endif %}>Send</button>
+    </form>
+
+    <div class="flex flex-wrap items-center gap-3 border-t border-line px-5 py-3">
+      <form hx-post="/chat/{{ thread.id }}/save" hx-target="#save-status" hx-swap="outerHTML" hx-disabled-elt="find button">
+        <button type="submit" class="btn-secondary h-9 rounded-lg px-4 text-[14px]" data-save-cv
+          {% if not ai_enabled or not (messages|selectattr("role", "equalto", "user")|list) %}disabled{% endif %}>
+          <span class="htmx-hide-on-request">Save to my CV</span><span class="htmx-show-on-request">Writing your CV…</span>
+        </button>
+      </form>
+      {% with result=None %}{% include "chat/save_status.html" %}{% endwith %}
+    </div>
+  </div>
+</div>
+{% endblock %}

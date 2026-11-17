@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * What the two Deepgram sockets send as text. Shapes follow Deepgram's published message types

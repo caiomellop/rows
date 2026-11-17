@@ -1,0 +1,9 @@
+<span id="save-status" class="text-[13px]">
+  {% if result is none %}
+  <span class="text-fg-3">Turns what you said here into resume entries you can edit.</span>
+  {% elif result.ok %}
+  <span role="status" class="text-fg-2">{{ result.message }} <a href="/dashboard/experience" class="underline underline-offset-2">Review</a></span>
+  {% else %}
+  <span role="alert" class="text-red-700 dark:text-red-400">{{ result.error }}</span>
+  {% endif %}
+</span>

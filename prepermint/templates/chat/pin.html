@@ -1,0 +1,9 @@
+<span id="pin" class="inline-flex items-center gap-2">
+  <form hx-post="/chat/{{ thread.id }}/pin" hx-target="#pin" hx-swap="outerHTML" hx-disabled-elt="find button">
+    <input type="hidden" name="pinned" value="{{ 'false' if thread.pinned else 'true' }}">
+    <button type="submit" aria-pressed="{{ 'true' if thread.pinned else 'false' }}" title="{{ 'Unpin from the sidebar' if thread.pinned else 'Pin to the sidebar' }}" class="btn-secondary h-9 rounded-lg px-3 text-[14px]">
+      {{ icon("pin-off" if thread.pinned else "pin", size=15, stroke=1.6) }}{{ "Unpin" if thread.pinned else "Pin" }}
+    </button>
+  </form>
+  {% if error %}<span role="alert" class="text-[13px] text-red-700 dark:text-red-400">{{ error }}</span>{% endif %}
+</span>

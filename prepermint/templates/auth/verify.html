@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Log in to Prepermint{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block body %}
+<main class="flex min-h-full flex-1 flex-col items-center justify-center px-6 py-16">
+  <div class="flex w-full max-w-[400px] flex-col items-center text-center">
+    {% include "partials/logo.html" %}
+    <h1 class="mt-8 text-[2.2rem] leading-[1.1] text-fg">Log in to Prepermint</h1>
+    <form action="/sign-in/verify" method="post" class="mt-8 w-full">
+      <input type="hidden" name="token" value="{{ token }}">
+      <p class="text-[15px] text-fg-2">Continue as <span class="font-medium text-fg">{{ email }}</span></p>
+      <button type="submit" autofocus class="btn-primary mt-5 h-14 w-full rounded-xl text-[17px]">Log in</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

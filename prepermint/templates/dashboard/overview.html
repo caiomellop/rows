@@ -1,0 +1,20 @@
+{% extends "app/layout.html" %}
+{% block page %}
+<div class="space-y-6">
+  {% with header_title="Build your profile", header_body="Two steps, about five minutes. The AI uses them to write and prepare you." %}{% include "app/page_header.html" %}{% endwith %}
+  <ol class="surface divide-y divide-line">
+    {% for step in steps %}
+    <li class="flex gap-4 p-5 md:p-6">
+      <span aria-hidden="true" class="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full text-[13px] font-medium {{ 'bg-ink text-page' if step.done else 'border border-ink/20 text-fg-2' }}">
+        {% if step.done %}{{ icon("check", size=14, cls="size-3.5") }}{% else %}{{ loop.index }}{% endif %}
+      </span>
+      <div class="min-w-0 flex-1">
+        <h2 class="font-sans text-[16px] font-medium text-fg">{{ step.title }}<span class="sr-only">{{ " (done)" if step.done else " (to do)" }}</span></h2>
+        <p class="mt-1 text-[14px] leading-relaxed text-fg-2">{{ step.body }}</p>
+      </div>
+      <a href="{{ step.href }}" class="btn-secondary h-9 shrink-0 self-center rounded-lg px-3.5 text-[14px]">{{ "Edit" if step.done else step.cta }}</a>
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Mock interview prototype{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block head %}<script src="{{ static_url('interview.js') }}" defer></script>{% endblock %}
+{% block body %}
+{#
+  CAI-36: a single page, no login, no database. The setup form is rendered here; web/interview/page.ts (bundled to
+  static/interview.js) wires it up and draws the live interview and the results into #interview-stage.
+#}
+{% set field = "w-full rounded-xl border border-line bg-card px-4 py-3 text-[15px] leading-relaxed text-fg placeholder:text-fg-3 focus:border-fg-3 focus:outline-none" %}
+{% set text_button = "text-[13px] text-fg-2 underline underline-offset-2 transition-colors hover:text-fg" %}
+<main class="mx-auto w-full max-w-3xl flex-1 px-6 py-10 sm:py-14">
+  <p class="font-geist text-[12px] uppercase tracking-[0.14em] text-fg-3">Prototype · nothing is saved</p>
+  <h1 class="mt-2 text-[2.2rem] leading-[1.1] text-fg">Mock interview by voice</h1>
+
+  <form id="interview-setup" class="mt-8 space-y-6" novalidate>
+    {# One field for the job, in two modes. The link is the default; the text is for postings behind a login. #}
+    <div id="job-link-mode">
+      <div class="flex items-baseline justify-between gap-4">
+        <label for="job-posting-url" class="text-[14px] font-medium text-fg">Job posting URL</label>
+        <button type="button" data-switch-mode="text" class="{{ text_button }}">Do it by text</button>
+      </div>
+      <p id="job-posting-url-hint" class="mt-0.5 text-[13px] text-fg-3">Paste the link to the job posting. The interview is held in the language of the voice you choose.</p>
+      <div class="relative mt-2">
+        <input id="job-posting-url" type="text" inputmode="url" autocomplete="off" spellcheck="false" class="{{ field }} pr-11"
+          aria-invalid="false" aria-describedby="job-posting-url-hint job-posting-url-status">
+        <span id="job-posting-url-icon" class="pointer-events-none absolute inset-y-0 right-4 flex items-center"></span>
+      </div>
+      {# Always in the page, so a screen reader announces each change: reading, read, or why not. #}
+      <p id="job-posting-url-status" role="status" aria-live="polite" class="mt-2 min-h-5 text-[13px] text-fg-2"></p>
+    </div>
+
+    <div id="job-text-mode" hidden>
+      <div class="flex items-baseline justify-between gap-4">
+        <label for="job-description" class="text-[14px] font-medium text-fg">Job description</label>
+        <button type="button" data-switch-mode="link" class="{{ text_button }}">Use a link instead</button>
+      </div>
+      <p id="job-description-hint" class="mt-0.5 text-[13px] text-fg-3">Paste the text of the posting. The interview is held in the language of the voice you choose.</p>
+      <textarea id="job-description" class="{{ field }} mt-2" rows="9" maxlength="{{ limits.jobDescription }}" aria-describedby="job-description-hint"></textarea>
+      <p id="job-text-is-link" role="status" class="mt-2 text-[13px] text-fg" hidden>
+        That is a link. <button type="button" data-switch-mode="link" class="{{ text_button }}">Use a link instead</button>
+      </p>
+    </div>
+
+    <label class="block">
+      <span class="text-[14px] font-medium text-fg">Resume summary (optional)</span>
+      <span class="mt-0.5 block text-[13px] text-fg-3">A few lines about your background. The interviewer only uses what you write here.</span>
+      <span class="mt-2 block"><textarea id="interview-resume" class="{{ field }}" rows="4" maxlength="{{ limits.resume }}"></textarea></span>
+    </label>
+
+    <div class="grid gap-6 sm:grid-cols-[repeat(2,12rem)]">
+      <label class="block">
+        <span class="text-[14px] font-medium text-fg">Length</span>
+        <span class="mt-2 block">
+          <select id="interview-duration" class="{{ field }}">
+            {% for minutes in durations %}<option value="{{ minutes }}">{{ minutes }} minutes</option>{% endfor %}
+          </select>
+        </span>
+      </label>
+      <label class="block">
+        <span class="text-[14px] font-medium text-fg">Voice</span>
+        <span class="mt-2 block">
+          <select id="interview-voice" class="{{ field }}">
+            {% for v in voices %}<option value="{{ v.id }}" {% if v.id == default_voice %}selected{% endif %}>{{ v.label }}</option>{% endfor %}
+          </select>
+        </span>
+      </label>
+    </div>
+
+    <p class="text-[13px] leading-relaxed text-fg-3">Use headphones. The microphone stays open while the interviewer speaks so you can interrupt, and speakers make it hear itself.</p>
+    <p id="interview-setup-error" role="alert" class="rounded-xl border border-line bg-panel px-4 py-3 text-[14px] text-fg" hidden></p>
+    <div class="flex items-center gap-4">
+      <button id="interview-start" type="submit" disabled class="btn-primary h-11 rounded-full px-7 text-[15px] disabled:cursor-not-allowed disabled:opacity-50">Começar</button>
+      <span id="interview-starting" role="status" class="text-[14px] text-fg-3" hidden>Preparing the interview…</span>
+    </div>
+  </form>
+
+  <div id="interview-stage"></div>
+</main>
+{% endblock %}

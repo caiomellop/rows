@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Log in to Prepermint{% endblock %}
+{% block body %}
+{# Login is email only (MVP-23): logo, title, one field, the terms line. Nothing else belongs on this page. #}
+<main class="flex min-h-full flex-1 flex-col items-center justify-center px-6 py-16">
+  <div class="flex w-full max-w-[400px] flex-col items-center text-center">
+    {% include "partials/logo.html" %}
+    <h1 class="mt-8 text-[2.2rem] leading-[1.1] text-fg">Log in to Prepermint</h1>
+    {% include "auth/sign_in_form.html" %}
+    <p class="mt-6 text-[13px] leading-relaxed text-fg-3">
+      By signing in you agree with our
+      <a href="{{ site_href('/terms') }}" class="underline underline-offset-2 hover:text-fg">Terms</a> and
+      <a href="{{ site_href('/privacy') }}" class="underline underline-offset-2 hover:text-fg">Privacy Policy</a>.
+    </p>
+  </div>
+</main>
+{% endblock %}

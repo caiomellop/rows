@@ -1,0 +1,15 @@
+{# Headline and summary. "Draft with AI" replaces this block (and the draft message next to the button, out of band);
+   nothing is saved until the owner saves. #}
+<div id="summary-fields" class="space-y-4">
+  <div>
+    <label class="label" for="pf-headline">Headline</label>
+    <input id="pf-headline" name="headline" value="{{ headline }}" maxlength="120" class="field" placeholder="Backend engineer · Go & PostgreSQL · 4 yrs">
+  </div>
+  <div>
+    <label class="label" for="pf-summary">Summary <span class="font-normal text-fg-3">· 3 sentences: what you build, your level, what you want next</span></label>
+    <textarea id="pf-summary" name="summary" rows="4" maxlength="800" class="field" data-summary-source="#pf-summary-source">{{ summary }}</textarea>
+    <input type="hidden" id="pf-summary-source" name="summarySource" value="{{ summary_source }}">
+    {% if summary_source == "ai" %}<p class="mt-1 text-[12px] text-fg-3" data-ai-note>AI draft. Check every claim before you save.</p>{% endif %}
+  </div>
+</div>
+{% if oob_draft_error %}<span id="draft-error" hx-swap-oob="true" role="alert" class="text-[13px] text-red-700">{{ draft_error or "" }}</span>{% endif %}

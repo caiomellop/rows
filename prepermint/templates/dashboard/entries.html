@@ -1,0 +1,25 @@
+{# The entries section. Every change to an entry answers with this whole block, so the list is always current. #}
+<section id="entries" aria-labelledby="entries-heading" class="space-y-3">
+  <h2 id="entries-heading" class="text-[1.6rem] text-fg">Your entries</h2>
+  {% if result %}
+  {% if result.ok %}{% if result.message %}<p role="status" class="text-[13px] text-fg-3">{{ result.message }}</p>{% endif %}{% else %}<p role="alert" class="text-[13px] text-red-700">{{ result.error }}</p>{% endif %}
+  {% endif %}
+  {% if not experiences %}<p class="text-[14px] text-fg-3">Nothing yet. Import a file or add an entry.</p>{% endif %}
+  {% for e in experiences %}
+  <details class="surface group p-0">
+    <summary class="flex cursor-pointer list-none items-center gap-4 p-5 [&::-webkit-details-marker]:hidden">
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-[15px] font-medium text-fg">{{ e.title }} <span class="font-normal text-fg-2">· {{ e.organization }}</span></p>
+        <p class="text-[13px] text-fg-3">{{ entry_meta(e) }}</p>
+      </div>
+      <span aria-hidden="true" class="text-fg-3 transition-transform group-open:rotate-180">⌄</span>
+    </summary>
+    <div class="border-t border-line p-5">{% include "dashboard/experience_form.html" %}</div>
+  </details>
+  {% endfor %}
+  <details class="group">
+    <summary class="btn-secondary h-9 w-fit cursor-pointer list-none rounded-lg px-4 text-[14px] group-open:hidden [&::-webkit-details-marker]:hidden">Add an entry by hand</summary>
+    <div class="surface p-5">{% with e=None %}{% include "dashboard/experience_form.html" %}{% endwith %}</div>
+  </details>
+  {% if oob_import %}{% include "dashboard/import_status.html" %}{% endif %}
+</section>

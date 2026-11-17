@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · Prepermint{% endblock %}
+{% block body %}
+{#
+  The one layout for the signed-in app: the sidebar plus the page. Chat (/chat, /memory) and Dashboard (/dashboard/*)
+  share it; which navigation the sidebar shows comes from the URL (prepermint/lib/app_mode.py).
+#}
+{% set path = current_path() %}
+{% set mode = mode_for(path) %}
+<div class="app-shell flex min-h-dvh flex-1 flex-col bg-page md:flex-row" data-drawer>
+  {% include "app/sidebar.html" %}
+  <main class="min-w-0 flex-1">
+    <div class="mx-auto flex min-h-full w-full max-w-[960px] flex-col px-4 pb-16 pt-8 md:px-10 md:pt-10">
+      {% block page %}{% endblock %}
+    </div>
+  </main>
+</div>
+{% endblock %}

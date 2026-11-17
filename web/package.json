@@ -1,0 +1,18 @@
+{
+  "name": "prepermint-web",
+  "private": true,
+  "description": "Browser code that cannot be Python (docs/adr/0003): the voice interview client, bundled into prepermint/static/. npm is a dev tool here only; the server has no Node dependency.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "htmx.org": "^2.0.4",
+    "typescript": "^5",
+    "vitest": "^5.1.0",
+    "zod": "^4.6.7"
+  }
+}

@@ -1,0 +1,130 @@
+{#
+  The app sidebar. On desktop it is a fixed column; below 768px it becomes a drawer opened from the top bar, where the
+  Chat / Dashboard switch stays visible. static/app.js opens and closes it.
+#}
+{% set item = "has-icon group flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[14px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink/60" %}
+{% set idle = "text-fg-2 hover:bg-ink/[0.05] hover:text-fg" %}
+{% set current = "bg-ink/[0.08] font-medium text-fg" %}
+{% set footer_button = "has-icon grid size-9 shrink-0 place-items-center rounded-lg text-fg-2 outline-none transition-colors hover:bg-ink/[0.05] hover:text-fg focus-visible:ring-2 focus-visible:ring-ink/60" %}
+
+{% macro brand() %}
+<a href="{{ MODE_HOME[mode] }}" aria-label="Prepermint home" class="flex items-center gap-2 rounded-lg text-fg outline-none focus-visible:ring-2 focus-visible:ring-ink/60">
+  {% include "partials/mark.html" %}
+  <span class="font-geist text-[20px] font-semibold leading-none tracking-[-0.04em]">Prepermint</span>
+</a>
+{% endmacro %}
+
+{% macro mode_switch() %}
+{# Segmented Chat / Dashboard switch. The active mode comes from the URL. #}
+<nav aria-label="Mode" class="flex gap-0.5 rounded-lg bg-ink/[0.06] p-0.5">
+  {% for m, label, ic in [("chat", "Chat", "message-circle"), ("dashboard", "Dashboard", "layout-panel-top")] %}
+  <a href="{{ MODE_HOME[m] }}" aria-label="{{ label }}" title="{{ label }}" {% if m == mode %}aria-current="true"{% endif %}
+    class="has-icon grid h-7 w-9 place-items-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink/60 {{ 'bg-card text-fg shadow-[0_1px_2px_rgba(0,0,0,0.12)]' if m == mode else 'text-fg-3 hover:text-fg' }}">
+    {{ icon(ic, size=16, stroke=1.7) }}
+  </a>
+  {% endfor %}
+</nav>
+{% endmacro %}
+
+{% macro link(href, ic, label) %}
+{% set active = is_active(path, href) %}
+<a href="{{ href }}" {% if active %}aria-current="page"{% endif %} class="{{ item }} {{ current if active else idle }}">
+  {{ icon(ic, size=17, cls="shrink-0") }}<span class="min-w-0 flex-1 truncate">{{ label }}</span>
+</a>
+{% endmacro %}
+
+<header class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-page/90 px-3 backdrop-blur-md md:hidden">
+  <button type="button" aria-label="Open menu" aria-expanded="false" aria-controls="app-sidebar" data-drawer-open class="{{ footer_button }}">
+    {{ icon("menu", size=19) }}
+  </button>
+  {{ brand() }}
+  <div class="ml-auto">{{ mode_switch() }}</div>
+</header>
+
+<div aria-hidden="true" data-drawer-backdrop hidden class="fixed inset-0 z-40 bg-black/40 md:hidden"></div>
+
+<aside id="app-sidebar" aria-label="App" data-drawer-panel
+  class="flex w-[272px] shrink-0 flex-col border-r border-line bg-page max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:invisible max-md:-translate-x-full max-md:shadow-2xl max-md:transition-[transform,visibility] max-md:duration-200 motion-reduce:transition-none data-[open]:max-md:visible data-[open]:max-md:translate-x-0 md:sticky md:top-0 md:h-dvh">
+  <div class="flex h-14 shrink-0 items-center justify-between gap-2 px-4">
+    {{ brand() }}
+    <div class="max-md:hidden">{{ mode_switch() }}</div>
+    <button type="button" aria-label="Close menu" data-drawer-close class="{{ footer_button }} md:hidden">{{ icon("x", size=18) }}</button>
+  </div>
+
+  <div class="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-2">
+    {% if mode == "chat" %}
+    <nav aria-label="Chat">
+      <div class="space-y-0.5">
+        {{ link("/chat", "square-pen", "New chat") }}
+        {{ link("/memory", "brain", "Memory") }}
+      </div>
+      <hr class="my-3 border-line">
+      <div class="space-y-0.5">
+        <p class="px-2.5 pb-1 pt-0.5 text-[12px] font-medium text-fg-3">Starters</p>
+        {% for s in starters %}
+        <form action="/chat/starters/{{ s.id }}" method="post">
+          <button type="submit" class="{{ item }} {{ idle }}">{{ icon(s.icon, size=17, cls="shrink-0") }}<span class="min-w-0 flex-1 truncate">{{ s.title }}</span></button>
+        </form>
+        {% endfor %}
+      </div>
+      <hr class="my-3 border-line">
+      <div hx-get="/chat/_threads" hx-trigger="threads-changed from:body" hx-swap="innerHTML">
+        {% include "app/thread_list.html" %}
+      </div>
+    </nav>
+    {% else %}
+    <nav aria-label="Dashboard">
+      <div class="space-y-0.5">{{ link("/dashboard", "home", "Overview") }}</div>
+      <hr class="my-3 border-line">
+      <div class="space-y-0.5">
+        {{ link("/dashboard/profile", "user", "Profile") }}
+        {{ link("/dashboard/experience", "file-text", "Resume") }}
+      </div>
+      <hr class="my-3 border-line">
+      <div class="space-y-0.5">
+        {# A page that does not exist yet: shown, but not reachable. #}
+        <span aria-disabled="true" class="{{ item }} cursor-default text-fg-3">
+          {{ icon("settings", size=17, cls="shrink-0") }}<span class="min-w-0 flex-1 truncate">Settings</span>
+          <span class="rounded-full border border-line px-1.5 py-px text-[11px] text-fg-3">Soon</span>
+        </span>
+      </div>
+    </nav>
+    {% endif %}
+  </div>
+
+  <div class="flex shrink-0 items-center gap-1 border-t border-line p-2">
+    {# Avatar + name. Opens a small menu above it with the email and sign out. #}
+    <div class="relative min-w-0 flex-1" data-menu>
+      <div id="account-menu" data-menu-panel hidden class="surface absolute bottom-full left-0 z-10 mb-2 w-60 rounded-xl p-1.5">
+        <div class="border-b border-line px-2.5 pb-2 pt-1.5">
+          <p class="truncate text-[14px] font-medium text-fg">{{ account_label }}</p>
+          {% if show_email %}<p class="truncate text-[13px] text-fg-3">{{ user.email }}</p>{% endif %}
+        </div>
+        <div class="pt-1.5">
+          <form action="/sign-out" method="post">
+            <button type="submit" class="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[14px] text-fg-2 outline-none hover:bg-ink/[0.05] hover:text-fg focus-visible:bg-ink/[0.05] focus-visible:text-fg">
+              {{ icon("log-out", size=16, stroke=1.6) }} Sign out
+            </button>
+          </form>
+        </div>
+      </div>
+      <button type="button" data-menu-button aria-expanded="false" aria-controls="account-menu" aria-label="Account menu for {{ account_label }}"
+        class="has-icon flex h-9 w-full items-center gap-2 rounded-lg px-1.5 text-left text-[14px] text-fg outline-none transition-colors hover:bg-ink/[0.05] focus-visible:ring-2 focus-visible:ring-ink/60">
+        {% if user.image %}
+        <img src="{{ user.image }}" alt="" width="24" height="24" class="size-6 shrink-0 rounded-full object-cover">
+        {% else %}
+        <span aria-hidden="true" class="grid size-6 shrink-0 place-items-center rounded-full bg-ink text-[11px] font-medium uppercase text-page">{{ account_label[0] }}</span>
+        {% endif %}
+        <span class="min-w-0 flex-1 truncate">{{ account_label }}</span>
+        {{ icon("chevrons-up-down", size=14, cls="shrink-0 text-fg-3", stroke=2) }}
+      </button>
+    </div>
+    {# Light / dark switch. The theme lives in data-theme on <html>; CSS picks the icon. #}
+    <button type="button" data-theme-toggle aria-label="Switch between light and dark theme" title="Theme" class="{{ footer_button }}">
+      {{ icon("moon", size=17, cls="dark:hidden") }}{{ icon("sun", size=17, cls="hidden dark:block") }}
+    </button>
+    <span role="img" aria-label="Help (coming soon)" title="Help is coming soon" class="{{ footer_button }} cursor-default text-fg-3 hover:bg-transparent hover:text-fg-3">
+      {{ icon("circle-help", size=17) }}
+    </span>
+  </div>
+</aside>

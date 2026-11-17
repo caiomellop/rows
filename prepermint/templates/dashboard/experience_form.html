@@ -1,0 +1,44 @@
+{# One entry's fields. `e` is the entry, or none for a new one. #}
+{% set fid = e.id if e else "new" %}
+<form action="/dashboard/experience" method="post" hx-post="/dashboard/experience" hx-target="#entries" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]" class="space-y-4">
+  {% if e %}<input type="hidden" name="id" value="{{ e.id }}">{% endif %}
+  <div class="grid gap-4 sm:grid-cols-[140px_1fr_1fr]">
+    <div>
+      <label class="label" for="{{ fid }}-kind">Type</label>
+      <select id="{{ fid }}-kind" name="kind" class="field">
+        <option value="work" {% if not e or e.kind == "work" %}selected{% endif %}>Work</option>
+        <option value="education" {% if e and e.kind == "education" %}selected{% endif %}>Education</option>
+      </select>
+    </div>
+    <div><label class="label" for="{{ fid }}-title">Title or degree</label><input id="{{ fid }}-title" name="title" required value="{{ e.title if e else '' }}" class="field" placeholder="Backend engineer"></div>
+    <div><label class="label" for="{{ fid }}-org">Company or school</label><input id="{{ fid }}-org" name="organization" required value="{{ e.organization if e else '' }}" class="field" placeholder="Acme"></div>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div><label class="label" for="{{ fid }}-start">Start</label><input id="{{ fid }}-start" type="month" name="startDate" value="{{ to_month(e.start_date) if e else '' }}" class="field"></div>
+    <div>
+      <label class="label" for="{{ fid }}-end">End</label>
+      <input id="{{ fid }}-end" type="month" name="endDate" value="{{ to_month(e.end_date) if e else '' }}" {% if e and e.current %}disabled{% endif %} class="field disabled:opacity-50" data-end-date>
+      <label class="mt-2 flex items-center gap-2 text-[13px] text-fg-2">
+        <input type="checkbox" name="current" {% if e and e.current %}checked{% endif %} data-current-toggle> I work here now
+      </label>
+    </div>
+    <div><label class="label" for="{{ fid }}-loc">Location</label><input id="{{ fid }}-loc" name="location" value="{{ (e.location or '') if e else '' }}" class="field" placeholder="Lisbon · Remote"></div>
+  </div>
+  <div>
+    <label class="label" for="{{ fid }}-bullets">What you did (one per line)</label>
+    <textarea id="{{ fid }}-bullets" name="bullets" rows="4" class="field" placeholder="Built the payments service in Go, used by 40k customers&#10;Cut CI time from 25 to 8 minutes">{{ e.bullets|join("\n") if e else "" }}</textarea>
+  </div>
+  <div>
+    <label class="label" for="{{ fid }}-skills">Skills (comma-separated)</label>
+    <input id="{{ fid }}-skills" name="skills" value="{{ e.skills|join(', ') if e else '' }}" class="field" placeholder="Go, PostgreSQL, Kubernetes">
+  </div>
+  <div class="flex flex-wrap items-center gap-3">
+    <button type="submit" class="btn-primary h-9 rounded-lg px-4 text-[14px]">
+      <span class="htmx-hide-on-request">{{ "Save" if e else "Add entry" }}</span><span class="htmx-show-on-request">Saving…</span>
+    </button>
+    {% if e %}
+    <button type="button" hx-post="/dashboard/experience/{{ e.id }}/delete" hx-target="#entries" hx-swap="outerHTML"
+      hx-confirm="Delete {{ e.title }} at {{ e.organization }}?" hx-disabled-elt="this" class="h-9 rounded-lg px-3 text-[14px] text-red-700 hover:bg-red-50">Delete</button>
+    {% endif %}
+  </div>
+</form>

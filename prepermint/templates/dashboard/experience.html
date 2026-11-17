@@ -1,0 +1,43 @@
+{% extends "app/layout.html" %}
+{% block page %}
+<div class="space-y-8">
+  {% with header_title="Resume", header_body="Jobs and education. Everything here is self-reported." %}{% include "app/page_header.html" %}{% endwith %}
+  <div class="grid gap-4 md:grid-cols-[1fr_280px]">
+    <section class="surface p-5">
+      <h2 class="mb-3 text-[1.4rem] text-fg">Import</h2>
+      {% if ai_enabled %}
+      <form action="/dashboard/experience/import" method="post" enctype="multipart/form-data" hx-post="/dashboard/experience/import"
+        hx-encoding="multipart/form-data" hx-target="#entries" hx-swap="outerHTML" hx-disabled-elt="find button" class="space-y-4" data-import-form>
+        <fieldset class="flex flex-wrap gap-2">
+          <legend class="label">Import from</legend>
+          {% for value, label in [("resume", "Resume"), ("linkedin", "LinkedIn")] %}
+          <label class="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-[14px] text-fg-2 has-[:checked]:border-ink/40 has-[:checked]:bg-ink/[0.06] has-[:checked]:text-fg">
+            <input type="radio" name="source" value="{{ value }}" {% if value == "resume" %}checked{% endif %} class="sr-only" data-import-source>{{ label }}
+          </label>
+          {% endfor %}
+        </fieldset>
+        <p class="text-[13px] leading-relaxed text-fg-3" data-hint="resume">PDF, DOCX or TXT.</p>
+        <p class="text-[13px] leading-relaxed text-fg-3" data-hint="linkedin" hidden>On your LinkedIn profile: Resources → Save to PDF. Or upload Positions.csv from Settings → Data privacy → Get a copy of your data.</p>
+        <div class="flex flex-wrap items-center gap-3">
+          <input type="file" name="file" required accept=".pdf,.docx,.txt,.md,.csv,application/pdf" aria-label="Resume file"
+            class="text-[14px] text-fg-2 file:mr-3 file:rounded-lg file:border file:border-ink/15 file:bg-ink/5 file:px-3 file:py-1.5 file:text-[14px] file:font-medium file:text-fg">
+          <button type="submit" class="btn-primary h-9 rounded-lg px-4 text-[14px]"><span class="htmx-hide-on-request">Import</span><span class="htmx-show-on-request">Reading your file…</span></button>
+        </div>
+        {% include "dashboard/import_status.html" %}
+        <p class="text-[12px] text-fg-3">Prepermint copies what the file says. Nothing is added or embellished, and you can edit every entry.</p>
+      </form>
+      {% else %}
+      <p class="text-[14px] text-fg-3">Import needs AI. Set ANTHROPIC_KEYS, or add entries by hand below.</p>
+      {% endif %}
+    </section>
+    <section class="surface flex flex-col justify-between gap-4 p-5">
+      <div>
+        <h2 class="text-[1.4rem] text-fg">No CV, or a weak one?</h2>
+        <p class="mt-1 text-[14px] leading-relaxed text-fg-2">The AI assistant interviews you about each job and writes strong bullets from your answers. It never makes things up.</p>
+      </div>
+      <a href="/chat" class="btn-secondary h-9 self-start rounded-lg px-4 text-[14px]">Start the interview</a>
+    </section>
+  </div>
+  {% include "dashboard/entries.html" %}
+</div>
+{% endblock %}

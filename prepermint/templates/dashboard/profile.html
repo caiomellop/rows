@@ -1,0 +1,69 @@
+{% extends "app/layout.html" %}
+{% block page %}
+<div>
+  {% with header_title="Profile", header_body="Your header and what you're looking for." %}{% include "app/page_header.html" %}{% endwith %}
+  <form action="/dashboard/profile" method="post" hx-post="/dashboard/profile" hx-target="#form-status" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]" class="space-y-6">
+    <section class="surface space-y-4 p-5 md:p-6">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 class="text-[1.4rem] text-fg">The 60-second header</h2>
+          <p class="text-[14px] text-fg-2">The short version of who you are.</p>
+        </div>
+        {% if ai_enabled %}
+        <div class="flex flex-col items-end gap-1">
+          <button type="button" class="btn-secondary h-9 rounded-lg px-3.5 text-[14px]" hx-post="/dashboard/profile/draft"
+            hx-include="#summary-fields" hx-target="#summary-fields" hx-swap="outerHTML" hx-disabled-elt="this">
+            <span class="htmx-hide-on-request">Draft with AI</span><span class="htmx-show-on-request">Drafting…</span>
+          </button>
+          <span id="draft-error" role="alert" class="text-[13px] text-red-700"></span>
+        </div>
+        {% endif %}
+      </div>
+      <div>
+        <label class="label" for="pf-name">Name</label>
+        <input id="pf-name" name="displayName" value="{{ p.display_name or '' }}" maxlength="100" class="field">
+      </div>
+      {% with headline=p.headline or "", summary=p.summary or "", summary_source=p.summary_source or "", draft_error=None %}{% include "dashboard/summary_fields.html" %}{% endwith %}
+    </section>
+
+    <section class="surface space-y-4 p-5 md:p-6">
+      <div>
+        <h2 class="text-[1.4rem] text-fg">What you're looking for</h2>
+        <p class="text-[14px] text-fg-2">Shapes the AI summary and what it asks you.</p>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-3">
+        <div><label class="label" for="pf-role">Target role</label><input id="pf-role" name="targetRole" value="{{ goals.targetRole or '' }}" class="field" placeholder="Backend engineer"></div>
+        <div><label class="label" for="pf-level">Level</label><input id="pf-level" name="targetLevel" value="{{ goals.targetLevel or '' }}" class="field" placeholder="Mid-level"></div>
+        <div><label class="label" for="pf-market">Market</label><input id="pf-market" name="targetMarket" value="{{ goals.targetMarket or '' }}" class="field" placeholder="Remote, EU timezones"></div>
+      </div>
+      <fieldset>
+        <legend class="label">Role types</legend>
+        <div class="flex flex-wrap gap-2">
+          {% for r in role_types %}
+          <label class="chip cursor-pointer bg-card"><input type="checkbox" name="roleTypes" value="{{ r }}" {% if r in p.role_types %}checked{% endif %}>{{ r }}</label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label" for="pf-mode">Work mode</label>
+          <select id="pf-mode" name="workMode" class="field">
+            <option value="">Not set</option>
+            {% for value, label in work_modes.items() %}<option value="{{ value }}" {% if p.work_mode == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="label" for="pf-auth">Work authorization <span class="font-normal text-fg-3">· optional</span></label><input id="pf-auth" name="workAuthorization" value="{{ p.work_authorization or '' }}" class="field" placeholder="EU citizen"></div>
+        <div><label class="label" for="pf-loc">Location</label><input id="pf-loc" name="location" value="{{ p.location or '' }}" class="field" placeholder="Porto, Portugal"></div>
+        <div><label class="label" for="pf-tz">Timezone</label><input id="pf-tz" name="timezone" value="{{ p.timezone or '' }}" class="field" placeholder="UTC+0"></div>
+      </div>
+    </section>
+
+    <div class="sticky bottom-4 z-10 flex items-center gap-3 rounded-xl border border-line bg-page/90 p-3 backdrop-blur">
+      <button type="submit" class="btn-primary h-10 rounded-lg px-5 text-[15px]">
+        <span class="htmx-hide-on-request">Save profile</span><span class="htmx-show-on-request">Saving…</span>
+      </button>
+      {% with result=None %}{% include "dashboard/form_status.html" %}{% endwith %}
+    </div>
+  </form>
+</div>
+{% endblock %}
