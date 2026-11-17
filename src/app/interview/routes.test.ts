@@ -32,7 +32,7 @@ const draft: PlanDraft = {
     { topic: "Conflict", question: "Tell me about a disagreement.", lookFor: "Their own role." },
   ],
 };
-const plan: Plan = { ...draft, language: "en" };
+const plan: Plan = { ...draft, language: "en", interviewerName: "Cliff" };
 const jobDescription = "We are hiring a backend engineer to build and run payment APIs in Go and PostgreSQL.";
 const usage = { input: 1200, output: 40, cacheRead: 1000, cacheWrite: 0 };
 
@@ -79,6 +79,8 @@ describe("when enabled", () => {
 
     it("refuses a duration that is not offered", async () => {
       expect((await session(post({ jobDescription, durationMinutes: 45 }))).status).toBe(400);
+      // 10 minutes was dropped: the interview arc needs at least 15 (CAI-91).
+      expect((await session(post({ jobDescription, durationMinutes: 10 }))).status).toBe(400);
     });
 
     it("returns the plan, the time budget and a browser token with the socket addresses", async () => {
@@ -102,32 +104,33 @@ describe("when enabled", () => {
       { name: "Eduardo", voice: "eduardo", language: "es", model: "flux-eduardo-es", speed: "0.9", expressivity: "0" },
       { name: "Roberto", voice: "roberto", language: "pt", model: "flux-roberto-pt", speed: "0.9", expressivity: "1" },
       { name: "Mathieu", voice: "mathieu", language: "fr", model: "flux-mathieu-fr", speed: "0.9", expressivity: "0" },
-    ])("$name sets the interview language, the voice settings and the speech hint", async ({ voice, language, model, speed, expressivity }) => {
+    ])("$name sets the interview language, the voice settings, the speech hint and the interviewer's name", async ({ name, voice, language, model, speed, expressivity }) => {
       ai.planInterview.mockResolvedValue({ plan: draft, usage });
       deepgram.mintBrowserToken.mockResolvedValue("t");
 
-      const body = await (await session(post({ jobDescription, durationMinutes: 10, voice }))).json();
+      const body = await (await session(post({ jobDescription, durationMinutes: 15, voice }))).json();
 
       const speak = new URL(body.deepgram.speakUrl);
       expect([speak.searchParams.get("model"), speak.searchParams.get("speed"), speak.searchParams.get("expressivity")]).toEqual([model, speed, expressivity]);
       expect(new URL(body.deepgram.listenUrl).searchParams.getAll("language_hint")).toEqual([language]);
       expect(ai.planInterview).toHaveBeenCalledWith(expect.objectContaining({ language }));
       expect(body.plan.language).toBe(language);
+      expect(body.plan.interviewerName).toBe(name.split(" ")[0]);
     });
 
     it("refuses a voice that is not offered", async () => {
-      expect((await session(post({ jobDescription, durationMinutes: 10, voice: "alexis" }))).status).toBe(400);
+      expect((await session(post({ jobDescription, durationMinutes: 15, voice: "alexis" }))).status).toBe(400);
     });
 
     it("shows our own message for a known failure and a generic one for anything else", async () => {
       deepgram.mintBrowserToken.mockResolvedValue("t");
       ai.planInterview.mockRejectedValueOnce(new ai.AiError("The AI is busy right now. Try again in a minute."));
-      const known = await session(post({ jobDescription, durationMinutes: 10 }));
+      const known = await session(post({ jobDescription, durationMinutes: 15 }));
       expect(known.status).toBe(502);
       expect((await known.json()).error).toBe("The AI is busy right now. Try again in a minute.");
 
       ai.planInterview.mockRejectedValueOnce(new Error("401 invalid x-api-key sk-ant-SECRET"));
-      const unknown = await session(post({ jobDescription, durationMinutes: 10 }));
+      const unknown = await session(post({ jobDescription, durationMinutes: 15 }));
       const text = JSON.stringify(await unknown.json());
       expect(text).toContain("Could not start the interview");
       expect(text).not.toContain("sk-ant");
@@ -136,7 +139,7 @@ describe("when enabled", () => {
     it("does not start an interview from a plan with almost no questions", async () => {
       ai.planInterview.mockResolvedValue({ plan: { ...plan, questions: plan.questions.slice(0, 1) }, usage });
       deepgram.mintBrowserToken.mockResolvedValue("t");
-      expect((await session(post({ jobDescription, durationMinutes: 10 }))).status).toBe(502);
+      expect((await session(post({ jobDescription, durationMinutes: 15 }))).status).toBe(502);
     });
   });
 

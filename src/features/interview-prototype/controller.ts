@@ -29,7 +29,7 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 const BARGE_IN_MIN_CHARS = 3;
 
 /** What the interview is built from. `jobDescription` is the text of the posting, pasted or already read from a link. */
-export type SessionForm = { jobDescription: string; resume: string; durationMinutes: 10 | 15 | 20 | 30; voice: VoiceId };
+export type SessionForm = { jobDescription: string; resume: string; durationMinutes: 15 | 20 | 30; voice: VoiceId };
 /** `readUsage` is what reading the link cost, so the cost of the whole interview adds up. It is not sent to the server. */
 export type StartForm = SessionForm & { readUsage?: LlmUsage };
 
@@ -318,7 +318,7 @@ export class InterviewController {
     this.usage = { ...this.usage, ttsChars: this.usage.ttsChars + turn.sentChars };
     const text = turn.text.trim();
     if (text) this.state = addTurn(this.state, { role: "interviewer", text, at: this.seconds() });
-    this.state = applyMove(this.state, coerceMove(turn.move, allowedMoves(this.state, setup.plan)), setup.plan);
+    this.state = applyMove(this.state, coerceMove(turn.move, allowedMoves(this.state)), setup.plan);
     this.set({ turns: this.state.transcript, speaking: "", status: "listening", usage: this.usage });
     if (this.state.stage === "done") void this.finish();
   }

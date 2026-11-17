@@ -274,7 +274,8 @@ describe("answering the candidate", () => {
     h.handlers.stt!.onTurn(candidate("Um, I have, uh, five years of backend experience."));
     await vi.waitFor(() => expect(h.turns).toHaveLength(2));
     const request = h.turns[1];
-    expect(request.body.state).toMatchObject({ stage: "questions", questionIndex: 0, followUps: 0 });
+    // The opening introduced the interview; this turn asks planned question 1.
+    expect(request.body.state).toMatchObject({ stage: "firstQuestion", questionIndex: 0, followUps: 0 });
     expect(request.body.state.transcript.map((t) => t.role)).toEqual(["interviewer", "candidate"]);
     expect(request.body.state.transcript[1].text).toBe("Um, I have, uh, five years of backend experience."); // fillers are kept
 
@@ -289,19 +290,27 @@ describe("answering the candidate", () => {
     expect(h.view().status).toBe("speaking");
   });
 
-  it("counts a follow-up only after the candidate heard it to the end", async () => {
+  it("asks planned question 1 after the opening, and counts a follow-up only after the candidate heard it to the end", async () => {
     const h = harness();
     await openInterview(h);
-    h.handlers.stt!.onTurn(candidate("I worked on payments."));
+    h.handlers.stt!.onTurn(candidate("Sounds good."));
     await vi.waitFor(() => expect(h.turns).toHaveLength(2));
-    h.turns[1].send({ t: "move", move: "FOLLOW_UP" });
-    h.turns[1].send({ t: "text", text: "What was your own role in that?" });
+    h.turns[1].send({ t: "move", move: "NEXT" });
+    h.turns[1].send({ t: "text", text: "Great. Walk me through your career so far." });
     h.turns[1].end();
     await vi.waitFor(() => expect(h.view().turns).toHaveLength(3));
 
-    h.handlers.stt!.onTurn(candidate("I led the ledger service."));
+    h.handlers.stt!.onTurn(candidate("I worked on payments."));
     await vi.waitFor(() => expect(h.turns).toHaveLength(3));
-    expect(h.turns[2].body.state).toMatchObject({ questionIndex: 0, followUps: 1 });
+    expect(h.turns[2].body.state).toMatchObject({ stage: "questions", questionIndex: 0, followUps: 0 });
+    h.turns[2].send({ t: "move", move: "FOLLOW_UP" });
+    h.turns[2].send({ t: "text", text: "What was your own role in that?" });
+    h.turns[2].end();
+    await vi.waitFor(() => expect(h.view().turns).toHaveLength(5));
+
+    h.handlers.stt!.onTurn(candidate("I led the ledger service."));
+    await vi.waitFor(() => expect(h.turns).toHaveLength(4));
+    expect(h.turns[3].body.state).toMatchObject({ questionIndex: 0, followUps: 1 });
   });
 
   it("ignores empty turns", async () => {
