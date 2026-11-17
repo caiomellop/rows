@@ -17,7 +17,7 @@ describe("prompts", () => {
 
   it("keeps the interview prompts and the code in step", () => {
     expect(placeholders(loadPrompt("interviews", "interviewer"))).toEqual(new Set(["language_name", "interviewer_name", "job_description", "resume", "plan"]));
-    expect(placeholders(loadPrompt("interviews", "planner"))).toEqual(new Set(["question_count", "language_name"]));
+    expect(placeholders(loadPrompt("interviews", "planner"))).toEqual(new Set(["language_name"]));
     expect(placeholders(loadPrompt("interviews", "feedback"))).toEqual(new Set(["language_name"]));
     // The page text is added by the code as data after the instructions, so the prompt has no placeholder.
     expect(placeholders(loadPrompt("interviews", "job-extractor"))).toEqual(new Set());

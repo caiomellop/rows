@@ -27,9 +27,12 @@ const draft: PlanDraft = {
   roleTitle: "Backend Engineer",
   companyName: null,
   questions: [
-    { topic: "Background", question: "Walk me through your background.", lookFor: "Relevant experience." },
-    { topic: "APIs", question: "How do you design a public API?", lookFor: "Versioning and errors." },
-    { topic: "Conflict", question: "Tell me about a disagreement.", lookFor: "Their own role." },
+    { topic: "Career path", question: "Walk me through your background.", lookFor: "Relevant experience." },
+    { topic: "Role responsibilities", question: "How do you design a public API?", lookFor: "Versioning and errors." },
+    { topic: "Previous roles", question: "What did your last team own?", lookFor: "Scope and context." },
+    { topic: "Deep dive", question: "Tell me about a disagreement.", lookFor: "Their own role." },
+    { topic: "Motivation", question: "Why are you looking for something new?", lookFor: "A clear reason." },
+    { topic: "Salary expectations", question: "What is your current situation regarding salary?", lookFor: "The current situation." },
   ],
 };
 const plan: Plan = { ...draft, language: "en", interviewerName: "Cliff" };
@@ -136,10 +139,19 @@ describe("when enabled", () => {
       expect(text).not.toContain("sk-ant");
     });
 
-    it("does not start an interview from a plan with almost no questions", async () => {
-      ai.planInterview.mockResolvedValue({ plan: { ...plan, questions: plan.questions.slice(0, 1) }, usage });
+    it("does not start an interview from a plan that misses an area", async () => {
+      ai.planInterview.mockResolvedValue({ plan: { ...draft, questions: draft.questions.slice(0, 5) }, usage });
       deepgram.mintBrowserToken.mockResolvedValue("t");
-      expect((await session(post({ jobDescription, durationMinutes: 15 }))).status).toBe(502);
+      const response = await session(post({ jobDescription, durationMinutes: 15 }));
+      expect(response.status).toBe(502);
+      expect((await response.json()).error).toBe("The interview plan came back incomplete. Try again.");
+    });
+
+    it("puts a plan written out of order back in the order of the areas", async () => {
+      ai.planInterview.mockResolvedValue({ plan: { ...draft, questions: [...draft.questions].reverse() }, usage });
+      deepgram.mintBrowserToken.mockResolvedValue("t");
+      const body = await (await session(post({ jobDescription, durationMinutes: 15 }))).json();
+      expect(body.plan.questions).toEqual(draft.questions);
     });
   });
 

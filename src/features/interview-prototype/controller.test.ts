@@ -11,9 +11,9 @@ const plan: Plan = {
   roleTitle: "Backend Engineer",
   companyName: null,
   questions: [
-    { topic: "Background", question: "Walk me through your background.", lookFor: "Relevant experience." },
-    { topic: "APIs", question: "How do you design a public API?", lookFor: "Versioning and errors." },
-    { topic: "Conflict", question: "Tell me about a disagreement.", lookFor: "Their own role." },
+    { topic: "Career path", question: "Walk me through your background.", lookFor: "Relevant experience." },
+    { topic: "Role responsibilities", question: "How do you design a public API?", lookFor: "Versioning and errors." },
+    { topic: "Deep dive", question: "Tell me about a disagreement.", lookFor: "Their own role." },
   ],
 };
 const form: StartForm = { jobDescription: "We are hiring a backend engineer to build payment APIs in Go.", resume: "", durationMinutes: 15, voice: "sienna" };

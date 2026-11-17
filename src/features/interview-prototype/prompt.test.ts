@@ -11,8 +11,8 @@ const plan: Plan = {
   roleTitle: "Engenheira de Dados",
   companyName: null,
   questions: [
-    { topic: "Início", question: "Fale um pouco sobre a sua trajetória.", lookFor: "Experiência relevante." },
-    { topic: "Pipelines", question: "Como você monitora um pipeline em produção?", lookFor: "Alertas e qualidade de dados." },
+    { topic: "Career path", question: "Fale um pouco sobre a sua trajetória.", lookFor: "Experiência relevante." },
+    { topic: "Role responsibilities", question: "Como você monitora um pipeline em produção?", lookFor: "Alertas e qualidade de dados." },
   ],
 };
 
@@ -32,7 +32,7 @@ describe("interviewer prompt", () => {
     expect(system).toContain(jobDescription);
     expect(system).toContain("Brazilian Portuguese");
     expect(system).toContain("(none provided)");
-    expect(system).toContain("1. [Início] Fale um pouco sobre a sua trajetória.");
+    expect(system).toContain("1. [Career path] Fale um pouco sobre a sua trajetória.");
   });
 
   it("opens with one user message that carries the briefing", () => {
@@ -49,7 +49,7 @@ describe("interviewer prompt", () => {
     const last = text(messages[2]);
     expect(last).toContain("<candidate_said>Então, é... eu trabalho com dados há cinco anos.</candidate_said>");
     expect(last.indexOf("<candidate_said>")).toBeLessThan(last.indexOf("<interview_state>"));
-    expect(last).toContain("Current question (1 of 2, area: Início)");
+    expect(last).toContain("Current question (1 of 2, area: Career path)");
   });
 
   it("marks an interrupted interviewer turn and joins consecutive candidate turns", () => {
