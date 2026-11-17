@@ -18,6 +18,10 @@ describe("move tag parser", () => {
     expect(result).toEqual({ move: "FOLLOW_UP", spoken: "And what happened next?" });
   });
 
+  it("reads the repeat tag", () => {
+    expect(run(["[[REPEAT]] Sure. What did your team own?"])).toEqual({ move: "REPEAT", spoken: "Sure. What did your team own?" });
+  });
+
   it("is case and space tolerant", () => {
     expect(run(["  [[ end ]]Thank you, goodbye."])).toEqual({ move: "END", spoken: "Thank you, goodbye." });
   });

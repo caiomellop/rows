@@ -262,15 +262,13 @@ Use only facts the candidate stated or confirmed. Suggestions the assistant made
 /* ------------------------------------------------------------------ */
 
 /** The question plan, built from the job description and the resume summary and written in the interview's language. */
-export async function planInterview(input: { jobDescription: string; resume: string; durationMinutes: number; language: Language }): Promise<{ plan: PlanDraft; usage: LlmUsage }> {
-  // About two minutes per question, so the plan fits the time budget.
-  const questionCount = Math.min(10, Math.max(4, Math.round(input.durationMinutes / 2.2)));
+export async function planInterview(input: { jobDescription: string; resume: string; language: Language }): Promise<{ plan: PlanDraft; usage: LlmUsage }> {
   const { parsed, usage } = await structuredWithUsage({
     schema: PlanDraftSchema,
     model: INTERVIEW_MODEL,
     effort: "low",
     maxTokens: 3000,
-    system: renderPrompt(loadPrompt("interviews", "planner"), { question_count: String(questionCount), language_name: LANGUAGE_NAMES[input.language] }),
+    system: renderPrompt(loadPrompt("interviews", "planner"), { language_name: LANGUAGE_NAMES[input.language] }),
     content: [{ type: "text", text: `<job_description>\n${input.jobDescription}\n</job_description>\n\n<resume>\n${input.resume || "(none provided)"}\n</resume>` }],
   });
   return { plan: parsed, usage };

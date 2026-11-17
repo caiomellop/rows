@@ -2,6 +2,7 @@ import { mintBrowserToken } from "@/features/interview-prototype/deepgram";
 import { listenUrl, speakUrl } from "@/features/interview-prototype/deepgram-urls";
 import { disabledResponse, prototypeEnabled } from "@/features/interview-prototype/gate";
 import { voiceById } from "@/features/interview-prototype/languages";
+import { arrangePlan } from "@/features/interview-prototype/plan";
 import { logFailure, safeMessage } from "@/features/interview-prototype/route-utils";
 import { StartRequestSchema, type Plan, type SessionResponse } from "@/features/interview-prototype/schemas";
 import { planInterview } from "@/lib/ai";
@@ -18,13 +19,14 @@ export async function POST(request: Request) {
 
   try {
     const [{ plan: draft, usage }, token] = await Promise.all([
-      planInterview({ jobDescription, resume, durationMinutes, language }),
+      planInterview({ jobDescription, resume, language }),
       // The token only has to be valid when each socket opens, so it lives as long as the interview plus a margin.
       mintBrowserToken(durationMinutes * 60 + 600),
     ]);
-    if (draft.questions.length < 3) return Response.json({ error: "The interview plan came back too short. Try again." }, { status: 502 });
+    const arranged = arrangePlan(draft);
+    if (!arranged) return Response.json({ error: "The interview plan came back incomplete. Try again." }, { status: 502 });
 
-    const plan: Plan = { ...draft, language, interviewerName: name };
+    const plan: Plan = { ...arranged, language, interviewerName: name };
     const body: SessionResponse = {
       plan,
       budgetMs: durationMinutes * 60_000,

@@ -17,8 +17,8 @@ describe("feedback helpers", () => {
   });
 
   it("numbers the planned questions", () => {
-    const plan: Plan = { language: "en", roleTitle: "Engineer", companyName: null, questions: [{ topic: "Intro", question: "Tell me about yourself.", lookFor: "x" }] };
-    expect(plannedQuestionsText(plan)).toBe("1. [Intro] Tell me about yourself.");
+    const plan: Plan = { language: "en", roleTitle: "Engineer", companyName: null, questions: [{ topic: "Career path", question: "Tell me about yourself.", lookFor: "x" }] };
+    expect(plannedQuestionsText(plan)).toBe("1. [Career path] Tell me about yourself.");
   });
 
   it("clamps scores to whole numbers from 1 to 5 and puts the criteria in rubric order", () => {

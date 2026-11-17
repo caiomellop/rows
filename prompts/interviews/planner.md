@@ -15,17 +15,9 @@ The interviewer opens with a short introduction (that is not part of the plan). 
 
 Set each question's `topic` to the name of its area, exactly as written above, in English. The interviewer uses it to see when the conversation moves to a new area.
 
-## How many questions per area
+## How many questions
 
-Write exactly {{question_count}} questions. Career path, Motivation and Salary expectations always get exactly one question each. Split the rest like this:
-
-| Questions | Role responsibilities | Previous roles | Deep dive |
-| --- | --- | --- | --- |
-| 7 | 2 | 1 | 1 |
-| 9 | 2 | 2 | 2 |
-| 10 | 2 | 3 | 2 |
-
-For any other number, stay close to this table. If the resume shows fewer past positions than the Previous roles slots, give the spare questions to Role responsibilities or Deep dive.
+Write exactly six questions: one per area, in the order above. The interviewer digs deeper with follow-ups, so each question opens its area; it does not have to cover everything in it.
 
 ## What to ask in each area
 
@@ -33,13 +25,13 @@ These are guidelines, not fixed text. Adapt them to the job and the resume. The 
 
 **Career path.** One short, open question that lets the candidate tell their story. For example: "Walk me through your career so far." or "Can you give me an overview of your career?" Ask it the same way with or without a resume.
 
-**Role responsibilities.** Pick the responsibilities the job description stresses most and ask about the candidate's experience with each one, one per question. The goal is real experience, not theory.
+**Role responsibilities.** Pick the responsibility the job description stresses most and ask about the candidate's experience with it. The goal is real experience, not theory.
 - If the resume shows the candidate has done it, name it: "I see you led onboarding at X. How did you approach it?"
 - If the resume shows no experience with it, or there is no resume, ask a situational question: "How would you handle X in this role?"
 
-**Previous roles.** Understand the context and scope of the candidate's recent positions: what the company was (size, market, stage) and what the role covered (scope, team, what they owned). Use the most recent positions on the resume, at most three. You can focus on one position or go through them in order, from the oldest to the most recent, one position per question. Without a resume, ask about their most recent role.
+**Previous roles.** Understand the context and scope of the candidate's recent positions: what the company was (size, market, stage) and what the role covered (scope, team, what they owned). Ask about the most recent position on the resume, or the one most relevant to this job. Without a resume, ask about their most recent role.
 
-**Deep dive.** One or two real situations from the candidate's past (a challenge, a decision, a conflict, a result) tied to what this job will face. Ask for a specific case: "Tell me about a time when..." If the resume suggests they have not faced it, make it a simulated situation: "Imagine that... How would you handle it?" The point is to understand how they reason; the interviewer digs in with follow-ups.
+**Deep dive.** One real situation from the candidate's past (a challenge, a decision, a conflict, a result) tied to what this job will face. Ask for a specific case: "Tell me about a time when..." If the resume suggests they have not faced it, make it a simulated situation: "Imagine that... How would you handle it?" The point is to understand how they reason; the interviewer digs in with follow-ups.
 
 **Motivation.** One question about why they are looking for something new and why this opportunity. Pick the angle that fits best: why they want to change now, why this role, or why this company or industry. For example: "What makes you want to work in this industry?"
 

@@ -14,16 +14,23 @@ export const DURATIONS = [15, 20, 30] as const;
 /** Size limits shared by the form and the routes, so a pasted document can't run up the Claude bill. */
 export const LIMITS = { jobDescription: 12_000, resume: 12_000, turnText: 4_000, turns: 200 } as const;
 
-/** What the interviewer can do in one turn. The model writes it as a tag at the start of its reply. */
-export const MOVES = ["FOLLOW_UP", "NEXT", "END"] as const;
+/**
+ * What the interviewer can do in one turn. The model writes it as a tag at the start of its reply.
+ * REPEAT says the planned question again for a candidate who asked for it, and does not count as a follow-up.
+ */
+export const MOVES = ["FOLLOW_UP", "REPEAT", "NEXT", "END"] as const;
 export type Move = (typeof MOVES)[number];
 
 /* ------------------------------------------------------------------ */
 /* Question plan (written by Claude from the job description and CV)   */
 /* ------------------------------------------------------------------ */
 
+/** The areas every interview covers, one planned question each, always in this order (planner.md, CAI-91 and CAI-93). */
+export const AREAS = ["Career path", "Role responsibilities", "Previous roles", "Deep dive", "Motivation", "Salary expectations"] as const;
+export type Area = (typeof AREAS)[number];
+
 const PlanQuestionSchema = z.object({
-  topic: z.string().describe('Two or three words, e.g. "Team leadership".'),
+  topic: z.enum(AREAS).describe("The area this question belongs to."),
   question: z.string().describe("Exactly what the interviewer says: one natural spoken sentence."),
   lookFor: z.string().describe("One sentence on what a strong answer contains."),
 });
@@ -32,7 +39,7 @@ const PlanQuestionSchema = z.object({
 export const PlanDraftSchema = z.object({
   roleTitle: z.string(),
   companyName: z.string().nullable(),
-  questions: z.array(PlanQuestionSchema).describe("The questions, in the order they will be asked."),
+  questions: z.array(PlanQuestionSchema).describe("One question per area, in the order of the areas."),
 });
 export type PlanDraft = z.infer<typeof PlanDraftSchema>;
 
@@ -68,11 +75,15 @@ export type Stage = (typeof STAGES)[number];
  * The interview state is the product: where the interview is, not only what was said.
  * `questionIndex` is the planned question being discussed (the last one asked).
  * `followUps` counts follow-ups on that question, or, in candidateQuestions, the candidate's questions answered.
+ * `repeats` counts the times the planned question was said again on request. `areaStartTurn` is the transcript
+ * index of the interviewer turn that asked the planned question, so the briefing can list what was already asked.
  */
 export const InterviewStateSchema = z.object({
   stage: z.enum(STAGES),
   questionIndex: z.number().int().min(0).max(20),
   followUps: z.number().int().min(0).max(20),
+  repeats: z.number().int().min(0).max(20).default(0),
+  areaStartTurn: z.number().int().min(0).max(LIMITS.turns).default(0),
   elapsedMs: z.number().min(0).max(4 * 3_600_000),
   budgetMs: z.number().int().min(60_000).max(3_600_000),
   transcript: z.array(TurnSchema).max(LIMITS.turns),
