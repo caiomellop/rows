@@ -7,37 +7,66 @@ permissions:
   contents: read
 
 jobs:
-  ci:
+  python:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:ci@localhost:5432/ci
+      TEST_DATABASE_URL: postgresql://postgres:ci@localhost:5432/ci_test
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-      - name: Migrations match schema.ts
-        env:
-          # drizzle-kit only needs a value here: check and generate never connect.
-          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
-        run: |
-          npm run db:check
-          npm run db:generate
-          if [ -n "$(git status --porcelain drizzle)" ]; then
-            echo "::error::src/db/schema.ts changed without a migration. Run 'npm run db:generate' and commit drizzle/."
-            git status --short drizzle
-            exit 1
-          fi
-      - run: npm run lint
-      - run: npm test
-      - run: npx next build
-
-      # Python app (docs/adr/0003-python-fastapi.md)
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy
-      - run: uv run pytest
+      - name: Migrations apply and match the models
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+      - name: Tests (with a database of their own)
+        run: |
+          PGPASSWORD=ci psql -h localhost -U postgres -c "CREATE DATABASE ci_test"
+          uv run pytest
+      - name: Built CSS is up to date
+        env:
+          TAILWINDCSS_VERSION: v4.3.5
+        run: |
+          uv run tailwindcss -i prepermint/static/src/app.css -o prepermint/static/app.css --minify
+          if [ -n "$(git status --porcelain prepermint/static)" ]; then
+            echo "::error::prepermint/static/app.css is stale. Run the Tailwind build (README) and commit it."
+            git status --short prepermint/static
+            exit 1
+          fi
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - name: Built bundle is up to date
+        run: |
+          npm run build
+          if [ -n "$(git status --porcelain ../prepermint/static)" ]; then
+            echo "::error::prepermint/static/interview.js or htmx.min.js is stale. Run 'npm run build' in web/ and commit it."
+            git status --short ../prepermint/static
+            exit 1
+          fi

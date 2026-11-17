@@ -22,7 +22,7 @@ A job page has to be loaded the way a browser loads it. Some boards answer plain
 - Cost and abuse: each link costs Apify and Claude money, and the prototype has no login, so anyone who can open the page can spend it. A rate limit is a separate issue.
 - Limits: pages that need a login and bot-protected sites can still fail, and the candidate then pastes the text. A public LinkedIn job page answered plain HTTP in full when tested (16 Nov 2026), with lists of similar jobs around it that the model must ignore, but LinkedIn can change that at any time. Apify has site-specific Actors for LinkedIn and others. They are paid and break often, so they are not used for now.
 - Privacy: Apify is a third party that receives the pasted link. A link is not personal data in itself, but it can carry tracking parameters. It is listed here as AGENTS.md section 6 requires.
-- Agents must not call Apify from anywhere except `src/features/interview-prototype/apify.ts`, and must not add another scraper without a new ADR.
+- Agents must not call Apify from anywhere except `prepermint/features/interview/apify.py` (it was `src/features/interview-prototype/apify.ts` before ADR 0003), and must not add another scraper without a new ADR.
 
 ## Update: the link is read when it is entered (CAI-89, 16 Nov 2026)
 

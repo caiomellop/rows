@@ -73,3 +73,18 @@ Two parts of the app cannot become Python:
 ## Update: the package is `prepermint/`, not `app/` (CAI-99, 17 Nov 2026)
 
 - A root-level `app/` folder makes Next.js ignore `src/app` (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/src-folder.md`), which would break the production build while both apps live in the repo. The Python package is `prepermint/`. Paths in the sub-issues that say `app/` mean `prepermint/`.
+
+## Update: built in one change instead of sub-issues (17 Nov 2026)
+
+At the owner's explicit request, the whole move (sub-issues CAI-100 to CAI-115) was done in one branch on top of the CAI-99 skeleton, instead of one PR per sub-issue. The decisions above stand; what the change did, and where it differs:
+
+- **Parity:** every route, form and AI call of the Next.js app has a Python counterpart with the same URLs, copy and rules. The Next.js server and UI code is deleted in the same branch; `drizzle/` stays as read-only history.
+- **Baseline checked:** `alembic upgrade head` on an empty database produces the same schema as Drizzle 0000-0005 (`pg_dump --schema-only`, identical apart from `alembic_version`). The `REVOKE` in `lock_down()` runs only where the Supabase roles exist, so local and CI databases work.
+- **Sessions:** the cookie is read with the same secret, claims and expiry; a test signs a token the way `jose` did and reads it back.
+- **Built assets are committed:** `prepermint/static/app.css` (Tailwind CLI v4.3.5, pinned with `TAILWINDCSS_VERSION`), `interview.js` and `htmx.min.js` (from `web/`, `npm run build`). Vercel's Python build then needs no Node; CI fails when they are stale.
+- **HTMX** is served from `prepermint/static/htmx.min.js`, copied from the `htmx.org` npm package in `web/`.
+- **Server Actions** became form posts (HTMX) and, for the voice interview page, two JSON routes: `POST /interview/read-job` and `POST /interview/warm-up` (the warm-up runs as a `BackgroundTask`).
+- **Errors:** actions no longer return the raw message of an unexpected error (the Next.js code did); they log its type and show "Something went wrong.", as AGENTS.md asks.
+- **Job links:** the server's public-address check also refuses hosts that a browser reads as IPv4 numbers (`0x7f.0.0.1`, `127.1`), which Python's URL parser does not normalize.
+- **Résumé PDF:** fpdf2's core fonts are Latin-1 only, so dashes, curly quotes and the bullet are mapped to Latin-1 and other characters become "?". MVP-16 should embed a Unicode font when it adds the download.
+- **Not yet verified on Vercel:** the CAI-99 measurements (cold start, streaming, background task on the deployed Python runtime), the preview deploy of this branch, and `alembic stamp 0001_baseline` on production. These are the owner's steps before merge.

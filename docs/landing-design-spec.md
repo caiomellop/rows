@@ -20,7 +20,7 @@ Eden uses EB Garamond for headings and Figtree for everything else, plus a custo
 | Subtitles: hero subtitle, eyebrows ("Pricing", "Creator plans"), billing badge | **Geist** | 400 subtitle / 500 eyebrows | |
 | Paragraphs, nav links, buttons, plan descriptions, feature lists, prices | **Figtree** | 400 body / 500 buttons & labels / 600 `<strong>` | Eden's body font. Price numerals use `tabular-nums` |
 
-**Implemented.** The fonts are self-hosted from `src/fonts/` and loaded with `next/font/local` in `src/app/layout.tsx`. They are variable WOFF2 files converted from the supplied TTFs and subset to Latin + Latin Extended (~424 KB total, down from 1.8 MB). CSS variables: `--font-garamond`, `--font-geist-sans`, `--font-figtree`. Tailwind utilities: `font-serif`, `font-geist`, `font-sans` (the default).
+**Implemented.** The fonts are self-hosted from `prepermint/static/fonts/` and declared with `@font-face` in `prepermint/static/src/app.css`. They are variable WOFF2 files converted from the supplied TTFs and subset to Latin + Latin Extended (~424 KB total, down from 1.8 MB). CSS variables: `--font-garamond`, `--font-geist-sans`, `--font-figtree`. Tailwind utilities: `font-serif`, `font-geist`, `font-sans` (the default).
 
 To add glyphs (another script), re-subset the original TTFs with `pyftsubset … --layout-features='*' --flavor=woff2`, keeping the `wght` axis.
 
@@ -345,14 +345,14 @@ Eden continues with testimonials, an interactive email-cost calculator, a full c
 
 | Piece | Where | Status |
 |---|---|---|
-| Fonts (§1) | `src/app/layout.tsx`, `src/fonts/` | Done, self-hosted |
-| Tokens, heading rule, `.btn-primary` / `.btn-secondary`, `.dot-grid*`, `.caret` (§2–3) | `src/app/globals.css` | Done |
-| Logo (mark + Geist wordmark) | `src/components/logo.tsx` | Done |
-| Nav bar (§4) | `src/components/site-nav.tsx` | Done. Links: Product, Pricing, Sign in + CTA. The session-aware part sits behind `<Suspense>` (`cacheComponents` is on). Below `sm` only Pricing + CTA show |
-| Home hero + typewriter (§5) | `src/app/page.tsx`, `src/components/hero-typewriter.tsx`, `src/components/landing-cta.tsx` | Done. Keep the lead-in to about 25 characters so it stays on one line on desktop |
-| Pricing (§6.1–6.2) | `src/app/pricing/page.tsx`, `src/components/pricing-plans.tsx` | Done: hero, billing toggle, one plan group, featured card, free strip |
-| Plan data | `src/lib/pricing.ts` | **Placeholder.** Names, prices and features need real values |
-| Sign-in page | `src/app/auth/signin/page.tsx` | Restyled to the new tokens |
+| Fonts (§1) | `prepermint/static/src/app.css`, `prepermint/static/fonts/` | Done, self-hosted |
+| Tokens, heading rule, `.btn-primary` / `.btn-secondary`, `.dot-grid*`, `.caret` (§2–3) | `prepermint/static/src/app.css` | Done |
+| Logo (mark + Geist wordmark) | `prepermint/templates/partials/logo.html` | Done |
+| Nav bar (§4) | `prepermint/templates/partials/site_nav.html` | Done. Links: Product, Pricing, Sign in + CTA. Below `sm` only Pricing + CTA show |
+| Home hero + typewriter (§5) | `prepermint/templates/site/home.html`, typewriter in `prepermint/static/app.js` | Done. Keep the lead-in to about 25 characters so it stays on one line on desktop |
+| Pricing (§6.1–6.2) | `prepermint/templates/site/pricing.html`, billing toggle in `prepermint/static/app.js` | Done: hero, billing toggle, one plan group, featured card, free strip |
+| Plan data | `prepermint/lib/pricing.py` | **Placeholder.** Names, prices and features need real values |
+| Sign-in page | `prepermint/templates/auth/sign_in.html` | Restyled to the new tokens |
 
 Not built yet:
 
