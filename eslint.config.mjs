@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Python app: vendored third-party script and the virtualenv.
+    "prepermint/static/js/htmx-*.min.js",
+    ".venv/**",
   ]),
 ]);
 

@@ -41,3 +41,10 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest
+      - name: Built CSS matches prepermint/styles/app.css
+        run: |
+          uv run python scripts/build_css.py
+          if [ -n "$(git status --porcelain prepermint/static/css)" ]; then
+            echo "::error::prepermint/static/css/app.css is out of date. Run 'uv run python scripts/build_css.py' and commit it."
+            exit 1
+          fi

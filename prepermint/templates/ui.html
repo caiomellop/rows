@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{# Sample page for the visual base (CAI-100): tokens, type, components, icons and the theme switch.
+   Removed with the other test routes in CAI-115. #}
+{% block title %}UI · Prepermint{% endblock %}
+{% block head_meta %}<meta name="robots" content="noindex">{% endblock %}
+{% block body %}
+<div class="app-shell min-h-screen bg-page text-fg">
+  <main class="mx-auto flex max-w-3xl flex-col gap-10 px-4 py-12 sm:px-6">
+    <header class="flex items-start justify-between gap-4">
+      <div>
+        <p class="font-geist text-sm text-fg-3">Python app · visual base</p>
+        <h1 class="mt-2 text-4xl sm:text-5xl">Prepare before the <span class="text-accent">interview</span></h1>
+        <p class="mt-3 text-fg-2">Figtree for text, EB Garamond for headings, Geist for eyebrows.</p>
+      </div>
+      {% include "partials/theme_toggle.html" %}
+    </header>
+
+    <section class="surface flex flex-col gap-4 p-6" aria-labelledby="tokens">
+      <h2 id="tokens" class="text-2xl">Tokens</h2>
+      <div class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        <div class="rounded-lg border border-line bg-page p-3">bg-page</div>
+        <div class="rounded-lg border border-line bg-card p-3">bg-card</div>
+        <div class="rounded-lg border border-line bg-panel p-3">bg-panel</div>
+        <div class="rounded-lg border border-line-subtle bg-ink p-3 text-page">bg-ink</div>
+      </div>
+      <p class="text-fg">text-fg · <span class="text-fg-2">text-fg-2</span> · <span class="text-fg-3">text-fg-3</span></p>
+    </section>
+
+    <section class="surface flex flex-col gap-4 p-6" aria-labelledby="components">
+      <h2 id="components" class="text-2xl">Components</h2>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" class="btn-primary icon-host rounded-full px-5 py-2.5">Start {{ icon("arrow-right") }}</button>
+        <button type="button" class="btn-secondary rounded-full px-5 py-2.5">Secondary</button>
+        <button type="button" class="btn-primary rounded-full px-5 py-2.5" disabled>{{ icon("spinner") }} Saving</button>
+        <span class="chip">{{ icon("check", size=14) }} Chip</span>
+      </div>
+      <div>
+        <label class="label" for="ui-email">Email</label>
+        <input class="field" id="ui-email" type="email" placeholder="you@email.com" autocomplete="off">
+      </div>
+    </section>
+
+    <section class="surface flex flex-col gap-4 p-6" aria-labelledby="icons">
+      <h2 id="icons" class="text-2xl">Icons</h2>
+      <p class="text-sm text-fg-2">Hover a tile to play its animation.</p>
+      <ul class="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        {% for name in icon_names %}
+        <li class="icon-host flex flex-col items-center gap-2 rounded-lg p-3 text-fg-2 transition-colors hover:bg-ink/[0.05] hover:text-fg">
+          {{ icon(name, size=22) }}
+          <span class="text-xs">{{ name }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </main>
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "asyncpg>=0.32.0",
     "fastapi>=0.163.2",
+    "jinja2>=3.1.6",
     "pydantic-settings>=2.16.3",
     "sqlalchemy[asyncio]>=2.1.9",
     "uvicorn>=0.54.0",
@@ -23,6 +24,7 @@ package = false
 dev = [
     "httpx>=0.28.1",
     "mypy>=2.4.1",
+    "pytailwindcss>=0.4.2",
     "pytest>=9.2.0",
     "ruff>=0.17.5",
 ]
@@ -41,7 +43,7 @@ select = ["E", "F", "W", "I", "B", "UP", "ANN", "S", "SIM", "RUF"]
 [tool.mypy]
 strict = true
 python_version = "3.13"
-files = ["prepermint", "tests"]
+files = ["prepermint", "tests", "scripts"]
 plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]

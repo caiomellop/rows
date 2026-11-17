@@ -1,0 +1,6 @@
+{# Light / dark switch. Port of src/components/app-shell/theme-toggle.tsx. #}
+<button type="button" data-theme-toggle aria-label="Switch between light and dark theme" title="Theme"
+  class="icon-host grid size-9 shrink-0 place-items-center rounded-lg text-fg-2 outline-none transition-colors hover:bg-ink/[0.05] hover:text-fg focus-visible:ring-2 focus-visible:ring-ink/60">
+  <span class="dark:hidden [&_svg]:[stroke-width:1.6]">{{ icon("moon", size=17) }}</span>
+  <span class="hidden dark:block [&_svg]:[stroke-width:1.6]">{{ icon("sun", size=17) }}</span>
+</button>

@@ -1,0 +1,653 @@
+/*
+ * Styles for the Python app (docs/adr/0003-python-fastapi.md). Built with the standalone Tailwind CLI:
+ *   uv run python scripts/build_css.py
+ * The design tokens and components below are a copy of src/app/globals.css; keep them in step until the
+ * Next.js app is removed (CAI-115).
+ */
+@import "tailwindcss" source(none);
+@source "../templates";
+@source "../icons.py";
+
+/* Self-hosted variable fonts (src/fonts, copied to prepermint/static/fonts). Next.js set these variables
+   through next/font; here they are plain font-face families. */
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/static/fonts/EBGaramond-VariableFont_wght.woff2") format("woff2");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/static/fonts/EBGaramond-Italic-VariableFont_wght.woff2") format("woff2");
+  font-weight: 400 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("/static/fonts/Geist-VariableFont_wght.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Figtree";
+  src: url("/static/fonts/Figtree-VariableFont_wght.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Figtree";
+  src: url("/static/fonts/Figtree-Italic-VariableFont_wght.woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --font-garamond: "EB Garamond";
+  --font-geist-sans: "Geist";
+  --font-figtree: "Figtree";
+}
+
+
+/*
+ * Design tokens: docs/landing-design-spec.md §2.
+ * Colors are RGB channel triplets so they can be used as rgb(var(--x) / alpha).
+ * The palette is monochrome on purpose; depth comes from ink alpha tints,
+ * hairline borders and soft layered shadows.
+ */
+:root {
+  --page: 252 252 250;
+  --card: 255 255 255;
+  --panel: 245 244 241;
+  --ink: 17 17 17;
+  --text-primary: 17 17 17;
+  --text-secondary: 82 80 76;
+  --text-muted: 112 110 105;
+  --accent: 17 17 17;
+  --cta-to: 43 43 43;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.05);
+}
+
+/*
+ * Dark theme. Only the signed-in app (.app-shell) has one; the landing and the
+ * public profile are always light. The inline script in src/app/layout.tsx
+ * sets data-theme before the first paint.
+ */
+html[data-theme="dark"]:has(.app-shell) {
+  color-scheme: dark;
+  --page: 14 14 13;
+  --card: 23 23 22;
+  --panel: 33 33 31;
+  --ink: 240 240 236;
+  --text-primary: 240 240 236;
+  --text-secondary: 172 170 164;
+  --text-muted: 132 130 124;
+  --accent: 240 240 236;
+  --cta-to: 214 214 209;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+}
+
+@custom-variant dark (&:where(html[data-theme="dark"]:has(.app-shell) *));
+
+@theme inline {
+  --color-page: rgb(var(--page));
+  --color-card: rgb(var(--card));
+  --color-panel: rgb(var(--panel));
+  --color-ink: rgb(var(--ink));
+  --color-fg: rgb(var(--text-primary));
+  --color-fg-2: rgb(var(--text-secondary));
+  --color-fg-3: rgb(var(--text-muted));
+  --color-accent: rgb(var(--accent));
+  --color-line: var(--border);
+  --color-line-subtle: var(--border-subtle);
+
+  --font-serif: var(--font-garamond), Georgia, serif;
+  --font-sans: var(--font-figtree), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-geist: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: rgb(var(--page));
+    color: rgb(var(--text-primary));
+    font-family: var(--font-figtree), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  /* Every heading is EB Garamond, regular weight, unless it opts out with .font-sans. */
+  :is(h1, h2, h3, h4, h5, h6):not(.font-sans) {
+    font-family: var(--font-garamond), Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* The accent phrase inside a display heading is black italic. */
+  :is(h1, h2):not(.font-sans) .text-accent {
+    font-style: italic;
+  }
+
+  ::selection {
+    background: rgba(92, 151, 118, 0.28);
+    color: #111;
+  }
+}
+
+@layer components {
+  /* Primary button: dark gradient, layered shadow, lifts on hover (spec §3.1). */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    white-space: nowrap;
+    color: rgb(var(--page));
+    background-image: linear-gradient(to bottom, rgb(var(--ink)), rgb(var(--cta-to)));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 1px 1.5px rgba(0, 0, 0, 0.16),
+      0 3px 6px -1px rgba(0, 0, 0, 0.22),
+      0 8px 14px -4px rgba(0, 0, 0, 0.18);
+    transition: all 200ms ease-out;
+    will-change: transform;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      0 1px 2px rgba(0, 0, 0, 0.18),
+      0 5px 10px -1px rgba(0, 0, 0, 0.26),
+      0 12px 22px -4px rgba(0, 0, 0, 0.22);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  /* Secondary button: light ink-tinted pill (spec §3.2). */
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: rgb(var(--text-primary));
+    border: 1px solid rgb(var(--ink) / 0.14);
+    background-color: rgb(var(--ink) / 0.05);
+    transition:
+      background-color 200ms ease-out,
+      border-color 200ms ease-out;
+  }
+  .btn-secondary:hover {
+    border-color: rgb(var(--ink) / 0.22);
+    background-color: rgb(var(--ink) / 0.09);
+  }
+
+  /* App surfaces (dashboard + public profile). */
+  .surface {
+    background: rgb(var(--card));
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.03),
+      0 4px 14px -6px rgba(0, 0, 0, 0.06);
+  }
+
+  .field {
+    display: block;
+    width: 100%;
+    border-radius: 0.65rem;
+    border: 1px solid rgb(var(--ink) / 0.14);
+    background: rgb(var(--card));
+    padding: 0.55rem 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: rgb(var(--text-primary));
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+  .field::placeholder {
+    color: rgb(var(--text-muted) / 0.8);
+  }
+  .field:focus {
+    outline: none;
+    border-color: rgb(var(--ink) / 0.45);
+    box-shadow: 0 0 0 3px rgb(var(--ink) / 0.07);
+  }
+
+  .label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: rgb(var(--text-secondary));
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgb(var(--panel));
+    padding: 0.2rem 0.65rem;
+    font-size: 0.8rem;
+    color: rgb(var(--text-secondary));
+    white-space: nowrap;
+  }
+
+  .btn-primary:disabled,
+  .btn-secondary:disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible {
+    outline: 2px solid rgb(var(--ink));
+    outline-offset: 3px;
+  }
+
+  /* Faint dotted grid (spec §3.3). Pair with a mask utility below. */
+  .dot-grid {
+    background-image: radial-gradient(rgba(17, 17, 17, 0.11) 1px, transparent 1.4px);
+    background-size: 24px 24px;
+    background-position: 12px 12px;
+  }
+  .dot-grid-center {
+    mask-image: radial-gradient(85% 85% at 50% 38%, #000 45%, transparent 100%);
+  }
+  .dot-grid-corner-left {
+    mask-image: radial-gradient(farthest-side at 0 0, #000 0, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
+  }
+  .dot-grid-corner-right {
+    mask-image: radial-gradient(farthest-side at 100% 0, #000 0, rgba(0, 0, 0, 0.5) 45%, transparent 100%);
+  }
+
+  /* Blinking caret for the hero typewriter. */
+  .caret {
+    display: inline-block;
+    width: 3px;
+    height: 0.85em;
+    margin-left: 0.25rem;
+    transform: translateY(0.08em);
+    border-radius: 9999px;
+    background: rgb(var(--accent));
+    animation: caret-blink 1.05s steps(1) infinite;
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.anim-rise {
+  animation: rise 0.8s ease-out both;
+}
+
+.anim-rise-delay {
+  animation: rise 0.9s ease-out 0.12s both;
+}
+
+.anim-rise-delay-2 {
+  animation: rise 0.9s ease-out 0.24s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .anim-rise-delay,
+  .anim-rise-delay-2,
+  .caret {
+    animation: none;
+  }
+  .btn-primary:hover {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Icon animations (prepermint/icons.py)                               */
+/* ------------------------------------------------------------------ */
+/* CSS versions of the lucide-animated motions in src/components/icons. An icon plays while the mouse
+   is over it or over an ancestor with .icon-host; touch screens and "reduce motion" never animate. */
+
+.icon {
+  flex-shrink: 0;
+  overflow: visible;
+}
+.icon :is(g, path, rect, line, polygon, circle) {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.icon [pathLength] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.i-chevrons-up-down path,
+.i-menu line,
+.i-settings,
+.i-file-text {
+  transition: transform 250ms ease-out, opacity 200ms ease-out;
+}
+.i-settings {
+  transition-duration: 900ms;
+  transition-timing-function: cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+.i-menu line {
+  transition-timing-function: cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+.i-sparkles .a-spark {
+  transition: fill 400ms ease-out;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .icon-host:hover .i-brain,
+  .i-brain:hover {
+    animation: icon-pulse 1.4s ease-in-out infinite alternate;
+  }
+  :is(.icon-host:hover .i-brain, .i-brain:hover) .a-stem {
+    animation: icon-trace-60 1.4s ease-in-out infinite alternate;
+  }
+  :is(.icon-host:hover .i-brain, .i-brain:hover) .a-side {
+    animation: icon-trace-50 1.4s ease-in-out infinite alternate;
+  }
+  :is(.icon-host:hover .i-brain, .i-brain:hover) :is(.a-top, .a-low) {
+    animation: icon-trace-20 1.4s ease-in-out infinite alternate;
+  }
+
+  :is(.icon-host:hover .i-chevrons-up-down, .i-chevrons-up-down:hover) .a-down {
+    transform: translateY(2px);
+  }
+  :is(.icon-host:hover .i-chevrons-up-down, .i-chevrons-up-down:hover) .a-up {
+    transform: translateY(-2px);
+  }
+
+  :is(.icon-host:hover .i-circle-help, .i-circle-help:hover) .a-mark {
+    animation: icon-wiggle-10 0.5s ease-in-out;
+  }
+
+  :is(.icon-host:hover .i-compass, .i-compass:hover) .a-needle {
+    animation: icon-spin-once 0.9s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+
+  :is(.icon-host:hover .i-file-text, .i-file-text:hover) {
+    transform: scale(1.05);
+  }
+  :is(.icon-host:hover .i-file-text, .i-file-text:hover) .a-line {
+    animation: icon-retrace 0.6s ease-in-out calc(var(--i) * 0.1s) both;
+  }
+
+  :is(.icon-host:hover .i-folder-code, .i-folder-code:hover) .a-left {
+    animation: icon-nudge-left 0.5s ease-in-out;
+  }
+  :is(.icon-host:hover .i-folder-code, .i-folder-code:hover) .a-right {
+    animation: icon-nudge-right 0.5s ease-in-out;
+  }
+
+  :is(.icon-host:hover .i-home, .i-home:hover) .a-door {
+    animation: icon-draw 0.6s ease-out both;
+  }
+
+  :is(.icon-host:hover .i-layout-panel-top, .i-layout-panel-top:hover) .a-top {
+    animation: icon-from-above 0.5s ease-out both;
+  }
+  :is(.icon-host:hover .i-layout-panel-top, .i-layout-panel-top:hover) .a-left {
+    animation: icon-from-left 0.5s ease-out 0.3s both;
+  }
+  :is(.icon-host:hover .i-layout-panel-top, .i-layout-panel-top:hover) .a-right {
+    animation: icon-from-right 0.5s ease-out 0.5s both;
+  }
+
+  :is(.icon-host:hover .i-menu, .i-menu:hover) .a-l1 {
+    transform: translateY(6px) rotate(45deg);
+  }
+  :is(.icon-host:hover .i-menu, .i-menu:hover) .a-l2 {
+    opacity: 0;
+  }
+  :is(.icon-host:hover .i-menu, .i-menu:hover) .a-l3 {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  :is(.icon-host:hover .i-message-circle, .i-message-circle:hover) {
+    animation: icon-wiggle-7 0.5s ease-in-out forwards;
+  }
+
+  :is(.icon-host:hover .i-mic, .i-mic:hover) .a-capsule {
+    animation: icon-bounce 0.6s ease-in-out;
+  }
+
+  :is(.icon-host:hover .i-moon, .i-moon:hover) {
+    animation: icon-rock 1.2s ease-in-out;
+  }
+
+  :is(.icon-host:hover .i-settings, .i-settings:hover) {
+    transform: rotate(180deg);
+  }
+
+  :is(.icon-host:hover .i-sparkles, .i-sparkles:hover) .a-spark {
+    fill: currentColor;
+    animation: icon-hop 1s ease-out;
+  }
+  :is(.icon-host:hover .i-sparkles, .i-sparkles:hover) .a-star {
+    animation: icon-blink 2s ease-in-out 1s both;
+  }
+
+  :is(.icon-host:hover .i-square-pen, .i-square-pen:hover) .a-pen {
+    animation: icon-scribble 0.5s ease-in-out;
+  }
+
+  :is(.icon-host:hover .i-sun, .i-sun:hover) .a-ray {
+    animation: icon-fade-in 0.3s ease-out calc(var(--i) * 0.1s) both;
+  }
+
+  :is(.icon-host:hover .i-user, .i-user:hover) .a-head {
+    animation: icon-draw-grow 0.5s ease-out both;
+  }
+  :is(.icon-host:hover .i-user, .i-user:hover) .a-body {
+    animation: icon-draw 0.4s ease-out 0.2s both;
+  }
+
+  :is(.icon-host:hover .i-x, .i-x:hover) .a-x {
+    animation: icon-draw 0.4s ease-out both;
+  }
+  :is(.icon-host:hover .i-x, .i-x:hover) .a-x2 {
+    animation-delay: 0.2s;
+  }
+}
+
+@keyframes icon-pulse {
+  to {
+    transform: scale(1.08);
+    stroke-width: 2.25;
+  }
+}
+@keyframes icon-trace-60 {
+  to {
+    stroke-dasharray: 0.4 1;
+    stroke-dashoffset: -0.25;
+  }
+}
+@keyframes icon-trace-50 {
+  to {
+    stroke-dasharray: 0.5 1;
+    stroke-dashoffset: -0.25;
+  }
+}
+@keyframes icon-trace-20 {
+  to {
+    stroke-dasharray: 0.8 1;
+    stroke-dashoffset: -0.1;
+  }
+}
+@keyframes icon-draw {
+  from {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+@keyframes icon-draw-grow {
+  from {
+    stroke-dashoffset: 1;
+    transform: scale(0.5);
+  }
+  to {
+    stroke-dashoffset: 0;
+    transform: scale(1);
+  }
+}
+@keyframes icon-retrace {
+  50% {
+    stroke-dashoffset: 1;
+  }
+}
+@keyframes icon-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes icon-wiggle-10 {
+  25% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+}
+@keyframes icon-wiggle-7 {
+  0% {
+    transform: scale(1);
+  }
+  33% {
+    transform: scale(1.05) rotate(-7deg);
+  }
+  66% {
+    transform: scale(1.05) rotate(7deg);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+@keyframes icon-rock {
+  20% {
+    transform: rotate(-10deg);
+  }
+  40% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(-5deg);
+  }
+  80% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes icon-spin-once {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes icon-nudge-left {
+  50% {
+    transform: translateX(-2px) rotate(8deg);
+  }
+}
+@keyframes icon-nudge-right {
+  50% {
+    transform: translateX(2px) rotate(-8deg);
+  }
+}
+@keyframes icon-from-above {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+@keyframes icon-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+@keyframes icon-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+}
+@keyframes icon-bounce {
+  25% {
+    transform: translateY(-3px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(-2px);
+  }
+}
+@keyframes icon-hop {
+  33% {
+    transform: translateY(-1px);
+  }
+  66% {
+    transform: translateY(0);
+  }
+}
+@keyframes icon-blink {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  30%,
+  85% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes icon-scribble {
+  33% {
+    transform: translate(-1px, 1.5px) rotate(0.5deg);
+  }
+  66% {
+    transform: translate(1.5px, -1px) rotate(-0.5deg);
+  }
+}

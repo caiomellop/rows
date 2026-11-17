@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-theme-key="{{ theme_key }}" class="h-full antialiased">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Prepermint{% endblock %}</title>
+    <meta name="description" content="{% block description %}Portfolio builder with GitHub sync{% endblock %}">
+    {% block head_meta %}{% endblock %}
+    {# Applies the saved theme before the first paint, so there is no flash. #}
+    <script>(function(){try{var t=localStorage.getItem("{{ theme_key }}");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})()</script>
+    <link rel="icon" href="{{ static_url('favicon.ico') }}">
+    <link rel="preload" href="/static/fonts/Figtree-VariableFont_wght.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/static/fonts/EBGaramond-VariableFont_wght.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ static_url('css/app.css') }}">
+    <script src="{{ static_url(htmx_file) }}" defer></script>
+    <script src="{{ static_url('js/theme.js') }}" defer></script>
+  </head>
+  <body class="min-h-full flex flex-col">
+    {% block body %}{% endblock %}
+  </body>
+</html>
