@@ -22,7 +22,7 @@ const text = (message: { content: unknown }) => (message.content as { text: stri
 function inProgress(): InterviewState {
   let state = prepareTurn(startState(15 * 60_000), plan, 0);
   state = addTurn(state, { role: "interviewer", text: "Olá! Fale um pouco sobre a sua trajetória.", at: 1 });
-  state = applyMove(state, "NEXT", plan);
+  state = applyMove(applyMove(state, "NEXT", plan), "NEXT", plan);
   return addTurn(state, { role: "candidate", text: "Então, é... eu trabalho com dados há cinco anos.", at: 20 });
 }
 
@@ -49,7 +49,7 @@ describe("interviewer prompt", () => {
     const last = text(messages[2]);
     expect(last).toContain("<candidate_said>Então, é... eu trabalho com dados há cinco anos.</candidate_said>");
     expect(last.indexOf("<candidate_said>")).toBeLessThan(last.indexOf("<interview_state>"));
-    expect(last).toContain("Current question (1 of 2)");
+    expect(last).toContain("Current question (1 of 2, area: Início)");
   });
 
   it("marks an interrupted interviewer turn and joins consecutive candidate turns", () => {

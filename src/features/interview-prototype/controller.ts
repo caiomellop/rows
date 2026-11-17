@@ -318,7 +318,7 @@ export class InterviewController {
     this.usage = { ...this.usage, ttsChars: this.usage.ttsChars + turn.sentChars };
     const text = turn.text.trim();
     if (text) this.state = addTurn(this.state, { role: "interviewer", text, at: this.seconds() });
-    this.state = applyMove(this.state, coerceMove(turn.move, allowedMoves(this.state, setup.plan)), setup.plan);
+    this.state = applyMove(this.state, coerceMove(turn.move, allowedMoves(this.state)), setup.plan);
     this.set({ turns: this.state.transcript, speaking: "", status: "listening", usage: this.usage });
     if (this.state.stage === "done") void this.finish();
   }

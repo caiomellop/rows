@@ -57,12 +57,17 @@ export const TurnSchema = z.object({
 });
 export type Turn = z.infer<typeof TurnSchema>;
 
-export const STAGES = ["opening", "questions", "closing", "done"] as const;
+/**
+ * opening: the interviewer introduces itself and the structure. firstQuestion: it bridges into planned
+ * question 1. questions: the plan. candidateQuestions: the candidate asks theirs. closing: goodbye.
+ */
+export const STAGES = ["opening", "firstQuestion", "questions", "candidateQuestions", "closing", "done"] as const;
 export type Stage = (typeof STAGES)[number];
 
 /**
  * The interview state is the product: where the interview is, not only what was said.
  * `questionIndex` is the planned question being discussed (the last one asked).
+ * `followUps` counts follow-ups on that question, or, in candidateQuestions, the candidate's questions answered.
  */
 export const InterviewStateSchema = z.object({
   stage: z.enum(STAGES),
