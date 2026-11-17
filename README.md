@@ -58,3 +58,14 @@ Production was migrated through Supabase, so it has no `drizzle.__drizzle_migrat
 3. Run `npm run db:migrate`. It should apply nothing.
 
 The baseline lists every migration in `drizzle/meta/_journal.json`. Run it before adding a new migration, or the new one will be marked as applied without running.
+
+## Python app (in progress)
+
+The app is being rewritten in Python with FastAPI ([ADR 0003](docs/adr/0003-python-fastapi.md), Linear epic CAI-97). Until the cutover, production is still the Next.js app above. With [uv](https://docs.astral.sh/uv/) installed:
+
+```
+uv sync
+uv run uvicorn prepermint.main:app --reload
+```
+
+Checks: `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy`, `uv run pytest`.
