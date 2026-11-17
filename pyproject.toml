@@ -1,0 +1,48 @@
+[project]
+name = "prepermint"
+version = "0.1.0"
+description = "Prepermint, the FastAPI app (docs/adr/0003-python-fastapi.md)"
+requires-python = ">=3.13"
+dependencies = [
+    "asyncpg>=0.32.0",
+    "fastapi>=0.163.2",
+    "pydantic-settings>=2.16.3",
+    "sqlalchemy[asyncio]>=2.1.9",
+    "uvicorn>=0.54.0",
+]
+
+[tool.vercel]
+# The package is prepermint/, not app/: while the Next.js app lives in this repo, a root app/
+# folder would make Next.js ignore src/app.
+entrypoint = "prepermint.main:app"
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=2.4.1",
+    "pytest>=9.2.0",
+    "ruff>=0.17.5",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+extend-exclude = ["node_modules"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "ANN", "S", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+strict = true
+python_version = "3.13"
+files = ["prepermint", "tests"]
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

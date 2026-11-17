@@ -16,7 +16,7 @@ Two parts of the app cannot become Python:
 ## Decision
 
 ### Server
-- **Runtime:** Python 3.13, **FastAPI**, served by Uvicorn. The code lives in an `app/` Python package, with routes in `app/routes/`, shared logic in `app/lib/` and features in `app/features/<feature>/`. That is the same split as today, just in Python.
+- **Runtime:** Python 3.13, **FastAPI**, served by Uvicorn. The code lives in a `prepermint/` Python package, with routes in `prepermint/routes/`, shared logic in `prepermint/lib/` and features in `prepermint/features/<feature>/`. That is the same split as today, just in Python. Vercel finds the app through `[tool.vercel] entrypoint` in `pyproject.toml`.
 - **Package manager:** **uv**, with `pyproject.toml` and `uv.lock`. No pip-tools, Poetry or Pipenv.
 - **Validation:** **pydantic v2** replaces zod for form data, query and path params, request bodies, settings (`pydantic-settings`) and AI output.
 - **Types and lint:** `mypy --strict` and **ruff**, in place of TypeScript strict and ESLint. `Any` and `type: ignore` are not allowed, the same as `any` and `@ts-ignore` today.
@@ -41,7 +41,7 @@ Two parts of the app cannot become Python:
 - **Icons:** Lucide icons become inline SVG partials, with the hover animation done in CSS. No other icon set.
 
 ### External services
-- **AI:** the **`anthropic`** Python SDK, with every call in `app/lib/ai.py` and the model IDs as constants there. Prompts stay in `prompts/` as Markdown. Structured output is validated with pydantic. Interview turns stream through `StreamingResponse`.
+- **AI:** the **`anthropic`** Python SDK, with every call in `prepermint/lib/ai.py` and the model IDs as constants there. Prompts stay in `prompts/` as Markdown. Structured output is validated with pydantic. Interview turns stream through `StreamingResponse`.
 - **Email:** Resend through **httpx**, as today with `fetch`. No SDK.
 - **Résumé import:** PDFs still go to Claude as a document. DOCX goes through **`mammoth`** (the Python package from the same author as the JS one).
 - **Résumé PDF output:** `@react-pdf/renderer` becomes **fpdf2**, which is pure Python and needs no system libraries. It is not wired to any route today, so it is ported last.
@@ -67,5 +67,9 @@ Two parts of the app cannot become Python:
   - **Interactivity:** HTMX and templates are less capable than React for rich interactions, and the design in `docs/landing-design-spec.md` has to be rebuilt by hand.
   - **Caching:** the Next.js cache (`cacheComponents`, `updateTag`) goes away. Reads happen on every request until a real need for caching shows up.
   - **Cold starts:** these get slower on Vercel's Python runtime. The first sub-issue measures them.
-- **AGENTS.md:** at cutover, sections 4, 5 and 6 are rewritten for the new stack. Examples: `requireUser()` becomes `require_user()`, `zod` becomes pydantic, `schema.ts` becomes `app/db/models.py`, Server Actions become form posts with HTMX, and `.env.example` loses the `NEXT_PUBLIC_` prefix. The Next.js block at the top of AGENTS.md is removed by the owner at that point, not by an agent.
+- **AGENTS.md:** at cutover, sections 4, 5 and 6 are rewritten for the new stack. Examples: `requireUser()` becomes `require_user()`, `zod` becomes pydantic, `schema.ts` becomes `prepermint/db/models.py`, Server Actions become form posts with HTMX, and `.env.example` loses the `NEXT_PUBLIC_` prefix. The Next.js block at the top of AGENTS.md is removed by the owner at that point, not by an agent.
 - **Banned until cutover:** agents must not mix the two stacks, for example by calling Python from Next.js or the reverse. They must not add a Python package that is not named here without updating this ADR, and must not change the database schema in either app until cutover. The baseline must stay equal to Drizzle `0005`.
+
+## Update: the package is `prepermint/`, not `app/` (CAI-99, 17 Nov 2026)
+
+- A root-level `app/` folder makes Next.js ignore `src/app` (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/src-folder.md`), which would break the production build while both apps live in the repo. The Python package is `prepermint/`. Paths in the sub-issues that say `app/` mean `prepermint/`.
