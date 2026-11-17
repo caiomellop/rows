@@ -1,6 +1,6 @@
 # 0003. Rewrite the app in Python with FastAPI
 
-Date: 2026-11-17 · Status: Proposed · Linear: CAI-XX (epic, to be created)
+Date: 2026-11-17 · Status: Accepted · Linear: CAI-98 (epic CAI-97)
 
 ## Context
 
@@ -37,6 +37,7 @@ Two parts of the app cannot become Python:
 ### Pages
 - **Rendering:** server-rendered **Jinja2** templates, with **HTMX** for partial updates: forms, the thread list, the sidebar and inline AI actions. Small interactions, such as the theme toggle and menus, use a few lines of plain JavaScript. There is no SPA framework.
 - **Tailwind:** built with the **standalone Tailwind CLI** through the `pytailwindcss` package, so building CSS needs no Node. `globals.css` and its tokens move as they are.
+- **Forms:** Server Actions become form posts, parsed with **`python-multipart`** (FastAPI needs it for forms and uploads). Server Actions checked the `Origin` header for free; every POST now checks it too, in one middleware.
 - **Icons:** Lucide icons become inline SVG partials, with the hover animation done in CSS. No other icon set.
 
 ### External services
