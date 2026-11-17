@@ -8,7 +8,8 @@ import { DEFAULT_VOICE, LANGUAGES, VOICE_IDS } from "./languages";
  * Nothing here is stored: the interview state lives in the browser and travels with each request.
  */
 
-export const DURATIONS = [10, 15, 20, 30] as const;
+/** 15 minutes is the shortest interview that fits the whole arc in planner.md (CAI-91). */
+export const DURATIONS = [15, 20, 30] as const;
 
 /** Size limits shared by the form and the routes, so a pasted document can't run up the Claude bill. */
 export const LIMITS = { jobDescription: 12_000, resume: 12_000, turnText: 4_000, turns: 200 } as const;
@@ -35,8 +36,11 @@ export const PlanDraftSchema = z.object({
 });
 export type PlanDraft = z.infer<typeof PlanDraftSchema>;
 
-/** The plan that travels with the interview: the draft plus the language the interview is held in. */
-export const PlanSchema = PlanDraftSchema.extend({ language: z.enum(LANGUAGES) });
+/**
+ * The plan that travels with the interview: the draft plus the language the interview is held in and the
+ * name the interviewer introduces itself with (the name of the chosen voice).
+ */
+export const PlanSchema = PlanDraftSchema.extend({ language: z.enum(LANGUAGES), interviewerName: z.string().max(40).optional() });
 export type Plan = z.infer<typeof PlanSchema>;
 
 /* ------------------------------------------------------------------ */
@@ -83,7 +87,7 @@ export const StartRequestSchema = z.object({
   jobDescription,
   resume,
   voice: z.enum(VOICE_IDS).default(DEFAULT_VOICE),
-  durationMinutes: z.union(DURATIONS.map((d) => z.literal(d)) as [z.ZodLiteral<10>, z.ZodLiteral<15>, z.ZodLiteral<20>, z.ZodLiteral<30>]),
+  durationMinutes: z.union(DURATIONS.map((d) => z.literal(d)) as [z.ZodLiteral<15>, z.ZodLiteral<20>, z.ZodLiteral<30>]),
 });
 
 export const TurnRequestSchema = z.object({ jobDescription, resume, plan, state: InterviewStateSchema });

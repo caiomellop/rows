@@ -98,7 +98,7 @@ export function describeState(state: InterviewState, plan: Plan): string {
 
   if (state.stage === "opening") {
     lines.push(
-      `Open the interview: greet the candidate in one sentence, say it is a short spoken interview for the ${plan.roleTitle} role, then ask planned question 1: "${plan.questions[0]?.question ?? ""}"`,
+      `Open the interview as your instructions describe under "Opening", then ask planned question 1: "${plan.questions[0]?.question ?? ""}"`,
       "If the candidate has already said something, acknowledge it briefly first.",
     );
   } else if (state.stage === "closing" || state.stage === "done") {

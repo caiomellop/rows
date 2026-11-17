@@ -29,7 +29,7 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 const BARGE_IN_MIN_CHARS = 3;
 
 /** What the interview is built from. `jobDescription` is the text of the posting, pasted or already read from a link. */
-export type SessionForm = { jobDescription: string; resume: string; durationMinutes: 10 | 15 | 20 | 30; voice: VoiceId };
+export type SessionForm = { jobDescription: string; resume: string; durationMinutes: 15 | 20 | 30; voice: VoiceId };
 /** `readUsage` is what reading the link cost, so the cost of the whole interview adds up. It is not sent to the server. */
 export type StartForm = SessionForm & { readUsage?: LlmUsage };
 

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   const { jobDescription, resume, durationMinutes, voice } = parsed.data;
   // The voice decides the language of the interview, and the speed and expressivity it speaks with.
-  const { language, model, speed, expressivity } = voiceById(voice);
+  const { name, language, model, speed, expressivity } = voiceById(voice);
 
   try {
     const [{ plan: draft, usage }, token] = await Promise.all([
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     ]);
     if (draft.questions.length < 3) return Response.json({ error: "The interview plan came back too short. Try again." }, { status: 502 });
 
-    const plan: Plan = { ...draft, language };
+    const plan: Plan = { ...draft, language, interviewerName: name };
     const body: SessionResponse = {
       plan,
       budgetMs: durationMinutes * 60_000,

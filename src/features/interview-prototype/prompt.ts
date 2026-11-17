@@ -26,6 +26,7 @@ export function buildTurnPrompt(input: { jobDescription: string; resume: string;
 } {
   const system = renderPrompt(loadPrompt("interviews", "interviewer"), {
     language_name: LANGUAGE_NAMES[input.plan.language],
+    interviewer_name: input.plan.interviewerName ?? "(none)",
     job_description: input.jobDescription,
     resume: input.resume || "(none provided)",
     plan: plannedQuestionsText(input.plan),
